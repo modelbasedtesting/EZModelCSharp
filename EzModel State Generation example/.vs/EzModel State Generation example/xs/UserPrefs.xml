@@ -1,0 +1,26 @@
+﻿<Properties StartupConfiguration="{7883B08C-F73D-44A0-953F-A8C68A5B50FA}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="EzModel State Generation example/Program.cs">
+    <Files>
+      <File FileName="EzModel State Generation example/Program.cs" Line="25" Column="6" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="EzModel State Generation example" expanded="True">
+            <Node name="EzModel State Generation example" expanded="True">
+              <Node name="Properties" expanded="True" />
+              <Node name="Program.cs" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.ItemProperties.EzModel_220State_220Generation_220example PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>
