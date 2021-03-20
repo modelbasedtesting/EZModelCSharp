@@ -17,7 +17,7 @@ namespace SeriousQualityEzModel
     // The user implements a public class of rules that inherits the IUserRules interface
     public interface IUserRules
     {
-        static string valueSeparator = ", ";
+        const string valueSeparator = ", ";
 
         string GetInitialState();
         List<string> GetAvailableActions(string startState);

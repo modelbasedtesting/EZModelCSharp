@@ -14,8 +14,9 @@
 
 using System;
 using System.Collections.Generic;
+using SeriousQualityEzModel;
 
-namespace SeriousQualityEzModel
+namespace DesklampAndTrafficlightExample
 {
     public class DesklampAndTrafficlightProgram
     {

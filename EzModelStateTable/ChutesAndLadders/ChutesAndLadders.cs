@@ -13,8 +13,9 @@
 
 using System;
 using System.Collections.Generic;
+using SeriousQualityEzModel;
 
-namespace SeriousQualityEzModel
+namespace ChutesAndLaddersExample
 {
     public class ChutesAndLaddersProgram
     {
