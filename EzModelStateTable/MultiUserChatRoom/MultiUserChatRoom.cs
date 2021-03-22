@@ -2,13 +2,24 @@
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 
-namespace ChatRoomExample
+namespace MultiUserChatRoomExample
 {
-    class ChatRoomProgram
+    class MultiUserChatRoomProgram
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            ChatRoom rules = new ChatRoom();
+            Console.WriteLine("Args = {0}", args.ToString());
+
+            ChatRoom rules;
+
+            if (args.Length > 2)
+            {
+                rules = new ChatRoom(uint.Parse(args[1]), uint.Parse(args[2]));
+            }
+            else
+            {
+                rules = new ChatRoom(2, 2);
+            }
 
             GeneratedGraph graph = new GeneratedGraph(rules);
 
@@ -19,199 +30,160 @@ namespace ChatRoomExample
 
     public class ChatRoom : IUserRules
     {
+        // Take the number of users chatting and the number who create chat rooms as arguments.
+        // Main( uint numUsers, uint numRoomHosts )
+        // constraint: numRoomHosts <= numUsers
+        // Users are then numbered 1 through numUsers,
+        // and Rooms are numbered 1 through numRoomHosts.
+        // For simplicity, user i hosts room i.
+        // A room host creates their room, and invites others to their room.
+        // A room host cannot invite themself to their room.
+        uint users;
+        uint roomHosts;
+
         // State Variables
-        // Angela
-        const string svAngelaStatus = "AStatus";
-        const string svAngelaInvitation = "AInvitation";
-        const string svAngelaRoom = "ARoom";
-        // Jacob
-        const string svJacobStatus = "JStatus";
-        const string svJacobInvitation = "JInvitation";
-        const string svJacobRoom = "JRoom";
+        // Per User
+        const string svStatus = "Status";
+        const string svInvitation = "Invitation";
+        const string svRoom = "Room";
 
         // State values
         // For *Status variables
-        const string LoggedOut = ".loggedOut"; 
+        const string LoggedOut = ".loggedOut";
         const string LoggedIn = ".loggedIn";
         // For *Room variables
         const string notCreated = ".notCreated";
         const string created = ".created";
-        const string angelaPresent = ".aPresent";
-        const string jacobPresent = ".jPresent";
+        const string userPresent = "Present";
         // For *Invitation variables; a person will not invite themself.
         const string noneInvited = ".noneInvited";
-        const string aInvited = ".aInvited";
-        const string jInvited = ".jInvited";
+        const string userInvited = "Invited";
         // IUserRules.valueSeparator abbreviated constant name for syntax convenience
         const string sep = IUserRules.valueSeparator;
 
         // Keep a vector of state variable values, one state variable represented by
         // each vector element.  Some state variables can have multiple simultaneous
-        // values, for example ARoom has possibilities of empty, angelaPresent,
-        // jacobPresent, or angelaPresent AND jacobPresent.
+        // values, for example U1Room has possibilities of notCreated, created AND U1Present,
+        // created AND U2Present, or created AND U1Present AND U2Present.
         // When responding to GetInitialState and GetEndState, return 
         // a valueSeparator-delimited string from the populated array elements.
-        // The vector indices represent the state value of the state variables,
-        // in order of Angela then Jacob.  See State Variables declarations, above.
-        string[] vState = new string[6];
-        const uint iAngelaStatus = 0;
-        const uint iAngelaRoom = 1;
-        const uint iAngelaInvitation = 2;
-        const uint iJacobStatus = 3;
-        const uint iJacobRoom = 4;
-        const uint iJacobInvitation = 5;
+        string[,] vState;
+        const uint iStatus = 0;
+        const uint iInvitation = 1;
+        const uint iRoom = 2;
 
         // Actions
-        const string aLogsIn = "A.logsIn";
-        const string aLogsOut = "A.logsOut";
-        const string jLogsIn = "J.logsIn";
-        const string jLogsOut = "J.logsOut";
-        const string aCreatesARoom = "A.creates." + svAngelaRoom;
-        const string jCreatesJRoom = "J.creates." + svJacobRoom;
-        const string aInvitesJ = "A.invites.J";
-        const string jInvitesA = "J.invites.A";
-        const string jAccepts = "J.accepts";
-        const string aAccepts = "A.accepts";
-        const string jDeclines = "J.declines";
-        const string aDeclines = "A.declines";
-        const string aLeavesARoom = "A.leaves." + svAngelaRoom;
-        const string jLeavesARoom = "J.leaves." + svAngelaRoom;
-        const string aLeavesJRoom = "A.leaves." + svJacobRoom;
-        const string jLeavesJRoom = "J.leaves." + svJacobRoom;
-        const string aEntersARoom = "A.enters." + svAngelaRoom;
-        const string jEntersARoom = "J.enters." + svAngelaRoom;
-        const string aEntersJRoom = "A.enters." + svJacobRoom;
-        const string jEntersJRoom = "J.enters." + svJacobRoom;
-
+        const string LogsIn = ".logsIn";
+        const string LogsOut = ".logsOut";
+        const string CreatesRoom = ".createsRoom";
+        const string Invites = ".invites.";
+        const string Accepts = ".accepts.";
+        const string Declines = ".declines.";
+        const string LeavesRoom = ".leaves.";
+        const string EntersRoom = ".enters.";
 
         // TODO: Harry, do we need actions for Jacob leaves Room, and Angela leaves Room,
         // or are those covered by Angela Logs Out and Jacob Logs Out?
 
-        public ChatRoom()
+        public ChatRoom(uint numUsers, uint numRoomHosts)
         {
+            roomHosts = numRoomHosts;
+            users = numUsers;
+
+            vState = new string[users, 3];
+
             // Initialize the state vector
-            vState[iAngelaStatus] = svAngelaStatus + LoggedOut;
-            vState[iAngelaRoom] = svAngelaRoom + notCreated;
-            vState[iAngelaInvitation] = svAngelaInvitation + noneInvited;
-            vState[iJacobStatus] = svJacobStatus + LoggedOut;
-            vState[iJacobRoom] = svJacobRoom + notCreated;
-            vState[iJacobInvitation] = svJacobInvitation + noneInvited;
+            for ( uint i = 0; i < users; i++ )
+            {
+                vState[i, iStatus] = String.Format("U{0}{1}{2}", i + 1, svStatus, LoggedOut);
+                vState[i, iInvitation] = String.Format("U{0}{1}{2}", i + 1, svInvitation, noneInvited);
+                vState[i, iRoom] = String.Format("U{0}{1}{2}", i + 1, svRoom, notCreated);
+            }
         }
 
-        string StringifyStateVector(string[] v)
+        string StringifyStateVector()
         {
-            if (v.Length != 6)
-            {
-                string e = String.Format("ERROR: wrong-size state vector of length {0} in StringifyStateVector", v.Length);
+            string s = "";
 
-                Console.WriteLine(e);
-                return e;
+            for ( uint i=0; i < users; i++ )
+            {
+                s += vState[i, iStatus] + sep + vState[i, iInvitation] + sep + vState[i, iRoom];
+                if ( i < users-1 )
+                {
+                    s += sep;
+                }
             }
 
-            return v[iAngelaStatus] + sep
-                + v[iAngelaRoom] + sep
-                + v[iAngelaInvitation] + sep
-                + v[iJacobStatus] + sep
-                + v[iJacobRoom] + sep
-                + v[iJacobInvitation];
+            return s;
         }
 
         // Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(vState);
+            return StringifyStateVector();
         }
 
         // Interface method
         public List<string> GetAvailableActions(string startState)
         {
-            // Do a vector element comparison to interpret start state
-            string[] vStart = startState.Split(sep);
-
             List<string> actions = new List<string>();
 
-            // Folks can always login or logout
-            actions.Add(vStart[iAngelaStatus].Contains(LoggedIn) ? aLogsOut : aLogsIn);
-            actions.Add(vStart[iJacobStatus].Contains(LoggedIn) ? jLogsOut : jLogsIn);
+            string[] vStart = startState.Split(sep);
 
-            // Someone who is logged in can do stuff
-            if (vStart[iAngelaStatus].Contains(LoggedIn))
+            for (uint i = 0; i < users; i++)
             {
-                if (vStart[iAngelaRoom].Contains(notCreated))
-                {
-                    actions.Add(aCreatesARoom);
-                }
-                else if (vStart[iAngelaRoom].Contains(created))
-                {
-                    if (vStart[iAngelaRoom].Contains(angelaPresent))
-                    {
-                        actions.Add(aLeavesARoom);
-                    }
+                string status = vStart[i * 3];
+                string invitation = vStart[i * 3 + 1];
+                string room = vStart[i * 3 + 2];
+                string user = String.Format("U{0}", i + 1);
+                actions.Add(vState[i, 0].Contains(LoggedIn) ? user + LogsOut : user + LogsIn);
 
-                    if (vStart[iJacobStatus].Contains(LoggedIn))
+                // Someone who is logged in can do stuff
+                if (status.Contains(LoggedIn))
+                {
+                    if (room.Contains(notCreated))
                     {
-                        if (vStart[iAngelaRoom].Contains(jacobPresent))
+                        actions.Add(String.Format("U{0}{1}", i, CreatesRoom));
+                    }
+                    else if (room.Contains(created))
+                    {
+                        for (uint j = 0; j < users; j++)
                         {
-                            actions.Add(jLeavesARoom);
-                        }
-                        else if (vStart[iAngelaInvitation].Contains(jInvited))
-                        {
-                            actions.Add(jAccepts);
-                            actions.Add(jDeclines);
-                        }
-                        else
-                        {
-                            if (vStart[iAngelaRoom].Contains(angelaPresent))
+                            string present = String.Format("U{0}Present", j + 1);
+
+                            if (room.Contains(present))
                             {
-                                actions.Add(aInvitesJ);
+                                actions.Add(String.Format("U{0}{1}", j+1, LeavesRoom));
+                            }
+
+                            if (vStart[iJacobStatus].Contains(LoggedIn))
+                            {
+                                if (room.Contains(jacobPresent))
+                                {
+                                    actions.Add(jLeavesARoom);
+                                }
+                                else if (invitation.Contains(jInvited))
+                                {
+                                    actions.Add(jAccepts);
+                                    actions.Add(jDeclines);
+                                }
+                                else
+                                {
+                                    if (room.Contains(angelaPresent))
+                                    {
+                                        actions.Add(aInvitesJ);
+                                    }
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    Console.WriteLine("ERROR: AngelaRoom status is not valid '{0}'", vStart[iAngelaRoom]);
+                    else
+                    {
+                        Console.WriteLine("ERROR: AngelaRoom status is not valid '{0}'", vStart[iAngelaRoom]);
+                    }
                 }
             }
 
-            if (vStart[iJacobStatus].Contains(LoggedIn))
-            {
-                if (vStart[iJacobRoom].Contains(notCreated))
-                {
-                    actions.Add(jCreatesJRoom);
-                }
-                else if (vStart[iJacobRoom].Contains(created))
-                {
-                    if (vStart[iJacobRoom].Contains(jacobPresent))
-                    {
-                        actions.Add(jLeavesJRoom);
-                    }
-
-                    if (vStart[iAngelaStatus].Contains(LoggedIn))
-                    {
-                        if (vStart[iJacobRoom].Contains(angelaPresent))
-                        {
-                            actions.Add(aLeavesJRoom);
-                        }
-                        else if (vStart[iJacobInvitation].Contains(aInvited))
-                        {
-                            actions.Add(aAccepts);
-                            actions.Add(aDeclines);
-                        }
-                        else
-                        {
-                            if (vStart[iJacobRoom].Contains(jacobPresent))
-                            {
-                                actions.Add(jInvitesA);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("ERROR: JacobRoom status is not valid '{0}'", vStart[iJacobRoom]);
-                }
-            }
             return actions;
         }
 
