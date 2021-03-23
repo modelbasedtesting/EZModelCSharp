@@ -1,0 +1,10 @@
+﻿March 23, 2021
+Doug Szabo
+Serious Quality, LLC
+
+The Stanford H3 Viewer project was downloaded from Stanford University web site.
+The GLUT flavor of the H3 Viewer code, including the GLUT example main program,
+was extracted to this project.
+What remains in this project is the transformation of the features of the
+H3 Viewer to WebGL JavaScript.  WebGL 1 will be an acceptable outcome.
+WebGL 2 is desired.

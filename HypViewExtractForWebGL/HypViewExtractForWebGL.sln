@@ -1,0 +1,88 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.809.2
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5D86BE15-B9B5-4133-AC93-D87881E64CDC}"
+	ProjectSection(SolutionItems) = preProject
+		Makefile = Makefile
+		VkHypViewer.cpp = VkHypViewer.cpp
+		HypViewer.cpp = HypViewer.cpp
+		HypView.cpp = HypView.cpp
+		HypTransform.cpp = HypTransform.cpp
+		HypQuat.cpp = HypQuat.cpp
+		HypPoint.cpp = HypPoint.cpp
+		HypNodeArray.cpp = HypNodeArray.cpp
+		HypNode.cpp = HypNode.cpp
+		HypLink.cpp = HypLink.cpp
+		HypGroupArray.cpp = HypGroupArray.cpp
+		HypGraph.cpp = HypGraph.cpp
+		Makefile.linuxxt = Makefile.linuxxt
+		Makefile.main = Makefile.main
+		Makefile.common = Makefile.common
+		README = README
+		COPYRIGHT = COPYRIGHT
+		COPYING = COPYING
+		CHANGES = CHANGES
+		FORWEBGL.txt = FORWEBGL.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{C3A51450-149D-4850-AA64-64EABE40E8A2}"
+	ProjectSection(SolutionItems) = preProject
+		VkHypViewer.h = VkHypViewer.h
+		StringArray.h = StringArray.h
+		HypViewer.h = HypViewer.h
+		HypView.h = HypView.h
+		HypTransform.h = HypTransform.h
+		HypQuat.h = HypQuat.h
+		HypPoint.h = HypPoint.h
+		HypNodeArray.h = HypNodeArray.h
+		HypNode.h = HypNode.h
+		HypLinkArray.h = HypLinkArray.h
+		HypLink.h = HypLink.h
+		HypGroupArray.h = HypGroupArray.h
+		HypGroup.h = HypGroup.h
+		HypGraph.h = HypGraph.h
+		HypData.h = HypData.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{78E9FD94-F98E-4970-B860-A29211B3976D}"
+	ProjectSection(SolutionItems) = preProject
+		hypviewer.gif = hypviewer.gif
+		VkHypViewer.html = VkHypViewer.html
+		HypViewer.html = HypViewer.html
+		HypView.html = HypView.html
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{2BD5484A-5149-46DD-B2C7-FD977E18D674}"
+	ProjectSection(SolutionItems) = preProject
+		main.cpp = main.cpp
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6638E8F8-FCCE-4B81-986E-458CC20D876C}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C3A51450-149D-4850-AA64-64EABE40E8A2} = {5D86BE15-B9B5-4133-AC93-D87881E64CDC}
+		{78E9FD94-F98E-4970-B860-A29211B3976D} = {5D86BE15-B9B5-4133-AC93-D87881E64CDC}
+		{2BD5484A-5149-46DD-B2C7-FD977E18D674} = {5D86BE15-B9B5-4133-AC93-D87881E64CDC}
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.VersionControlPolicy = $1
+		$1.CommitMessageStyle = $2
+		$2.FirstFilePrefix = 
+		$2.FileSeparator = @:\n
+		$2.LineAlign = 0
+		$2.InterMessageLines = 0
+		$2.Wrap = False
+	EndGlobalSection
+EndGlobal
