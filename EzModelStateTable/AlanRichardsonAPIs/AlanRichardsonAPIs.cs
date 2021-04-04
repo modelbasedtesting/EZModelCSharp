@@ -6,23 +6,9 @@ namespace AlanRichardsonAPIs
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            APIs rules;
-
-            if (args.Length < 2)
-            {
-                rules = new APIs(10);
-            }
-            else
-            {
-                uint arg = uint.Parse(args[1]);
-                if (arg < 10)
-                {
-                    arg = 10;
-                }
-                rules = new APIs(arg);
-            }
+            APIs rules = new APIs();
 
             GeneratedGraph graph = new GeneratedGraph(rules);
 
@@ -30,25 +16,6 @@ namespace AlanRichardsonAPIs
             Console.ReadLine();
         }
     }
-
-    // This struct is needed only for traversals.
-    //struct ToDo
-    //{
-    //    // The first four properties match those of a todo item in
-    //    // the system under test.
-    //    int id;
-    //    string title;
-    //    bool doneStatus;
-    //    string description;
-
-    //    // The final three properties are for checking the validation rules
-    //    // of the system under test.  If any of the properties are allowed,
-    //    // then the validation rules of the system under test allow arbitrary
-    //    // fields in the data.
-    //    string nuisanceString;
-    //    int nuisanceInt;
-    //    bool nuisanceBool;
-    //}
 
     public class APIs : IUserRules
     {
@@ -64,10 +31,6 @@ namespace AlanRichardsonAPIs
 
         string svTodosClassString = betweenZeroAndMaximumTodos;
 
-        // A counter of items in the todos list.
-        // The system under test initializes the list with 10 items.
-        uint svNumTodos = 10;
-
         // Once the X-AUTH-TOKEN exists, there isn't a way to get rid of it
         // except for stopping the system under test.
         bool svXAuthTokenExists = false;
@@ -76,23 +39,6 @@ namespace AlanRichardsonAPIs
         // It will be unknown during each new run of the system under test, until
         // it is requested.  It must be supplied with each multi-player session.
         bool svXChallengerGuidExists = false;
-
-        // A helper variable to limit the size of the state-transition table, and
-        // thus also limit the size of the model graph.
-        // This is adjusted by the command-line argument.
-        uint maxTodos = 10;
-
-        // Helper variables, really for traversals.  Not needed to explain
-        // state transitions..
-
-
-        //// State Variables
-        //// The secret note is persisted in the playerdata of the system under test
-        //// We must read the playerdata to initialize the secret note.
-        //string svSecretNote = "";
-
-        //// Populate the todos list during object constructor.
-        //List<ToDo> todosList = new List<ToDo>();
 
         // Actions handled by APIs
         const string startup = "java -jar apichallenges.jar";
@@ -122,36 +68,9 @@ namespace AlanRichardsonAPIs
         const string deleteFinalTodoId = "DeleteFinalTodoById";
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
-        //const string invalidGetTodo404 = "InvalidEndpointGetTodo";
-        //const string invalidGetTodos404 = "InvalidIdGetTodos";
-        //const string invalidPostTodos400 = "InvalidContentPostTodos";
-        //const string invalidGetTodos406 = "InvalidAcceptGetTodos";
-        //const string invalidPostTodos415 = "InvalidContentTypePostTodos";
-        //const string invalidDeleteHeartbeat405 = "MethodNotAllowedDeleteHeartbeat";
-        //const string serverErrorPatchHeartbeat500 = "InternalServerErrorPatchHeartbeat";
-        //const string serverErrorTraceHeartbeat501 = "ServerNotImplementedTraceHeartbeat";
-        //const string invalidAuthGetSecretToken401 = "InvalidAuthGetSecretToken";
-        //const string invalidNotAuthorizedGetSecretNote403 = "XAuthTokenNotValidGetSecretNote";
-        //const string invalidAuthHeaderMissingGetSecretNote401 = "XAuthTokenMissingGetSecretNote";
-        //const string invalidNotAuthorizedPostSecretNote403 = "XAuthTokenNotValidPostSecretNote";
-        //const string invalidAuthHeaderMissingPostSecretNote401 = "XAuthTokenMissingPostSecretNote";
 
-        public APIs(uint max)
-        {
-            maxTodos = max;
-            // During traversals: 
-            // Read the todos list from the system under test.
-            // Read the secret note from the player data.
-        }
-
-        // Swap the following statement in to see state explosion due to explicit todos list length 
-        // string StringifyStateVector(bool running, uint numTodos, bool xAuthTokenExists, bool xChallengerGuidExists)
-        // Comment this out if you swap in the previous statement.
         string StringifyStateVector(bool running, string todosClass, bool xAuthTokenExists, bool xChallengerGuidExists)
         {
-            // Swap the following statement in to see state explosion due to explicit todos list length 
-            // string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}, XChallenger.{3}", running, numTodos, xAuthTokenExists, xChallengerGuidExists);
-            // Comment this out if you swap in the previous statement.
             string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}, XChallenger.{3}", running, todosClass, xAuthTokenExists, xChallengerGuidExists);
             return s;
         }
@@ -159,12 +78,8 @@ namespace AlanRichardsonAPIs
         // Interface method
         public string GetInitialState()
         {
-            // Swap the following statement in to see state explosion due to explicit todos list length
-            // return StringifyStateVector(svRunning, svNumTodos, svXAuthTokenExists, svXChallengerGuidExists);
-            // Comment this out if you swap in the previous statement.
             return StringifyStateVector(svRunning, svTodosClassString, svXAuthTokenExists, svXChallengerGuidExists);
         }
-
 
         // Interface method
         public List<string> GetAvailableActions(string startState)
@@ -176,12 +91,7 @@ namespace AlanRichardsonAPIs
             // one state in this object.
             string[] vState = startState.Split(", ");
             bool running = vState[0].Contains("True") ? true : false;
-
-            // Swap the following statement in to see state explosion due to explicit todos list length
-            // uint numTodos = uint.Parse(vState[1].Split(".")[1]);
-            // Comment this out if you swap in the previous statement.
             string todosClass = vState[1].Split(".")[1];
-
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
@@ -230,38 +140,11 @@ namespace AlanRichardsonAPIs
             // specific invalid actions cited in the API Challenges list.
             actions.Add(invalidRequest);
 
-            // Explicit, invalid actions found in the API Challenges list.
-            // Being specific about invalid actions could lead to confusion
-            // when interpreting output from the
-            // traversal program in that implementing invalid actions not
-            // listed below would be outside the scope of the model.
-            // A single, invalidRequest link in the model gives latitude to
-            // the traversal program to implement any amount of specific
-            // invalid reuqests, thus the traversal program can exceed the
-            // coverage of the API Challenges list and still match the model.
-            //actions.Add(invalidGetTodo404);
-            //actions.Add(invalidGetTodos404);
-            //actions.Add(invalidPostTodos400);
-            //actions.Add(invalidGetTodos406);
-            //actions.Add(invalidPostTodos415);
-            //actions.Add(invalidDeleteHeartbeat405);
-            //actions.Add(serverErrorPatchHeartbeat500);
-            //actions.Add(serverErrorTraceHeartbeat501);
-            //actions.Add(invalidAuthGetSecretToken401);
-            //actions.Add(invalidNotAuthorizedGetSecretNote403);
-            //actions.Add(invalidAuthHeaderMissingGetSecretNote401);
-            //actions.Add(invalidNotAuthorizedPostSecretNote403);
-            //actions.Add(invalidAuthHeaderMissingPostSecretNote401);
-
-            // if (numTodos > 0)
-            //            if (todosClass != zeroTodos)
-            //            {
             actions.Add(getTodoId);
-                actions.Add(headTodoId);
-                actions.Add(postTodoId);
-                actions.Add(putTodoId);
-                actions.Add(deleteTodoId);
-//            }
+            actions.Add(headTodoId);
+            actions.Add(postTodoId);
+            actions.Add(putTodoId);
+            actions.Add(deleteTodoId);
 
             if (xAuthTokenExists)
             {
@@ -291,9 +174,7 @@ namespace AlanRichardsonAPIs
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
             bool running = vState[0].Contains("True") ? true : false;
-            //            uint numTodos = uint.Parse(vState[1].Split(".")[1]);
             string todosClass = vState[1].Split(".")[1];
-
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
@@ -306,8 +187,6 @@ namespace AlanRichardsonAPIs
                     break;
                 case shutdown:
                     running = false;
-                    // The software restores the todos list to the initial state.
-                    // numTodos = 10;
                     todosClass = betweenZeroAndMaximumTodos;
                     break;
                 case getTodos:
@@ -318,14 +197,12 @@ namespace AlanRichardsonAPIs
                 case putTodoId:
                     break;
                 case postTodos:
-                    // numTodos++;
                     if (todosClass == zeroTodos)
                     {
                         todosClass = betweenZeroAndMaximumTodos;
                     }
                     break;
                 case deleteTodoId:
-//                    numTodos--;
                     if (todosClass == maximumTodos)
                     {
                         todosClass = betweenZeroAndMaximumTodos;
@@ -362,9 +239,7 @@ namespace AlanRichardsonAPIs
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            //            return StringifyStateVector(running, numTodos, xAuthTokenExists, xChallengerGuidExists);
             return StringifyStateVector(running, todosClass, xAuthTokenExists, xChallengerGuidExists);
-
         }
     }
 }
