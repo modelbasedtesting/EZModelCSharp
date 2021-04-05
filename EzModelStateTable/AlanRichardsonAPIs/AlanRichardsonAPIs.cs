@@ -24,12 +24,14 @@ namespace AlanRichardsonAPIs
         bool svRunning = false;
 
         // Reduce state explosion by bracketing the number of todos in the
-        // todos list into three classes.
+        // todos list into five classes.
         const string zeroTodos = "Zero";
-        const string betweenZeroAndMaximumTodos = "BetweenZeroAndMaximum";
+        const string oneTodo = "One";
+        const string between1AndMaxMinus1Todos = "Between1AndMaxMinus1";
+        const string maxMinus1Todos = "MaxMinus1";
         const string maximumTodos = "Maximum";
 
-        string svTodosClassString = betweenZeroAndMaximumTodos;
+        string svTodosClassString = between1AndMaxMinus1Todos;
 
         // Once the X-AUTH-TOKEN exists, there isn't a way to get rid of it
         // except for stopping the system under test.
@@ -111,11 +113,17 @@ namespace AlanRichardsonAPIs
                 case zeroTodos:
                     actions.Add(postTodos);
                     break;
-                case betweenZeroAndMaximumTodos:
+                case oneTodo:
                     actions.Add(postTodos);
+                    actions.Add(deleteFinalTodoId);
+                    break;
+                case between1AndMaxMinus1Todos:
+                    actions.Add(postTodos);
+                    actions.Add(deleteTodoId);
+                    break;
+                case maxMinus1Todos:
                     actions.Add(postMaximumTodo);
                     actions.Add(deleteTodoId);
-                    actions.Add(deleteFinalTodoId);
                     break;
                 case maximumTodos:
                     actions.Add(deleteTodoId);
@@ -187,7 +195,7 @@ namespace AlanRichardsonAPIs
                     break;
                 case shutdown:
                     running = false;
-                    todosClass = betweenZeroAndMaximumTodos;
+                    todosClass = between1AndMaxMinus1Todos;
                     break;
                 case getTodos:
                 case headTodos:
@@ -199,13 +207,29 @@ namespace AlanRichardsonAPIs
                 case postTodos:
                     if (todosClass == zeroTodos)
                     {
-                        todosClass = betweenZeroAndMaximumTodos;
+                        todosClass = oneTodo;
+                    }
+                    else if (todosClass == oneTodo)
+                    {
+                        todosClass = between1AndMaxMinus1Todos;
+                    }
+                    else if (todosClass == between1AndMaxMinus1Todos)
+                    {
+                        todosClass = maxMinus1Todos;
                     }
                     break;
                 case deleteTodoId:
                     if (todosClass == maximumTodos)
                     {
-                        todosClass = betweenZeroAndMaximumTodos;
+                        todosClass = maxMinus1Todos;
+                    }
+                    else if (todosClass == maxMinus1Todos)
+                    {   
+                        todosClass = between1AndMaxMinus1Todos;
+                    }
+                    else if (todosClass == between1AndMaxMinus1Todos)
+                    {
+                        todosClass = oneTodo;
                     }
                     break;
                 case deleteFinalTodoId:
