@@ -24,14 +24,13 @@ namespace AlanRichardsonAPIs
         bool svRunning = false;
 
         // Reduce state explosion by bracketing the number of todos in the
-        // todos list into five classes.
+        // todos list into three partitions.  Each partition has distinct
+        // outlinks.
         const string zeroTodos = "Zero";
-        const string oneTodo = "One";
-        const string between1AndMaxMinus1Todos = "Between1AndMaxMinus1";
-        const string maxMinus1Todos = "MaxMinus1";
+        const string betweenZeroAndMaximumTodos = "BetweenZeroAndMaximum";
         const string maximumTodos = "Maximum";
 
-        string svTodosClassString = between1AndMaxMinus1Todos;
+        string svTodosClassString = betweenZeroAndMaximumTodos;
 
         // Once the X-AUTH-TOKEN exists, there isn't a way to get rid of it
         // except for stopping the system under test.
@@ -65,9 +64,13 @@ namespace AlanRichardsonAPIs
         const string postSecretToken = "GetSecretToken";
         const string getSecretNote = "GetSecretNoteByToken";
         const string postSecretNote = "SetSecretNoteByToken";
+
         // Special actions to reduce state explosion related to number of todos
         const string postMaximumTodo = "AddMaximumTodoWithoutId";
         const string deleteFinalTodoId = "DeleteFinalTodoById";
+        const string postBetweenZeroAndMaximumTodo = "AddBetweenZeroAndMaximumTodoWithoutId";
+        const string deleteBetweenZeroAndMaximumTodoId = "DeleteBetweenZeroAndMaximumTodoById";
+
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
@@ -113,17 +116,11 @@ namespace AlanRichardsonAPIs
                 case zeroTodos:
                     actions.Add(postTodos);
                     break;
-                case oneTodo:
-                    actions.Add(postTodos);
-                    actions.Add(deleteFinalTodoId);
-                    break;
-                case between1AndMaxMinus1Todos:
-                    actions.Add(postTodos);
-                    actions.Add(deleteTodoId);
-                    break;
-                case maxMinus1Todos:
+                case betweenZeroAndMaximumTodos:
+                    actions.Add(postBetweenZeroAndMaximumTodo);
+                    actions.Add(deleteBetweenZeroAndMaximumTodoId);
                     actions.Add(postMaximumTodo);
-                    actions.Add(deleteTodoId);
+                    actions.Add(deleteFinalTodoId);
                     break;
                 case maximumTodos:
                     actions.Add(deleteTodoId);
@@ -195,7 +192,7 @@ namespace AlanRichardsonAPIs
                     break;
                 case shutdown:
                     running = false;
-                    todosClass = between1AndMaxMinus1Todos;
+                    todosClass = betweenZeroAndMaximumTodos;
                     break;
                 case getTodos:
                 case headTodos:
@@ -207,36 +204,29 @@ namespace AlanRichardsonAPIs
                 case postTodos:
                     if (todosClass == zeroTodos)
                     {
-                        todosClass = oneTodo;
+                        todosClass = betweenZeroAndMaximumTodos;
                     }
-                    else if (todosClass == oneTodo)
-                    {
-                        todosClass = between1AndMaxMinus1Todos;
-                    }
-                    else if (todosClass == between1AndMaxMinus1Todos)
-                    {
-                        todosClass = maxMinus1Todos;
-                    }
+                    break;
+                case postBetweenZeroAndMaximumTodo:
+                case deleteBetweenZeroAndMaximumTodoId:
                     break;
                 case deleteTodoId:
                     if (todosClass == maximumTodos)
                     {
-                        todosClass = maxMinus1Todos;
-                    }
-                    else if (todosClass == maxMinus1Todos)
-                    {   
-                        todosClass = between1AndMaxMinus1Todos;
-                    }
-                    else if (todosClass == between1AndMaxMinus1Todos)
-                    {
-                        todosClass = oneTodo;
+                        todosClass = betweenZeroAndMaximumTodos;
                     }
                     break;
                 case deleteFinalTodoId:
-                    todosClass = zeroTodos;
+                    if (todosClass == betweenZeroAndMaximumTodos)
+                    {
+                        todosClass = zeroTodos;
+                    }
                     break;
                 case postMaximumTodo:
-                    todosClass = maximumTodos;
+                    if (todosClass == betweenZeroAndMaximumTodos)
+                    {
+                        todosClass = maximumTodos;
+                    }
                     break;
                 case showDocs:
                     break;
