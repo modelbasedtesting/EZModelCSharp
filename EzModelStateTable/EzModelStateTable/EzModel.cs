@@ -46,7 +46,18 @@ namespace SeriousQualityEzModel
             foreach (string t in transitions)
             {
                 Console.WriteLine(t);
-            }
+
+            int locSeparator1 = t.IndexOf(transitionSeparator);
+            int locSeparator2 = t.IndexOf(transitionSeparator,locSeparator1+1);
+
+            string startState = t.Substring(0,locSeparator1-1);
+            string action = t.Substring(locSeparator1+1, locSeparator2-locSeparator1-1);
+            string endState = t.Substring(locSeparator2 + 1);
+
+            string s = startState + transitionSeparator + endState + transitionSeparator + action;
+            Console.WriteLine(s);
+
+         }
         }
 
         public GeneratedGraph(IUserRules theRules)
