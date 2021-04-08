@@ -12,6 +12,7 @@ namespace AlanRichardsonAPIsHairball
 
             GeneratedGraph graph = new GeneratedGraph(rules);
 
+            graph.SkipSelfLinks(true);
             graph.DisplayStateTable(); // Display the Excel-format state table
             Console.ReadLine();
         }

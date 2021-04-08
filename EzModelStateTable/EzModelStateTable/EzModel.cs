@@ -11,9 +11,26 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.IO;
 
 namespace SeriousQualityEzModel
 {
+    struct StateTransition
+    {
+        public string startState;
+        public string endState;
+        public string action;
+
+        public StateTransition(string startState, string endState, string action)
+        {
+            this.startState = startState;
+            this.endState = endState;
+            this.action = action;
+        }
+    }
+
     // The user implements a public class of rules that inherits the IUserRules interface
     public interface IUserRules
     {
@@ -26,38 +43,48 @@ namespace SeriousQualityEzModel
 
     public class GeneratedGraph
     {
-        List<string> transitions = new List<string>();
+        List<StateTransition> transitions = new List<StateTransition>();
         List<string> totalNodes;
         List<string> unexploredNodes;
         IUserRules rules; // We are able to refer to the user rules by interface, because we are only calling interface methods
+        bool skipSelfLinks = false;
 
         string transitionSeparator = " | ";
 
-        string BuildTransition(string startState, string action, string endState)
+        public void SkipSelfLinks(bool Skip)
         {
-            string t = startState + transitionSeparator + action + transitionSeparator + endState;
-            return t;
+            skipSelfLinks = Skip;
         }
 
         public void DisplayStateTable()
         {
-            Console.WriteLine("Start state{0}Action{0}End state\n", transitionSeparator);
+            Console.WriteLine("Start state{0}End state{0}Action\n", transitionSeparator);
 
-            foreach (string t in transitions)
+            foreach (StateTransition t in transitions)
             {
-                Console.WriteLine(t);
+                if (skipSelfLinks)
+                {
+                    if (t.startState == t.endState)
+                    {
+                        continue;
+                    }
+                }
+                Console.WriteLine(t.startState + transitionSeparator + t.endState + transitionSeparator + t.action);
+            }
+        }
 
-            int locSeparator1 = t.IndexOf(transitionSeparator);
-            int locSeparator2 = t.IndexOf(transitionSeparator,locSeparator1+1);
+        public bool StateTableToFile( string filePath )
+        {
 
-            string startState = t.Substring(0,locSeparator1-1);
-            string action = t.Substring(locSeparator1+1, locSeparator2-locSeparator1-1);
-            string endState = t.Substring(locSeparator2 + 1);
+            // Return true if able to finish writing the state table
+            // to the chosen file path.
+            // Return false otherwise.
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
 
-            string s = startState + transitionSeparator + endState + transitionSeparator + action;
-            Console.WriteLine(s);
-
-         }
+            return true;
         }
 
         public GeneratedGraph(IUserRules theRules)
@@ -102,7 +129,7 @@ namespace SeriousQualityEzModel
                 }
 
                 // add this {startState, action, endState} transition to the Graph
-                transitions.Add(BuildTransition(startState, action, endState));
+                transitions.Add(new StateTransition(startState: startState, endState: endState, action: action));
             }
         }
     }
