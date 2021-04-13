@@ -10,7 +10,16 @@ namespace ChatRoomExample
         {
             ChatRoom rules = new ChatRoom();
 
-            GeneratedGraph graph = new GeneratedGraph(rules);
+            GeneratedGraph graph = new GeneratedGraph(rules, 1000, 100);
+
+            // write graph to dot format file
+            string fname = "ChatRoom";
+            string suffix = "0000";
+            string fullName = fname + suffix;
+            graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
+
+            // Cover the model with Greedy Postman
+            graph.GreedyPostman(fname);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
             Console.ReadLine();

@@ -23,7 +23,16 @@ namespace ChutesAndLaddersExample
         {
             ChutesAndLadders rules = new ChutesAndLadders();
 
-            GeneratedGraph graph = new GeneratedGraph(rules);
+            GeneratedGraph graph = new GeneratedGraph(rules, 1500, 110);
+
+            // write graph to dot format file
+            string fname = "ChutesAndLadders";
+            string suffix = "0000";
+            string fullName = fname + suffix;
+            graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
+
+            // Cover the model with Greedy Postman
+            graph.GreedyPostman(fname);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
             Console.ReadLine();

@@ -24,9 +24,19 @@ namespace DesklampAndTrafficlightExample
         {
             DeskLampAndTrafficLight rules = new DeskLampAndTrafficLight();
 
-            GeneratedGraph graph = new GeneratedGraph(rules);
+            GeneratedGraph graph = new GeneratedGraph(rules, 100, 100);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
+
+            // write graph to dot format file
+            string fname = "DesklampAndStreetlight";
+            string suffix = "0000";
+            string fullName = fname + suffix;
+            graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
+
+            // Cover the model with Greedy Postman
+            graph.GreedyPostman(fname);
+
             Console.ReadLine();
         }
     }
