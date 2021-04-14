@@ -9,6 +9,10 @@
 //
 //   Compliments of Doug Szabo, for Harry Robinson.
 
+// TODO: scan this code and look for a condition where
+// transition uniqueness is characterized by start and end state; that is not the right way to do it.
+// Ensure transition uniqueness is characterized by start state and action.
+
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -24,7 +28,7 @@ namespace SeriousQualityEzModel
         public string startState;
         public string endState;
         public string action;
-        public int traversals;
+        public int hitCount;
         public double probability;
 
         public StateTransition(string startState, string endState, string action)
@@ -32,7 +36,7 @@ namespace SeriousQualityEzModel
             this.startState = startState;
             this.endState = endState;
             this.action = action;
-            this.traversals = 0;
+            this.hitCount = 0;
             this.probability = 1.0;
         }
     }
@@ -46,7 +50,7 @@ namespace SeriousQualityEzModel
         // property just tells the size of the array.
         uint count = 0;
 
-        Random rnd = new Random(1);
+        Random rnd = new Random(DateTime.Now.Millisecond);
 
         public StateTransitions(uint maximumTransitions)
         {
@@ -59,9 +63,9 @@ namespace SeriousQualityEzModel
 
             for (int i = 0; i < count; i++)
             {
-                if (transitions[i].traversals < floor)
+                if (transitions[i].hitCount < floor)
                 {
-                    floor = transitions[i].traversals;
+                    floor = transitions[i].hitCount;
                 }
             }
             return floor;
@@ -76,7 +80,7 @@ namespace SeriousQualityEzModel
             List<int> lowHitList = new List<int>();
             for (int i = 0; i < count; i++)
             {
-                if (transitions[i].traversals == lowHit)
+                if (transitions[i].hitCount == lowHit)
                 {
                     lowHitList.Add(i);
                 }
@@ -84,6 +88,8 @@ namespace SeriousQualityEzModel
 
             // Target one of the low-hit transitions 
             int low = rnd.Next(lowHitList.Count);
+            // TODO: Trace the hit list
+//            Console.WriteLine("{0}, {1}", low, lowHitList.ToString());
             return (lowHitList[low]);
         }
 
@@ -94,7 +100,7 @@ namespace SeriousQualityEzModel
                 transitions[count].startState = startState;
                 transitions[count].endState = endState;
                 transitions[count].action = action;
-                transitions[count].traversals = 0;
+                transitions[count].hitCount = 0;
                 transitions[count].probability = 1.0;
                 count++;
                 return true;
@@ -142,7 +148,7 @@ namespace SeriousQualityEzModel
         {
             if (index < count)
             {
-                return transitions[index].traversals;
+                return transitions[index].hitCount;
             }
 
             return -1;
@@ -176,15 +182,15 @@ namespace SeriousQualityEzModel
             return -1;
         }
 
-        public void IncrementTraversals( uint index )
+        public void IncrementHitCount( uint index )
         {
             if (index < count)
             {
-                transitions[index].traversals++;
+                transitions[index].hitCount++;
             }
             else
             {
-                Console.WriteLine("IncrementTraversals(): index {0} greater than number of transitions {1} in the graph.", index, count);
+                Console.WriteLine("IncrementHitCount(): index {0} greater than number of transitions {1} in the graph.", index, count);
             }
         }
 
@@ -205,15 +211,27 @@ namespace SeriousQualityEzModel
 
         public int GetTransitionIndexByStartAndEndStates( string matchStartState, string matchEndState )
         {
+            int lowHit = int.MaxValue;
+            int lowHitIndex = -1;
+
             for ( int i = 0; i < count; i++ )
             {
+                // There can be multiple arcs between start and end state.
+                // Track the index of the transition with the lowest hitCount.
+                // Return the tracked index to the caller, so that coverage is
+                // increased.
                 if (transitions[i].startState == matchStartState && transitions[i].endState == matchEndState)
                 {
-                    return i;
+                    if (transitions[i].hitCount <= lowHit)
+                    {
+                        // TODO: Trace transition selection
+//                        Console.WriteLine("{0}, {1}, {2}", transitions[i].action, transitions[i].hitCount, transitions[i].startState);
+                        lowHit = transitions[i].hitCount;
+                        lowHitIndex = i;
+                    }
                 }
             }
-
-            return -1;
+            return lowHitIndex;
         }
     }
 
@@ -255,6 +273,7 @@ namespace SeriousQualityEzModel
                 nodes[count].state = state;
                 nodes[count].visits = 0;
                 nodes[count].visited = false;
+                nodes[count].parent = "";
                 count++;
                 return true;
             }
@@ -387,6 +406,7 @@ namespace SeriousQualityEzModel
                 }
                 Console.WriteLine(start + transitionSeparator + end + transitionSeparator + transitions.ActionByIndex(i));
             }
+            Console.WriteLine("  ");
         }
 
         public bool StateTableToFile( string filePath )
@@ -467,6 +487,15 @@ namespace SeriousQualityEzModel
             return -1;
         }
 
+        Queue<int> FindPathLessTraveled(string startState, string endState)
+        {
+            Queue<Node> queue = new Queue<Node>();
+            Stack<Node> route = new Stack<Node>();
+            Queue<int> path = new Queue<int>();
+
+            return path;
+        }
+
         Queue<int> FindShortestPath(string startState, string endState)
         {
             Queue<Node> queue = new Queue<Node>();
@@ -476,6 +505,8 @@ namespace SeriousQualityEzModel
             totalNodes.ClearAllVisits();
 
             int targetIndex = totalNodes.GetIndexByState(endState);
+            // TODO: Trace target transitions
+//            Console.WriteLine("Target transition = {0}, {1}", transitions.StartStateByIndex((uint)targetIndex), transitions.ActionByIndex((uint)targetIndex));
 
             queue.Enqueue(totalNodes.GetNodeByIndex((uint)totalNodes.GetIndexByState(startState)));
 
@@ -536,7 +567,7 @@ namespace SeriousQualityEzModel
             return path;
         }
 
-        public void GreedyPostman(string fname)
+        public void RandomDestinationPostman(string fname)
         {
 
             // Each transition will now be a target to be reached
@@ -544,15 +575,14 @@ namespace SeriousQualityEzModel
             //  2. move along a path from where you are to the start node of that transition
             //  3. move along the target transition (so now you shd be in that transition's end node)
 
-            //            StateModel s = new StateModel();    // start with the initial state of the model
             string state = rules.GetInitialState();
-//            Queue<Transition> path = new Queue<Transition>();
 
             int fileCtr = 0;
             int loopctr = 0;
-            string suffix = "";
+            string suffix;
+            int minimumCoverageFloor = 2;
 
-            while (loopctr < 25)
+            while (transitions.GetTraversalsFloor() < minimumCoverageFloor)  // loopctr < 25)
             {
                 loopctr++;
 
@@ -567,7 +597,7 @@ namespace SeriousQualityEzModel
                     foreach (int tIndex in path)
                     {
                         // mark the transitions covered along the way
-                        transitions.IncrementTraversals((uint)tIndex);
+                        transitions.IncrementHitCount((uint)tIndex);
                         fileCtr++;
                         suffix = String.Format("{0}", fileCtr.ToString("D4"));
                         this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByIndex((uint)tIndex));
@@ -575,13 +605,16 @@ namespace SeriousQualityEzModel
                 }
 
                 // mark that we covered the target Transition as well
-                transitions.IncrementTraversals((uint)targetIndex);
+                transitions.IncrementHitCount((uint)targetIndex);
+
                 state = transitions.EndStateByIndex((uint)targetIndex);  // move to the end node of the target transition
 
                 fileCtr++;
                 suffix = String.Format("{0}", fileCtr.ToString("D4"));
                 this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByIndex((uint)targetIndex));
             }
+            // TODO: Trace floor coverage
+//            Console.WriteLine("Reached coverage floor of {0} in {1} iterations.", minimumCoverageFloor, loopctr);
         }
 
         public void CreateGraphVizFileAndImage(string fname, string suffix, string action)
@@ -599,7 +632,7 @@ namespace SeriousQualityEzModel
                 for (uint i = 0; i < totalNodes.Count(); i++)
                 {
                     // TODO: Get the string formatting correct for GraphViz.
-                    w.WriteLine("\"{0}\"\t[label=\"{1}\"]", i, totalNodes.GetNodeByIndex(i).state.Replace(",", "\\n"));
+                    w.WriteLine("\"{0}\"\t[label=\"{1}\"]", totalNodes.GetNodeByIndex(i).state, totalNodes.GetNodeByIndex(i).state.Replace(",", "\\n"));
                 }
 
                 // Insert the info node into the image

@@ -10,7 +10,7 @@ namespace AlanRichardsonAPIsHairball
         {
             APIs rules = new APIs();
 
-            GeneratedGraph graph = new GeneratedGraph(rules, 5000, 500);
+            GeneratedGraph graph = new GeneratedGraph( rules, 5000, 500);
 
             graph.SkipSelfLinks(true);
             graph.DisplayStateTable(); // Display the Excel-format state table
@@ -22,7 +22,7 @@ namespace AlanRichardsonAPIsHairball
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
             // Cover the model with Greedy Postman
-            graph.GreedyPostman(fname);
+            graph.RandomDestinationPostman(fname);
 
             Console.ReadLine();
         }

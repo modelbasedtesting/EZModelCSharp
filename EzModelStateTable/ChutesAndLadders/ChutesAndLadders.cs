@@ -32,7 +32,7 @@ namespace ChutesAndLaddersExample
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
             // Cover the model with Greedy Postman
-            graph.GreedyPostman(fname);
+            graph.RandomDestinationPostman(fname);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
             Console.ReadLine();

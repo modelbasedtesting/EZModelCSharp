@@ -21,7 +21,7 @@ namespace AlanRichardsonAPIs
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
             // Cover the model with Greedy Postman
-            graph.GreedyPostman(fname);
+            graph.RandomDestinationPostman(fname);
 
             Console.ReadLine();
         }

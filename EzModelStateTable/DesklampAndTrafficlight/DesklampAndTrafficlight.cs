@@ -35,7 +35,7 @@ namespace DesklampAndTrafficlightExample
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
             // Cover the model with Greedy Postman
-            graph.GreedyPostman(fname);
+            graph.RandomDestinationPostman(fname);
 
             Console.ReadLine();
         }
@@ -61,6 +61,10 @@ namespace DesklampAndTrafficlightExample
         const string turnGreen = svTrafficLight + ".turnGreen";
         const string turnYellow = svTrafficLight + ".turnYellow";
         const string turnRed = svTrafficLight + ".turnRed";
+        // enable next line to observe treatment of a second transition on two nodes
+        const string duplicate = "Duuuuh";
+        const string dup2 = "dup2";
+        const string dup3 = "dup3";
 
         // Interface method
         public string GetInitialState()
@@ -103,6 +107,10 @@ namespace DesklampAndTrafficlightExample
             else if (startState.Contains(yellow))
             {
                 actions.Add(turnRed);
+                // enable next line to observe treatment of a second transition on two nodes
+                actions.Add(duplicate);
+                actions.Add(dup2);
+                actions.Add(dup3);
             }
             else if (startState.Contains(red))
             {
@@ -141,6 +149,11 @@ namespace DesklampAndTrafficlightExample
                 return endState.Replace(green, yellow);
             }
             else if (action == turnRed)
+            {
+                return endState.Replace(yellow, red);
+            }
+            // enable next block to observe treatment of a second transition on two nodes
+            else if (action == duplicate || action == dup2 || action == dup3)
             {
                 return endState.Replace(yellow, red);
             }
