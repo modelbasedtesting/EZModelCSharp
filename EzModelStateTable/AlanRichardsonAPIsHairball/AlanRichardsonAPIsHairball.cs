@@ -8,9 +8,10 @@ namespace AlanRichardsonAPIsHairball
     {
         static void Main()
         {
+
             APIs rules = new APIs();
 
-            GeneratedGraph graph = new GeneratedGraph( rules, 5000, 500);
+            GeneratedGraph graph = new GeneratedGraph( rules, 5000, 100, 50);
 
             graph.SkipSelfLinks(true);
             graph.DisplayStateTable(); // Display the Excel-format state table
@@ -21,6 +22,7 @@ namespace AlanRichardsonAPIsHairball
             string fullName = fname + suffix;
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
+            graph.NotifyAdapter(true);
             // Cover the model with Greedy Postman
             graph.RandomDestinationPostman(fname);
 
@@ -28,6 +30,7 @@ namespace AlanRichardsonAPIsHairball
         }
     }
 
+    //      
     // This struct is needed only for traversals.
     //struct ToDo
     //{
@@ -128,10 +131,49 @@ namespace AlanRichardsonAPIsHairball
         // Interface method
         public string GetInitialState()
         {
+//            if (notifyAdapter is true)
+            // TODO: For execution, this function needs to
+            // prepare the system under test, and establish the
+            // initial state conditions in the system.
+            // Whether to affect the system under test can be decided by the
+            // execute flag.
+
             // We get state explosion due to explicit todos list length
             return StringifyStateVector(svRunning, svNumTodos, svXAuthTokenExists, svXChallengerGuidExists);
         }
 
+        // Interface method
+        public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
+        {
+        }
+
+        // Interface method
+        public bool AreStatesAcceptablySimilar(string observed, string expected)
+        {
+            // Compare reported to expected, if unacceptable return false.
+            return true;
+        }
+
+        // Interface method
+        public string AdapterTransition(string startState, string action )
+        {
+            string expected = GetEndState(startState, action);
+            string observed = "";
+            // What does execution mean?
+            //
+            // read the graph
+            // follow the transition list
+            // for each transition,
+            //  - set / confirm the start state
+            //  - drive execution of the action (of the transition)
+            //  - compare endState to state of system under test
+            //    - if matching, go to next transition
+            //    - if not matching, halt and report
+            //      - start state and list of transitions up to the mismatch
+            //      - predicted versus actual endState
+            return observed;
+
+        }
 
         // Interface method
         public List<string> GetAvailableActions(string startState)

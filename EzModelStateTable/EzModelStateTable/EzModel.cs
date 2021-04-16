@@ -27,17 +27,31 @@ namespace SeriousQualityEzModel
     {
         public string startState;
         public string endState;
-        public string action;
+        public uint actionIndex;
         public int hitCount;
         public double probability;
+        public bool enabled;
 
-        public StateTransition(string startState, string endState, string action)
+        public StateTransition(string startState, string endState, uint actionIndex)
         {
             this.startState = startState;
             this.endState = endState;
-            this.action = action;
+            this.actionIndex = actionIndex;
             this.hitCount = 0;
             this.probability = 1.0;
+            this.enabled = true;
+        }
+    }
+
+    public struct TransitionAction
+    {
+        public string action;
+        public int faultCount; // Keep track of errors involving this action
+
+        public TransitionAction(string actionArg)
+        {
+            this.action = actionArg;
+            this.faultCount = 0;
         }
     }
 
@@ -45,23 +59,27 @@ namespace SeriousQualityEzModel
     {
         StateTransition[] transitions;
 
-        // Keep track of the number of populated elements in the array
+        TransitionAction[] actions;
+
+        // Keep track of the number of populated elements in the transitions array
         // because C# arrays are fixed size and the .Length
         // property just tells the size of the array.
-        uint count = 0;
+        uint transitionCount = 0;
+        uint actionCount = 0;
 
         Random rnd = new Random(DateTime.Now.Millisecond);
 
-        public StateTransitions(uint maximumTransitions)
+        public StateTransitions(uint maximumTransitions, uint maximumActions)
         {
             transitions = new StateTransition[maximumTransitions];
+            actions = new TransitionAction[maximumActions];
         }
 
         public int GetTraversalsFloor()
         {
             int floor = int.MaxValue;
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < transitionCount; i++)
             {
                 if (transitions[i].hitCount < floor)
                 {
@@ -78,7 +96,7 @@ namespace SeriousQualityEzModel
 
             // Create a list of all low-hit transitions
             List<int> lowHitList = new List<int>();
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < transitionCount; i++)
             {
                 if (transitions[i].hitCount == lowHit)
                 {
@@ -95,14 +113,30 @@ namespace SeriousQualityEzModel
 
         public bool Add( string startState, string endState, string action )
         {
-            if ( count < transitions.Length )
+            if (transitionCount < transitions.Length)
             {
-                transitions[count].startState = startState;
-                transitions[count].endState = endState;
-                transitions[count].action = action;
-                transitions[count].hitCount = 0;
-                transitions[count].probability = 1.0;
-                count++;
+                transitions[transitionCount].startState = startState;
+                transitions[transitionCount].endState = endState;
+                TransitionAction ta = new TransitionAction(action);
+                bool actionFound = false;
+                for (uint i = 0; i < actionCount; i++)
+                {
+                    if (actions[i].action == action)
+                    {
+                        transitions[transitionCount].actionIndex = i;
+                        actionFound = true;
+                        break;
+                    }
+                }
+                if (!actionFound)
+                {
+                    transitions[transitionCount].actionIndex = actionCount;
+                    actions[actionCount].action = action;
+                    actionCount++;
+                }
+                transitions[transitionCount].hitCount = 0;
+                transitions[transitionCount].probability = 1.0;
+                transitionCount++;
                 return true;
             }
 
@@ -111,12 +145,12 @@ namespace SeriousQualityEzModel
 
         public uint Count()
         {
-            return count;
+            return transitionCount;
         }
 
         public string StartStateByIndex( uint index )
         {
-            if (index < count)
+            if (index < transitionCount)
             {
                 return transitions[index].startState;
             }
@@ -126,7 +160,7 @@ namespace SeriousQualityEzModel
 
         public string EndStateByIndex(uint index)
         {
-            if (index < count)
+            if (index < transitionCount)
             {
                 return transitions[index].endState;
             }
@@ -136,9 +170,9 @@ namespace SeriousQualityEzModel
 
         public string ActionByIndex(uint index)
         {
-            if (index < count)
+            if (index < transitionCount)
             {
-                return transitions[index].action;
+                return actions[transitions[index].actionIndex].action;
             }
 
             return String.Empty;
@@ -146,7 +180,7 @@ namespace SeriousQualityEzModel
 
         public int TraversalsByIndex(uint index)
         {
-            if (index < count)
+            if (index < transitionCount)
             {
                 return transitions[index].hitCount;
             }
@@ -156,7 +190,7 @@ namespace SeriousQualityEzModel
 
         public int IndexOfStartState( string matchState )
         {
-            for ( int i = 0; i < count; i++ )
+            for ( int i = 0; i < transitionCount; i++ )
             {
                 if (transitions[i].startState == matchState)
                 {
@@ -170,7 +204,7 @@ namespace SeriousQualityEzModel
 
         public int IndexOfEndState(string matchState)
         {
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < transitionCount; i++)
             {
                 if (transitions[i].endState == matchState)
                 {
@@ -184,21 +218,31 @@ namespace SeriousQualityEzModel
 
         public void IncrementHitCount( uint index )
         {
-            if (index < count)
+            if (index < transitionCount)
             {
                 transitions[index].hitCount++;
             }
             else
             {
-                Console.WriteLine("IncrementHitCount(): index {0} greater than number of transitions {1} in the graph.", index, count);
+                Console.WriteLine("IncrementHitCount(): index {0} greater than number of transitions {1} in the graph.", index, transitionCount);
             }
+        }
+
+        public int IncrementActionFaults( uint index )
+        {
+            if (index < transitionCount)
+            {
+                actions[transitions[index].actionIndex].faultCount++;
+                return actions[transitions[index].actionIndex].faultCount;
+            }
+            return -1;
         }
 
         public List<uint> GetOutlinkIndices(string matchStartState)
         {
             List<uint> indices = new List<uint>();
 
-            for (uint i = 0; i < count; i++)
+            for (uint i = 0; i < transitionCount; i++)
             {
                 if (transitions[i].startState == matchStartState)
                 {
@@ -214,7 +258,7 @@ namespace SeriousQualityEzModel
             int lowHit = int.MaxValue;
             int lowHitIndex = -1;
 
-            for ( int i = 0; i < count; i++ )
+            for ( int i = 0; i < transitionCount; i++ )
             {
                 // There can be multiple arcs between start and end state.
                 // Track the index of the transition with the lowest hitCount.
@@ -232,6 +276,32 @@ namespace SeriousQualityEzModel
                 }
             }
             return lowHitIndex;
+        }
+
+        public void Disable(uint tIndex)
+        {
+            if ( tIndex < transitionCount )
+            {
+                transitions[tIndex].enabled = false;
+            }
+        }
+
+        public void DisableByAction(string matchAction)
+        {
+            for (uint i = 0; i < actionCount; i++)
+            {
+                if (actions[i].action == matchAction)
+                {
+                    for (uint j = 0; j < transitionCount; j++)
+                    {
+                        if (transitions[j].actionIndex == i)
+                        {
+                            transitions[j].enabled = false;
+                        }
+                    }
+                    return;
+                }
+            }
         }
     }
 
@@ -370,6 +440,9 @@ namespace SeriousQualityEzModel
         string GetInitialState();
         List<string> GetAvailableActions(string startState);
         string GetEndState(string startState, string action);
+        string AdapterTransition(string startState, string action);
+        bool AreStatesAcceptablySimilar(string observed, string predicted);
+        void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail);
     }
 
     public class GeneratedGraph
@@ -380,12 +453,24 @@ namespace SeriousQualityEzModel
         IUserRules rules; // We are able to refer to the user rules by interface, because we are only calling interface methods
 
         bool skipSelfLinks = false;
+        bool notifyAdapter = false;
+        bool stopOnProblem = false;
 
         public string transitionSeparator = " | ";
 
         public void SkipSelfLinks(bool Skip)
         {
             skipSelfLinks = Skip;
+        }
+
+        public void NotifyAdapter(bool notify)
+        {
+            notifyAdapter = notify;
+        }
+
+        public void StopOnProblem(bool stop)
+        {
+            stopOnProblem = stop;
         }
 
         public void DisplayStateTable()
@@ -423,11 +508,11 @@ namespace SeriousQualityEzModel
             return true;
         }
 
-        public GeneratedGraph(IUserRules theRules, uint maxTransitions, uint maxNodes)
+        public GeneratedGraph(IUserRules theRules, uint maxTransitions, uint maxNodes, uint maxActions)
         {
             rules = theRules; // we follow the Rules!
 
-            transitions = new StateTransitions(maxTransitions);
+            transitions = new StateTransitions(maxTransitions, maxActions);
 
             totalNodes = new Nodes(maxNodes);
 
@@ -569,12 +654,14 @@ namespace SeriousQualityEzModel
 
         public void RandomDestinationPostman(string fname)
         {
+            ResetPosition:
 
             // Each transition will now be a target to be reached
             //  1. find a transition with a low hit count
             //  2. move along a path from where you are to the start node of that transition
             //  3. move along the target transition (so now you shd be in that transition's end node)
 
+            // TODO: When notifyAdapter is true, the rules must prepare the system under test.
             string state = rules.GetInitialState();
 
             int fileCtr = 0;
@@ -600,6 +687,45 @@ namespace SeriousQualityEzModel
                         transitions.IncrementHitCount((uint)tIndex);
                         fileCtr++;
                         suffix = String.Format("{0}", fileCtr.ToString("D4"));
+                        if (notifyAdapter)
+                        {
+                            string reportedEndState = rules.AdapterTransition(state, transitions.ActionByIndex((uint)tIndex));
+                            if (!rules.AreStatesAcceptablySimilar(reportedEndState, transitions.EndStateByIndex((uint)tIndex)))
+                            {
+                                // Inconsistency.
+                                // TODO: Ask the adapter to report a problem, including the popcorn trail.
+                                // ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail);
+                                // If the user wants to stop on problem, stop.  Otherwise:
+                                if (stopOnProblem)
+                                {
+                                    return;
+                                }
+
+                                // On the actions, add a fault counter.
+                                // On first fault on an action, Disable the transition.
+                                if (transitions.IncrementActionFaults((uint)tIndex) == 1 )
+                                {
+                                    // NOTE: the cause of
+                                    // the problem may be in the route to this transition.  Building a capability for
+                                    // EzModel to pick an alternate route to this transition is useful, and coincident
+                                    // with Beeline.  Beeline is an alternate route case.  Beeline can isolate a problem
+                                    // transition: if the first problem was detected on transition Z in the route ...,Y,Z, and then
+                                    // Beeline succeeds in route ...,X,Z, we may find that another route of ...,Y,Z also has
+                                    // a problem.  Y is then the suspect transition.
+                                    transitions.Disable((uint)tIndex);
+                                }
+                                else
+                                {
+                                    // On second or later fault on the same action, disable the action everywhere.
+                                    transitions.DisableByAction(transitions.ActionByIndex((uint)tIndex));
+                                    // NOTE: there may be a systemic problem with the action itself.  Two incidents involving the
+                                    // same action is reason enough to avoid the action for the remainder of the run.  Development
+                                    // team can root-cause the issue.
+                                }
+                                // Go back to the start of this function, and reset the adapter.
+                                goto ResetPosition;
+                            }
+                        }
                         this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByIndex((uint)tIndex));
                     }
                 }
@@ -608,6 +734,15 @@ namespace SeriousQualityEzModel
                 transitions.IncrementHitCount((uint)targetIndex);
 
                 state = transitions.EndStateByIndex((uint)targetIndex);  // move to the end node of the target transition
+                if (notifyAdapter)
+                {
+                    string reportedEndState = rules.AdapterTransition(transitions.StartStateByIndex((uint)targetIndex), transitions.ActionByIndex((uint)targetIndex));
+                    if (!rules.AreStatesAcceptablySimilar(reportedEndState, transitions.EndStateByIndex((uint)targetIndex)))
+                    {
+                        // Inconsistency.  Stop the traversal.
+                        goto ResetPosition;
+                    }
+                }
 
                 fileCtr++;
                 suffix = String.Format("{0}", fileCtr.ToString("D4"));
