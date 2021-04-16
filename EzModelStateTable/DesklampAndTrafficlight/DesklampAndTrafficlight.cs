@@ -18,31 +18,55 @@ using SeriousQualityEzModel;
 
 namespace DesklampAndTrafficlightExample
 {
-    public class DesklampAndTrafficlightProgram
+    class DesklampAndTrafficlightProgram
     {
         public static void Main()
         {
-            DeskLampAndTrafficLight rules = new DeskLampAndTrafficLight();
+            DeskLampAndTrafficLight client = new DeskLampAndTrafficLight();
+            client.SkipSelfLinks = false;
 
-            GeneratedGraph graph = new GeneratedGraph(rules, 100, 100);
+            GeneratedGraph graph = new GeneratedGraph(client, 200, 20, 10);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
             // write graph to dot format file
             string fname = "DesklampAndStreetlight";
             string suffix = "0000";
-            string fullName = fname + suffix;
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            // Cover the model with Greedy Postman
-            graph.RandomDestinationPostman(fname);
+            client.NotifyAdapter = true;
+            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+            client.StopOnProblem = true;
 
-            Console.ReadLine();
+            graph.RandomDestinationCoverage(fname);
         }
     }
 
-    public class DeskLampAndTrafficLight : IUserRules
+    public class DeskLampAndTrafficLight : IEzModelClient
     {
+        bool skipSelfLinks;
+        bool notifyAdapter;
+        bool stopOnProblem;
+
+        // Interface Properties
+        public bool SkipSelfLinks
+        {
+            get => skipSelfLinks;
+            set => skipSelfLinks = value;
+        }
+
+        public bool NotifyAdapter
+        {
+            get => notifyAdapter;
+            set => notifyAdapter = value;
+        }
+
+        public bool StopOnProblem
+        {
+            get => stopOnProblem;
+            set => stopOnProblem = value;
+        }
+
         // State Variables
         const string svDeskLamp = "DL";
         const string svTrafficLight = "TL";
@@ -75,9 +99,53 @@ namespace DesklampAndTrafficlightExample
             initialState.Add(red);
             initialState.Sort();
 
-            string stateString = initialState[0] + IUserRules.valueSeparator + initialState[1];
+            string stateString = initialState[0] + IEzModelClient.valueSeparator + initialState[1];
 
             return stateString;
+        }
+
+        // Interface method
+        public void SetStateOfSystemUnderTest(string state)
+        {
+        }
+
+        // Interface method
+        public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
+        {
+        }
+
+        // Interface method
+        public bool AreStatesAcceptablySimilar(string observed, string expected)
+        {
+            // Compare reported to expected, if unacceptable return false.
+            return true;
+        }
+
+        // Interface method
+        public void ReportTraversal(string initialState, List<string> popcornTrail)
+        {
+
+        }
+
+        // Interface method
+        public string AdapterTransition(string startState, string action)
+        {
+            string expected = GetEndState(startState, action);
+            string observed = "";
+            // What does execution mean?
+            //
+            // read the graph
+            // follow the transition list
+            // for each transition,
+            //  - set / confirm the start state
+            //  - drive execution of the action (of the transition)
+            //  - compare endState to state of system under test
+            //    - if matching, go to next transition
+            //    - if not matching, halt and report
+            //      - start state and list of transitions up to the mismatch
+            //      - predicted versus actual endState
+            return observed;
+
         }
 
         // Interface method

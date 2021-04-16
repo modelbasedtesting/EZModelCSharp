@@ -4,31 +4,55 @@ using SeriousQualityEzModel;
 
 namespace AlanRichardsonAPIs
 {
-    class Program
+    class AlanRichardsonAPIsProgram
     {
         static void Main()
         {
-            APIs rules = new APIs();
+            APIs cient = new APIs();
+            cient.SkipSelfLinks = false;
 
-            GeneratedGraph graph = new GeneratedGraph(rules, 5000, 500);
+            GeneratedGraph graph = new GeneratedGraph(cient, 3000, 100, 30);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
             // write graph to dot format file
             string fname = "RichardsonAPIs";
             string suffix = "0000";
-            string fullName = fname + suffix;
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            // Cover the model with Greedy Postman
-            graph.RandomDestinationPostman(fname);
+            cient.NotifyAdapter = true;
+// If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+            cient.StopOnProblem = true;
 
-            Console.ReadLine();
+            graph.RandomDestinationCoverage(fname);
         }
     }
 
-    public class APIs : IUserRules
+    public class APIs : IEzModelClient
     {
+        bool skipSelfLinks;
+        bool notifyAdapter;
+        bool stopOnProblem;
+
+        // Interface Properties
+        public bool SkipSelfLinks
+        {
+            get => skipSelfLinks;
+            set => skipSelfLinks = value;
+        }
+
+        public bool NotifyAdapter
+        {
+            get => notifyAdapter;
+            set => notifyAdapter = value;
+        }
+
+        public bool StopOnProblem
+        {
+            get => stopOnProblem;
+            set => stopOnProblem = value;
+        }
+
         // Initially the system is not running, and this affects a lot of
         // state.
         bool svRunning = false;
@@ -94,6 +118,50 @@ namespace AlanRichardsonAPIs
         public string GetInitialState()
         {
             return StringifyStateVector(svRunning, svTodosClassString, svXAuthTokenExists, svXChallengerGuidExists);
+        }
+
+        // Interface method
+        public void SetStateOfSystemUnderTest(string state)
+        {
+        }
+
+        // Interface method
+        public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
+        {
+        }
+
+        // Interface method
+        public bool AreStatesAcceptablySimilar(string observed, string expected)
+        {
+            // Compare reported to expected, if unacceptable return false.
+            return true;
+        }
+
+        // Interface method
+        public void ReportTraversal(string initialState, List<string> popcornTrail)
+        {
+
+        }
+
+        // Interface method
+        public string AdapterTransition(string startState, string action)
+        {
+            string expected = GetEndState(startState, action);
+            string observed = "";
+            // What does execution mean?
+            //
+            // read the graph
+            // follow the transition list
+            // for each transition,
+            //  - set / confirm the start state
+            //  - drive execution of the action (of the transition)
+            //  - compare endState to state of system under test
+            //    - if matching, go to next transition
+            //    - if not matching, halt and report
+            //      - start state and list of transitions up to the mismatch
+            //      - predicted versus actual endState
+            return observed;
+
         }
 
         // Interface method

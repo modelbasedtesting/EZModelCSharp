@@ -21,26 +21,51 @@ namespace ChutesAndLaddersExample
     {
         public static void Main()
         {
-            ChutesAndLadders rules = new ChutesAndLadders();
+            ChutesAndLadders client = new ChutesAndLadders();
+            client.SkipSelfLinks = false;
 
-            GeneratedGraph graph = new GeneratedGraph(rules, 1500, 110);
+            GeneratedGraph graph = new GeneratedGraph(client, 1100, 110, 10);
+
+            graph.DisplayStateTable(); // Display the Excel-format state table
 
             // write graph to dot format file
             string fname = "ChutesAndLadders";
             string suffix = "0000";
-            string fullName = fname + suffix;
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            // Cover the model with Greedy Postman
-            graph.RandomDestinationPostman(fname);
+            client.NotifyAdapter = true;
+            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+            client.StopOnProblem = true;
 
-            graph.DisplayStateTable(); // Display the Excel-format state table
-            Console.ReadLine();
+            graph.RandomDestinationCoverage(fname);
         }
     }
 
-    public class ChutesAndLadders : IUserRules
+    public class ChutesAndLadders : IEzModelClient
     {
+        bool skipSelfLinks;
+        bool notifyAdapter;
+        bool stopOnProblem;
+
+        // Interface Properties
+        public bool SkipSelfLinks
+        {
+            get => skipSelfLinks;
+            set => skipSelfLinks = value;
+        }
+
+        public bool NotifyAdapter
+        {
+            get => notifyAdapter;
+            set => notifyAdapter = value;
+        }
+
+        public bool StopOnProblem
+        {
+            get => stopOnProblem;
+            set => stopOnProblem = value;
+        }
+
         // State Variables
         const string svSquare = "Square";
 
@@ -95,6 +120,50 @@ namespace ChutesAndLaddersExample
             // Chutes and Ladders begins off the board,
             // which we model as a pseudo-square number zero.
             return svSquare + ".0";
+        }
+
+        // Interface method
+        public void SetStateOfSystemUnderTest(string state)
+        {
+        }
+
+        // Interface method
+        public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
+        {
+        }
+
+        // Interface method
+        public bool AreStatesAcceptablySimilar(string observed, string expected)
+        {
+            // Compare reported to expected, if unacceptable return false.
+            return true;
+        }
+
+        // Interface method
+        public void ReportTraversal(string initialState, List<string> popcornTrail)
+        {
+
+        }
+
+        // Interface method
+        public string AdapterTransition(string startState, string action)
+        {
+            string expected = GetEndState(startState, action);
+            string observed = "";
+            // What does execution mean?
+            //
+            // read the graph
+            // follow the transition list
+            // for each transition,
+            //  - set / confirm the start state
+            //  - drive execution of the action (of the transition)
+            //  - compare endState to state of system under test
+            //    - if matching, go to next transition
+            //    - if not matching, halt and report
+            //      - start state and list of transitions up to the mismatch
+            //      - predicted versus actual endState
+            return observed;
+
         }
 
         // Interface method

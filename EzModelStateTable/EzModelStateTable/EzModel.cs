@@ -432,17 +432,55 @@ namespace SeriousQualityEzModel
         }
     }
 
-// The user implements a public class of rules that inherits the IUserRules interface
-    public interface IUserRules
+// The test automation worker implements a public class that communicates with
+// EzModel through the IEzModelClient interface.  The test automation is
+// responsible for
+//  (1) setting the states and actions that make up the rules of the model,
+//  and optionally
+//  (2) driving the system under test,
+//  (3) measuring the state of the system under test,
+//  (4) reporting outcomes including problems, and
+//  (5) reporting the action path from initial state to a problem or end of run.
+
+    public interface IEzModelClient
     {
         const string valueSeparator = ", ";
 
+        // When true, EzModel will not add transitions to the state table that
+        // are self-links.  Set this value before calling the GeneratedGraph constructor,
+        // as the creation of transitions occurs in the constructor body.
+        // EzModel should not change the SkipSelfLinks setting.
+        bool SkipSelfLinks { get; set; }
+
+        // When true, EzModel will call the rules.AdapterTransition() method for
+        // each traversal step.  rules.AdapterTransition() is responsible for
+        // driving the action of the traversal step in the system under test, and
+        // must return the end state of the system under test.
+        // EzModel should not change the NotifyAdapter setting.
+        bool NotifyAdapter { get; set; }
+
+        // When true, EzModel will end the current traversal strategy on the first
+        // problem indicated by the rules module.  For example, if StopOnProblem is
+        // true, EzModel identifies a false from rules.AreStatesAcceptablySimilar()
+        // as a problem, and stops the current traversal strategy, returning
+        // control to the rules module.
+        // EzModel shoud not change the StopOnProblem setting.
+        bool StopOnProblem { get; set; }
+
+        // When the rules module intends to drive the system under test, the
+        // GetInitialState method is responsible for initializing both the
+        // state of the model and the state of the system under test.
+        // When the rules module does not intend to drive the system under test,
+        // GetInitialState is responsible only for returning the initial state
+        // to EzModel.
         string GetInitialState();
         List<string> GetAvailableActions(string startState);
         string GetEndState(string startState, string action);
         string AdapterTransition(string startState, string action);
         bool AreStatesAcceptablySimilar(string observed, string predicted);
         void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail);
+        void ReportTraversal(string initialState, List<string> popcornTrail);
+        void SetStateOfSystemUnderTest(string state);
     }
 
     public class GeneratedGraph
@@ -450,28 +488,10 @@ namespace SeriousQualityEzModel
         StateTransitions transitions;
         Nodes totalNodes;
         List<string> unexploredStates;
-        IUserRules rules; // We are able to refer to the user rules by interface, because we are only calling interface methods
 
-        bool skipSelfLinks = false;
-        bool notifyAdapter = false;
-        bool stopOnProblem = false;
+        IEzModelClient client; 
 
         public string transitionSeparator = " | ";
-
-        public void SkipSelfLinks(bool Skip)
-        {
-            skipSelfLinks = Skip;
-        }
-
-        public void NotifyAdapter(bool notify)
-        {
-            notifyAdapter = notify;
-        }
-
-        public void StopOnProblem(bool stop)
-        {
-            stopOnProblem = stop;
-        }
 
         public void DisplayStateTable()
         {
@@ -482,7 +502,7 @@ namespace SeriousQualityEzModel
                 string start = transitions.StartStateByIndex(i);
                 string end = transitions.EndStateByIndex(i);
 
-                if (skipSelfLinks)
+                if (client.SkipSelfLinks)
                 {
                     if (start == end)
                     {
@@ -508,9 +528,9 @@ namespace SeriousQualityEzModel
             return true;
         }
 
-        public GeneratedGraph(IUserRules theRules, uint maxTransitions, uint maxNodes, uint maxActions)
+        public GeneratedGraph(IEzModelClient theEzModelClient, uint maxTransitions, uint maxNodes, uint maxActions)
         {
-            rules = theRules; // we follow the Rules!
+            client = theEzModelClient;
 
             transitions = new StateTransitions(maxTransitions, maxActions);
 
@@ -518,7 +538,7 @@ namespace SeriousQualityEzModel
 
             unexploredStates = new List<string>();
 
-            string state = rules.GetInitialState();
+            string state = client.GetInitialState();
             unexploredStates.Add(state); // Adding to the <List> instance
             totalNodes.Add(state); // Adding to the Nodes class instance
 
@@ -539,12 +559,12 @@ namespace SeriousQualityEzModel
 
         void AddNewTransitionsToGraph(string startState)
         {
-            List<string> Actions = rules.GetAvailableActions(startState);
+            List<string> Actions = client.GetAvailableActions(startState);
 
             foreach (string action in Actions)
             {
                 // an endstate is generated from current state + changes from an invoked action
-                string endState = rules.GetEndState(startState, action);
+                string endState = client.GetEndState(startState, action);
 
                 // if generated endstate is new, add  to the totalNode & unexploredNode lists
                 if (!totalNodes.Contains(endState))
@@ -652,24 +672,36 @@ namespace SeriousQualityEzModel
             return path;
         }
 
-        public void RandomDestinationPostman(string fname)
+        public void RandomDestinationCoverage(string fname)
         {
-            ResetPosition:
+        ResetPosition:
 
             // Each transition will now be a target to be reached
             //  1. find a transition with a low hit count
             //  2. move along a path from where you are to the start node of that transition
             //  3. move along the target transition (so now you shd be in that transition's end node)
 
-            // TODO: When notifyAdapter is true, the rules must prepare the system under test.
-            string state = rules.GetInitialState();
+            // InitialState is needed in case rules.ReportProblem() is called.
+            string initialState = client.GetInitialState();
+
+            if (client.NotifyAdapter)
+            {
+                client.SetStateOfSystemUnderTest(initialState);
+            }
+
+            // State is the start state of the current transition.
+            string state = initialState;
+
+            // Record the actions taken in case rules.ReportProblem() is called.
+            // This list is built up only when the rules module has NotifyAdapter == true.
+            List<string> popcornTrail = new List<string>();
 
             int fileCtr = 0;
             int loopctr = 0;
             string suffix;
             int minimumCoverageFloor = 2;
 
-            while (transitions.GetTraversalsFloor() < minimumCoverageFloor)  // loopctr < 25)
+            while (transitions.GetTraversalsFloor() < minimumCoverageFloor)
             {
                 loopctr++;
 
@@ -687,16 +719,19 @@ namespace SeriousQualityEzModel
                         transitions.IncrementHitCount((uint)tIndex);
                         fileCtr++;
                         suffix = String.Format("{0}", fileCtr.ToString("D4"));
-                        if (notifyAdapter)
+                        if (client.NotifyAdapter)
                         {
-                            string reportedEndState = rules.AdapterTransition(state, transitions.ActionByIndex((uint)tIndex));
-                            if (!rules.AreStatesAcceptablySimilar(reportedEndState, transitions.EndStateByIndex((uint)tIndex)))
+                            string action = transitions.ActionByIndex((uint)tIndex);
+                            popcornTrail.Add(action);
+                            string reportedEndState = client.AdapterTransition(state, action);
+                            string predicted = transitions.EndStateByIndex((uint)tIndex);
+                            if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
                             {
                                 // Inconsistency.
                                 // TODO: Ask the adapter to report a problem, including the popcorn trail.
-                                // ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail);
+                                client.ReportProblem(initialState, reportedEndState, predicted, popcornTrail);
                                 // If the user wants to stop on problem, stop.  Otherwise:
-                                if (stopOnProblem)
+                                if (client.StopOnProblem)
                                 {
                                     return;
                                 }
@@ -734,11 +769,28 @@ namespace SeriousQualityEzModel
                 transitions.IncrementHitCount((uint)targetIndex);
 
                 state = transitions.EndStateByIndex((uint)targetIndex);  // move to the end node of the target transition
-                if (notifyAdapter)
+                if (client.NotifyAdapter)
                 {
-                    string reportedEndState = rules.AdapterTransition(transitions.StartStateByIndex((uint)targetIndex), transitions.ActionByIndex((uint)targetIndex));
-                    if (!rules.AreStatesAcceptablySimilar(reportedEndState, transitions.EndStateByIndex((uint)targetIndex)))
+                    string action = transitions.ActionByIndex((uint)targetIndex);
+                    popcornTrail.Add(action);
+                    string reportedEndState = client.AdapterTransition(transitions.StartStateByIndex((uint)targetIndex), action);
+                    string predicted = transitions.EndStateByIndex((uint)targetIndex);
+                    if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
                     {
+                        client.ReportProblem(initialState, reportedEndState, predicted, popcornTrail);
+                        if (client.StopOnProblem)
+                        {
+                            return;
+                        }
+
+                        if (transitions.IncrementActionFaults((uint)targetIndex) == 1)
+                        {
+                            transitions.Disable((uint)targetIndex);
+                        }
+                        else
+                        {
+                            transitions.DisableByAction(transitions.ActionByIndex((uint)targetIndex));
+                        }
                         // Inconsistency.  Stop the traversal.
                         goto ResetPosition;
                     }
@@ -749,7 +801,12 @@ namespace SeriousQualityEzModel
                 this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByIndex((uint)targetIndex));
             }
             // TODO: Trace floor coverage
-//            Console.WriteLine("Reached coverage floor of {0} in {1} iterations.", minimumCoverageFloor, loopctr);
+            Console.WriteLine("Reached coverage floor of {0} in {1} iterations.", minimumCoverageFloor, loopctr);
+
+            if (client.NotifyAdapter)
+            {
+                client.ReportTraversal(initialState, popcornTrail);
+            }
         }
 
         public void CreateGraphVizFileAndImage(string fname, string suffix, string action)

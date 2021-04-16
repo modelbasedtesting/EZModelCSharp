@@ -1,4 +1,17 @@
 ﻿using System;
+
+namespace MultiUserChatRoomExample
+{
+    class MultiUserChatRoomProgram
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("MULTIUSERCHATROOM NOT IMPLEMENTED.  REVIEW SOURCE FILE.", args.ToString());
+        }
+    }
+}
+/* 
+using System;
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 
@@ -28,7 +41,7 @@ namespace MultiUserChatRoomExample
         }
     }
 
-    public class ChatRoom : IUserRules
+    public class ChatRoom : IEzModelClient
     {
         // Take the number of users chatting and the number who create chat rooms as arguments.
         // Main( uint numUsers, uint numRoomHosts )
@@ -59,7 +72,7 @@ namespace MultiUserChatRoomExample
         const string noneInvited = ".noneInvited";
         const string userInvited = "Invited";
         // IUserRules.valueSeparator abbreviated constant name for syntax convenience
-        const string sep = IUserRules.valueSeparator;
+        const string sep = IEzModelClient.valueSeparator;
 
         // Keep a vector of state variable values, one state variable represented by
         // each vector element.  Some state variables can have multiple simultaneous
@@ -354,3 +367,4 @@ namespace MultiUserChatRoomExample
         }
     }
 }
+*/

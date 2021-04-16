@@ -8,26 +8,51 @@ namespace ChatRoomExample
     {
         static void Main()
         {
-            ChatRoom rules = new ChatRoom();
+            ChatRoom client = new ChatRoom();
+            client.SkipSelfLinks = false;
 
-            GeneratedGraph graph = new GeneratedGraph(rules, 1000, 100);
+            GeneratedGraph graph = new GeneratedGraph(client, 2000, 100, 20);
+
+            graph.DisplayStateTable(); // Display the Excel-format state table
 
             // write graph to dot format file
             string fname = "ChatRoom";
             string suffix = "0000";
-            string fullName = fname + suffix;
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            // Cover the model with Greedy Postman
-            graph.RandomDestinationPostman(fname);
+            client.NotifyAdapter = true;
+            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+            client.StopOnProblem = true;
 
-            graph.DisplayStateTable(); // Display the Excel-format state table
-            Console.ReadLine();
+            graph.RandomDestinationCoverage(fname);
         }
     }
 
-    public class ChatRoom : IUserRules
+    public class ChatRoom : IEzModelClient
     {
+        bool skipSelfLinks;
+        bool notifyAdapter;
+        bool stopOnProblem;
+
+        // Interface Properties
+        public bool SkipSelfLinks
+        {
+            get => skipSelfLinks;
+            set => skipSelfLinks = value;
+        }
+
+        public bool NotifyAdapter
+        {
+            get => notifyAdapter;
+            set => notifyAdapter = value;
+        }
+
+        public bool StopOnProblem
+        {
+            get => stopOnProblem;
+            set => stopOnProblem = value;
+        }
+
         // State Variables
         // Angela
         const string svAngelaStatus = "AStatus";
@@ -52,7 +77,7 @@ namespace ChatRoomExample
         const string aInvited = ".aInvited";
         const string jInvited = ".jInvited";
         // IUserRules.valueSeparator abbreviated constant name for syntax convenience
-        const string sep = IUserRules.valueSeparator;
+        const string sep = IEzModelClient.valueSeparator;
 
         // Keep a vector of state variable values, one state variable represented by
         // each vector element.  Some state variables can have multiple simultaneous
@@ -129,6 +154,50 @@ namespace ChatRoomExample
         public string GetInitialState()
         {
             return StringifyStateVector(vState);
+        }
+
+        // Interface method
+        public void SetStateOfSystemUnderTest(string state)
+        {
+        }
+
+        // Interface method
+        public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
+        {
+        }
+
+        // Interface method
+        public bool AreStatesAcceptablySimilar(string observed, string expected)
+        {
+            // Compare reported to expected, if unacceptable return false.
+            return true;
+        }
+
+        // Interface method
+        public void ReportTraversal(string initialState, List<string> popcornTrail)
+        {
+
+        }
+
+        // Interface method
+        public string AdapterTransition(string startState, string action)
+        {
+            string expected = GetEndState(startState, action);
+            string observed = "";
+            // What does execution mean?
+            //
+            // read the graph
+            // follow the transition list
+            // for each transition,
+            //  - set / confirm the start state
+            //  - drive execution of the action (of the transition)
+            //  - compare endState to state of system under test
+            //    - if matching, go to next transition
+            //    - if not matching, halt and report
+            //      - start state and list of transitions up to the mismatch
+            //      - predicted versus actual endState
+            return observed;
+
         }
 
         // Interface method

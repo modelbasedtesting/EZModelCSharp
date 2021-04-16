@@ -4,29 +4,28 @@ using SeriousQualityEzModel;
 
 namespace AlanRichardsonAPIsHairball
 {
-    class Program
+    class AlanRichardsonAPIsHairballProgram
     {
         static void Main()
         {
 
-            APIs rules = new APIs();
+            APIs ciient = new APIs();
+            ciient.SkipSelfLinks = true;
 
-            GeneratedGraph graph = new GeneratedGraph( rules, 5000, 100, 50);
+            GeneratedGraph graph = new GeneratedGraph( ciient, 5000, 100, 50);
 
-            graph.SkipSelfLinks(true);
             graph.DisplayStateTable(); // Display the Excel-format state table
 
             // write graph to dot format file
             string fname = "RichardsonHairball";
             string suffix = "0000";
-            string fullName = fname + suffix;
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            graph.NotifyAdapter(true);
-            // Cover the model with Greedy Postman
-            graph.RandomDestinationPostman(fname);
+            ciient.NotifyAdapter = true;
+// If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+            ciient.StopOnProblem = true;
 
-            Console.ReadLine();
+            graph.RandomDestinationCoverage(fname);
         }
     }
 
@@ -56,8 +55,31 @@ namespace AlanRichardsonAPIsHairball
     //// Populate the todos list during object constructor.
     //List<ToDo> todosList = new List<ToDo>();
 
-    public class APIs : IUserRules
+    public class APIs : IEzModelClient
     {
+        bool skipSelfLinks;
+        bool notifyAdapter;
+        bool stopOnProblem;
+
+        // Interface Properties
+        public bool SkipSelfLinks
+        {
+            get => skipSelfLinks;
+            set => skipSelfLinks = value;
+        }
+
+        public bool NotifyAdapter
+        {
+            get => notifyAdapter;
+            set => notifyAdapter = value;
+        }
+
+        public bool StopOnProblem
+        {
+            get => stopOnProblem;
+            set => stopOnProblem = value;
+        }
+
         // Initially the system is not running, and this affects a lot of
         // state.
         bool svRunning = false;
@@ -143,6 +165,11 @@ namespace AlanRichardsonAPIsHairball
         }
 
         // Interface method
+        public void SetStateOfSystemUnderTest(string state)
+        {
+        }
+
+        // Interface method
         public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
         {
         }
@@ -152,6 +179,12 @@ namespace AlanRichardsonAPIsHairball
         {
             // Compare reported to expected, if unacceptable return false.
             return true;
+        }
+
+        // Interface method
+        public void ReportTraversal(string initialState, List<string> popcornTrail)
+        {
+
         }
 
         // Interface method
