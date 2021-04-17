@@ -573,7 +573,12 @@ namespace SeriousQualityEzModel
                     unexploredStates.Add(endState); // Adds a string to List instance
                 }
 
-                // add this {startState, action, endState} transition to the Graph
+                // add this {startState, endState, action} transition to the Graph
+                // except in the case where client.SkipSelfLinks is true AND startState == endState
+                if (client.SkipSelfLinks == true && (startState == endState))
+                {
+                    continue;
+                }
                 transitions.Add(startState: startState, endState: endState, action: action);
             }
         }

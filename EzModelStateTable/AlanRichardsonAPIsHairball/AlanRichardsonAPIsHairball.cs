@@ -9,10 +9,10 @@ namespace AlanRichardsonAPIsHairball
         static void Main()
         {
 
-            APIs ciient = new APIs();
-            ciient.SkipSelfLinks = true;
+            APIs client = new APIs();
+            client.SkipSelfLinks = true;
 
-            GeneratedGraph graph = new GeneratedGraph( ciient, 5000, 100, 50);
+            GeneratedGraph graph = new GeneratedGraph( client, 5000, 100, 50);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
@@ -21,9 +21,9 @@ namespace AlanRichardsonAPIsHairball
             string suffix = "0000";
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            ciient.NotifyAdapter = true;
+            client.NotifyAdapter = true;
 // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            ciient.StopOnProblem = true;
+            client.StopOnProblem = true;
 
             graph.RandomDestinationCoverage(fname);
         }
