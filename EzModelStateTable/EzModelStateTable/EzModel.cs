@@ -932,16 +932,24 @@ namespace SeriousQualityEzModel
                 w.WriteLine("fillcolor=lightgrey, style=filled, color=black]");
                 w.WriteLine();
 
+                // Capture the target transition of the path so that we properly decorate it.
+                Queue<int> arcPath = new Queue<int>(path.ToArray());
+                arcPath.Enqueue(endOfPathTransitionIndex);
+
                 // Color each link by its hit count
                 for (uint i = 0; i < transitions.Count(); i++)
                 {
                     // Set all path arcs to lightgrey except the currently actioned arc.
-                    string linkAppearance = ", color=lightgrey, penwidth=5";
+                    string linkAppearance = ", color=lightgrey, penwidth=15";
                     int traversals = transitions.TraversalsByIndex(i);
 
-                    if (i == transitionIndex || !path.Contains((int)i))
+                    if (i == transitionIndex || !arcPath.Contains((int)i))
                     {
                         linkAppearance = GetLinkAppearance(traversals);
+                    }
+                    if (i == transitionIndex)
+                    {
+                        linkAppearance = linkAppearance.Replace("penwidth=3", "penwidth=15");
                     }
 
                     w.WriteLine("\"{0}\" -> \"{1}\" [ label=\"{2} ({3})\"{4} ];",
