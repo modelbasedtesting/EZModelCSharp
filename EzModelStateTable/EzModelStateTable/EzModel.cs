@@ -766,7 +766,7 @@ namespace SeriousQualityEzModel
                                 goto ResetPosition;
                             }
                         }
-                        this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByIndex((uint)tIndex));
+                        this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByIndex((uint)tIndex), tIndex, targetIndex);
                     }
                 }
 
@@ -803,7 +803,7 @@ namespace SeriousQualityEzModel
 
                 fileCtr++;
                 suffix = String.Format("{0}", fileCtr.ToString("D4"));
-                this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByIndex((uint)targetIndex));
+                this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByIndex((uint)targetIndex), targetIndex, targetIndex);
             }
             // TODO: Trace floor coverage
             Console.WriteLine("Reached coverage floor of {0} in {1} iterations.", minimumCoverageFloor, loopctr);
@@ -814,9 +814,14 @@ namespace SeriousQualityEzModel
             }
         }
 
-        public void CreateGraphVizFileAndImage(string fname, string suffix, string action)
+        public void CreateGraphVizFileAndImage(string fname, string suffix, string title, int transitionIndex = -1, int endOfPathTransitionIndex = -1)
         {
+            // NOTE: transitionIndex and endOfPathTransitionIndex are optional.  Not every graph rendition has
+            // is being traversed, and not every graph rendition has a path with an end node..
+            // If transitionIndex is non-negative, light up the start and end nodes.
+            // If endOfPathTransitionIndex is non-negative, light it up in the end of path color.
             // Create a new file.
+
             using (FileStream fs = new FileStream(fname + suffix + ".txt", FileMode.Create))
             using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
             {
@@ -825,11 +830,53 @@ namespace SeriousQualityEzModel
                 w.WriteLine("node [shape = ellipse];");
                 w.WriteLine("rankdir=LR;");
 
+                int endOfPathNodeIndex = -1;
+
+                if (endOfPathTransitionIndex > -1)
+                {
+                    endOfPathNodeIndex = totalNodes.GetIndexByState(transitions.EndStateByIndex((uint)endOfPathTransitionIndex));
+                }
+
+                
+                int startStateIndex = -1;
+                int endStateIndex = -1;
+
+                if (transitionIndex > -1)
+                {
+                    startStateIndex = totalNodes.GetIndexByState(transitions.StartStateByIndex((uint)transitionIndex));
+                    endStateIndex = totalNodes.GetIndexByState(transitions.EndStateByIndex((uint)transitionIndex));
+                }
+
+                string endOfPath = ", fillcolor=blue, style=filled";
+                string startState = ", color=green, penwidth=3";
+                string endState = ", color=red, penwidth=3";
+                string selfLinkState = ", color=purple, penwidth=3";
                 // add the state nodes to the image
                 for (uint i = 0; i < totalNodes.Count(); i++)
                 {
-                    // TODO: Get the string formatting correct for GraphViz.
-                    w.WriteLine("\"{0}\"\t[label=\"{1}\"]", totalNodes.GetNodeByIndex(i).state, totalNodes.GetNodeByIndex(i).state.Replace(",", "\\n"));
+                    string decoration = "";
+
+                    if (startStateIndex == endStateIndex && i == startStateIndex)
+                    {
+                        decoration = selfLinkState;
+                    }
+                    else
+                    {
+                        if (i == startStateIndex)
+                        {
+                            decoration += startState;
+                        }
+                        if (i == endStateIndex)
+                        {
+                            decoration += endState;
+                        }
+                    }
+
+                    if ( i == endOfPathNodeIndex )
+                    {
+                        decoration += endOfPath;
+                    }
+                    w.WriteLine("\"{0}\"\t[label=\"{1}\"{2}]", totalNodes.GetNodeByIndex(i).state, totalNodes.GetNodeByIndex(i).state.Replace(",", "\\n"), decoration);
                 }
 
                 // Insert the info node into the image
@@ -838,9 +885,9 @@ namespace SeriousQualityEzModel
                 w.Write("\"Info node\"\t[label=\"");
                 w.Write("++++++++++++++\\n");
                 w.Write("Step: {0}\\n", suffix);
-                w.Write("{0}\\n", action);
+                w.Write("{0}\\n", title);
                 w.Write("Floor:  {0}\", ", transitions.GetTraversalsFloor());
-                w.WriteLine("fillcolor=lightgrey, color=black]");
+                w.WriteLine("fillcolor=lightgrey, style=filled, color=black]");
                 w.WriteLine();
 
                 // Color each link by its hit count

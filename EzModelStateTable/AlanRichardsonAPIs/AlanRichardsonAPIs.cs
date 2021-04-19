@@ -8,10 +8,10 @@ namespace AlanRichardsonAPIs
     {
         static void Main()
         {
-            APIs cient = new APIs();
-            cient.SkipSelfLinks = false;
+            APIs client = new APIs();
+            client.SkipSelfLinks = true;
 
-            GeneratedGraph graph = new GeneratedGraph(cient, 3000, 100, 30);
+            GeneratedGraph graph = new GeneratedGraph(client, 3000, 100, 30);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
@@ -20,9 +20,9 @@ namespace AlanRichardsonAPIs
             string suffix = "0000";
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            cient.NotifyAdapter = true;
+            client.NotifyAdapter = true;
 // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            cient.StopOnProblem = true;
+            client.StopOnProblem = true;
 
             graph.RandomDestinationCoverage(fname);
         }
