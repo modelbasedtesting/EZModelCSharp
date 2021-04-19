@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using SeriousQualityEzModel;
 
 namespace RichardsonAPIsAdapterExecution
 {
@@ -125,7 +127,7 @@ namespace RichardsonAPIsAdapterExecution
             // the system under test to match the parsed state values.
             // TODO: this method should report true or false to indicate whether it
             // succeeded in driving the state of the system under test.
-            string[] vState = startState.Split(", ");
+            string[] vState = state.Split(", ");
             bool running = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
@@ -134,7 +136,7 @@ namespace RichardsonAPIsAdapterExecution
             if (!running)
             {
                 // shut down the APIs server.  Done..
-                return
+                return;
             }
 
             // running == true is implied at this point.
@@ -158,7 +160,7 @@ namespace RichardsonAPIsAdapterExecution
 				// we need to do something here for local runs.
             }
 
-            switch todosClass {
+            switch (todosClass) {
                 case zeroTodos:
                     // If the class of the system under test is already zeroTodos, do nothing.
                     // Else, drain the todos list.
@@ -174,6 +176,7 @@ namespace RichardsonAPIsAdapterExecution
                     break;
                 default:
                     Console.WriteLine("Unknown todosClass '{0}' in SetStateOfSystemUnderTest()", todosClass);
+                    break;
             }
         }
 

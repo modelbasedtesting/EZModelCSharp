@@ -842,12 +842,12 @@ namespace SeriousQualityEzModel
 
                 
                 int startStateIndex = -1;
-                int endStateIndex = -1;
+//                int endStateIndex = -1;
 
                 if (transitionIndex > -1)
                 {
                     startStateIndex = totalNodes.GetIndexByState(transitions.StartStateByIndex((uint)transitionIndex));
-                    endStateIndex = totalNodes.GetIndexByState(transitions.EndStateByIndex((uint)transitionIndex));
+//                    endStateIndex = totalNodes.GetIndexByState(transitions.EndStateByIndex((uint)transitionIndex));
                 }
 
                 List<int> pathNodeIndices = new List<int>();
@@ -872,47 +872,47 @@ namespace SeriousQualityEzModel
                 {
                     string decoration = "";
 
-                    if (startStateIndex == i || endStateIndex == i || endOfPathNodeIndex == i || pathNodeIndices.Contains(i))
+                    if (startStateIndex == i || /* endStateIndex == i || */ endOfPathNodeIndex == i || pathNodeIndices.Contains(i))
                     {
                         decoration = ", style=filled, fillcolor=\"";
                     }
 
-                    if (startStateIndex != i && endStateIndex != i && endOfPathNodeIndex != i && pathNodeIndices.Contains(i))
+                    if (startStateIndex != i && /* endStateIndex != i && */ endOfPathNodeIndex != i && pathNodeIndices.Contains(i))
                     {
                         decoration += "lightgrey\"";
                     }
 
-                    if (startStateIndex == i && endStateIndex == i && endOfPathNodeIndex != i)
-                    {
-                        decoration += "green:red\"";
-                    }
+                    //if (startStateIndex == i && endStateIndex == i && endOfPathNodeIndex != i)
+                    //{
+                    //    decoration += "green:red\"";
+                    //}
 
-                    if (startStateIndex == i && endStateIndex == i && endOfPathNodeIndex == i)
-                    {
-                        decoration += "green:red:cyan\"";
-                    }
+                    //if (startStateIndex == i && endStateIndex == i && endOfPathNodeIndex == i)
+                    //{
+                    //    decoration += "green:red:cyan\"";
+                    //}
 
-                    if (startStateIndex == i && endStateIndex != i && endOfPathNodeIndex != i)
+                    if (startStateIndex == i && /* endStateIndex != i && */ endOfPathNodeIndex != i)
                     {
                         decoration += "green\"";
                     }
 
-                    if (startStateIndex == i && endStateIndex != i && endOfPathNodeIndex == i)
+                    if (startStateIndex == i && /* endStateIndex != i && */ endOfPathNodeIndex == i)
                     {
                         decoration += "cyan:green\"";
                     }
 
-                    if (startStateIndex != i && endStateIndex == i && endOfPathNodeIndex != i)
-                    {
-                        decoration += "red\"";
-                    }
+                    //if (startStateIndex != i && endStateIndex == i && endOfPathNodeIndex != i)
+                    //{
+                    //    decoration += "red\"";
+                    //}
 
-                    if (startStateIndex != i && endStateIndex == i && endOfPathNodeIndex == i)
-                    {
-                        decoration += "red:cyan\"";
-                    }
+                    //if (startStateIndex != i && endStateIndex == i && endOfPathNodeIndex == i)
+                    //{
+                    //    decoration += "red:cyan\"";
+                    //}
 
-                    if (startStateIndex != i && endStateIndex != i && endOfPathNodeIndex == i)
+                    if (startStateIndex != i && /* endStateIndex != i && */ endOfPathNodeIndex == i)
                     {
                         decoration += "cyan\"";
                     }
@@ -935,9 +935,17 @@ namespace SeriousQualityEzModel
                 // Color each link by its hit count
                 for (uint i = 0; i < transitions.Count(); i++)
                 {
+                    // Set all path arcs to lightgrey except the currently actioned arc.
+                    string linkAppearance = ", color=lightgrey, penwidth=5";
                     int traversals = transitions.TraversalsByIndex(i);
+
+                    if (i == transitionIndex || !path.Contains((int)i))
+                    {
+                        linkAppearance = GetLinkAppearance(traversals);
+                    }
+
                     w.WriteLine("\"{0}\" -> \"{1}\" [ label=\"{2} ({3})\"{4} ];",
-                        transitions.StartStateByIndex(i), transitions.EndStateByIndex(i), transitions.ActionByIndex(i), traversals, GetLinkAppearance(traversals));
+                        transitions.StartStateByIndex(i), transitions.EndStateByIndex(i), transitions.ActionByIndex(i), traversals, linkAppearance);
                 }
 
                 w.WriteLine("}");
