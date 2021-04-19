@@ -227,7 +227,10 @@ namespace AlanRichardsonAPIs
             actions.Add(headTodoId);
             actions.Add(postTodoId);
             actions.Add(putTodoId);
-            actions.Add(deleteTodoId);
+// The next line of code, adding deleteTodoId to actions, is redundant and
+// is therefore an error in the model configuration.  It manifests as a
+// duplicate deleteTodoById arc between nodes.
+//            actions.Add(deleteTodoId);
 
             if (xAuthTokenExists)
             {

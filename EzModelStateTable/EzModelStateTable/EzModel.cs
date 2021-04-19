@@ -488,6 +488,7 @@ namespace SeriousQualityEzModel
         StateTransitions transitions;
         Nodes totalNodes;
         List<string> unexploredStates;
+        Queue<int> path = new Queue<int>();
 
         IEzModelClient client; 
 
@@ -710,6 +711,8 @@ namespace SeriousQualityEzModel
             {
                 loopctr++;
 
+                path = new Queue<int>();
+
                 // Find a transition with a low hit count
                 int targetIndex = transitions.GetALowHitTransitionIndex();
 
@@ -717,7 +720,7 @@ namespace SeriousQualityEzModel
 
                 if (state != targetStartState)
                 {
-                    Queue<int> path = FindShortestPath(state, targetStartState);
+                    path = FindShortestPath(state, targetStartState);
                     foreach (int tIndex in path)
                     {
                         // mark the transitions covered along the way
@@ -847,36 +850,75 @@ namespace SeriousQualityEzModel
                     endStateIndex = totalNodes.GetIndexByState(transitions.EndStateByIndex((uint)transitionIndex));
                 }
 
-                string endOfPath = ", fillcolor=blue, style=filled";
-                string startState = ", color=green, penwidth=3";
-                string endState = ", color=red, penwidth=3";
-                string selfLinkState = ", color=purple, penwidth=3";
+                List<int> pathNodeIndices = new List<int>();
+
+                // Get the set of nodes involved in the path, if any.
+                foreach (uint tIndex in path)
+                {
+                    int nodeIndex = totalNodes.GetIndexByState(transitions.StartStateByIndex(tIndex));
+                    if (!pathNodeIndices.Contains(nodeIndex))
+                    {
+                        pathNodeIndices.Add(nodeIndex);
+                    }
+                    nodeIndex = totalNodes.GetIndexByState(transitions.EndStateByIndex(tIndex));
+                    if (!pathNodeIndices.Contains(nodeIndex))
+                    {
+                        pathNodeIndices.Add(nodeIndex);
+                    }
+                }
+
                 // add the state nodes to the image
-                for (uint i = 0; i < totalNodes.Count(); i++)
+                for (int i = 0; i < totalNodes.Count(); i++)
                 {
                     string decoration = "";
 
-                    if (startStateIndex == endStateIndex && i == startStateIndex)
+                    if (startStateIndex == i || endStateIndex == i || endOfPathNodeIndex == i || pathNodeIndices.Contains(i))
                     {
-                        decoration = selfLinkState;
-                    }
-                    else
-                    {
-                        if (i == startStateIndex)
-                        {
-                            decoration += startState;
-                        }
-                        if (i == endStateIndex)
-                        {
-                            decoration += endState;
-                        }
+                        decoration = ", style=filled, fillcolor=\"";
                     }
 
-                    if ( i == endOfPathNodeIndex )
+                    if (startStateIndex != i && endStateIndex != i && endOfPathNodeIndex != i && pathNodeIndices.Contains(i))
                     {
-                        decoration += endOfPath;
+                        decoration += "lightgrey\"";
                     }
-                    w.WriteLine("\"{0}\"\t[label=\"{1}\"{2}]", totalNodes.GetNodeByIndex(i).state, totalNodes.GetNodeByIndex(i).state.Replace(",", "\\n"), decoration);
+
+                    if (startStateIndex == i && endStateIndex == i && endOfPathNodeIndex != i)
+                    {
+                        decoration += "green:red\"";
+                    }
+
+                    if (startStateIndex == i && endStateIndex == i && endOfPathNodeIndex == i)
+                    {
+                        decoration += "green:red:cyan\"";
+                    }
+
+                    if (startStateIndex == i && endStateIndex != i && endOfPathNodeIndex != i)
+                    {
+                        decoration += "green\"";
+                    }
+
+                    if (startStateIndex == i && endStateIndex != i && endOfPathNodeIndex == i)
+                    {
+                        decoration += "cyan:green\"";
+                    }
+
+                    if (startStateIndex != i && endStateIndex == i && endOfPathNodeIndex != i)
+                    {
+                        decoration += "red\"";
+                    }
+
+                    if (startStateIndex != i && endStateIndex == i && endOfPathNodeIndex == i)
+                    {
+                        decoration += "red:cyan\"";
+                    }
+
+                    if (startStateIndex != i && endStateIndex != i && endOfPathNodeIndex == i)
+                    {
+                        decoration += "cyan\"";
+                    }
+
+
+                    w.WriteLine("\"{0}\"\t[label=\"{1}\"{2}]", totalNodes.GetNodeByIndex((uint)i).state, totalNodes.GetNodeByIndex((uint)i).state.Replace(",", "\\n"), decoration);
                 }
 
                 // Insert the info node into the image
