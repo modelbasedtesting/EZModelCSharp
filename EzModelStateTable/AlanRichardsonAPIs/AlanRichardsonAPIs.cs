@@ -269,8 +269,13 @@ namespace AlanRichardsonAPIs
                     running = true;
                     break;
                 case shutdown:
+                    // Set all state variables back to initial state on shutdown,
+                    // because if the APIs server starts up again, it will take
+                    // on those initial state values.
                     running = false;
-                    todosClass = betweenZeroAndMaximumTodos;
+                    todosClass = svTodosClassString;
+                    xChallengerGuidExists = svXChallengerGuidExists;
+                    xAuthTokenExists = svXAuthTokenExists;
                     break;
                 case getTodos:
                 case headTodos:

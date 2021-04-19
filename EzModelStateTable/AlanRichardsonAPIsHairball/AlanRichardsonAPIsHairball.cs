@@ -336,9 +336,13 @@ namespace AlanRichardsonAPIsHairball
                     running = true;
                     break;
                 case shutdown:
+                    // Set all state variables back to initial state on shutdown,
+                    // because if the APIs server starts up again, it will take
+                    // on those initial state values.
                     running = false;
-                    // The software restores the todos list to the initial state.
-                    numTodos = 10;
+                    xChallengerGuidExists = svXChallengerGuidExists;
+                    xAuthTokenExists = svXAuthTokenExists;
+                    numTodos = svNumTodos;
                     break;
                 case getTodos:
                 case headTodos:
