@@ -13,6 +13,8 @@ namespace AlanRichardsonAPIs
 
             GeneratedGraph graph = new GeneratedGraph(client, 3000, 100, 30);
 
+            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+
             graph.DisplayStateTable(); // Display the Excel-format state table
 
             // write graph to dot format file
