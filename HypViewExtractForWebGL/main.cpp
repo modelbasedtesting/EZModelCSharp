@@ -4,19 +4,13 @@ NAMESPACEHACK
 extern "C" {
 #include <stdlib.h>
 #include <GL/glut.h>
-#ifndef WIN32
 #include <ieeefp.h>
-#endif
 #ifdef HYPFREE
 #include <floatingpoint.h>
 #endif
 #include <errno.h>
 }
-#ifdef HYPIRIX
-#include <fstream.h>
-#else
 #include <fstream>
-#endif
 
 #include "HypView.h"
 #include "HypData.h"
@@ -100,7 +94,6 @@ int main(int argc, char *argv[]) {
   atexit(PrintAllocations);
   
   glutInit(&argc,argv);
-  //  glutInitWindowSize(hd->winx, hd->winy);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 
   ifstream inFile(fname);

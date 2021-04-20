@@ -36,15 +36,7 @@
 #ifndef HYPDATA_H
 #define HYPDATA_H
 
-// #include <utmpx.h>
-#ifdef WIN32
-// disable warning C4786: symbol greater than 255 character,
-// okay to ignore
-#pragma warning(disable: 4786)
-#include <winsock.h>   
-#else
 #include <sys/time.h>
-#endif
 
 #define HV_LEAFSIZE .04
 #define HV_MAXGROUPS 16
@@ -116,12 +108,7 @@ public:
     labelsize = 20; 			 
     passiveCull = 5;
     motionCull = 5;
-#ifdef WIN32
-    labelfont = "Arial";
-    labelfontsize = 12;
-#else
     labelfont = "-*-courier-medium-r-normal--12-*";
-#endif
     colorBack[0] = 1.0;
     colorBack[1] = 1.0;
     colorBack[2] = 1.0;
@@ -196,9 +183,6 @@ public:
   /* font to draw labels with */
   char *labelfont;
   /* font size - in Windows font string is name only */
-#ifdef WIN32
-  int labelfontsize;
-#endif
   /* how many events to throw away for every 1 processed when mouse moving */
   int passiveCull;
   /* how many events to throw away for every 1 processed when mouse dragging */

@@ -55,5 +55,3 @@ HypNodeArray::~HypNodeArray()
 {
   this->erase(this->begin(),this->end());
 }
-
-      

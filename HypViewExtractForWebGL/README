@@ -72,20 +72,20 @@ include/	library include files
 data/		sample data files
 
 examples/
- vksimple/	very simple ViewKit app, calls library
+vksimple/	very simple ViewKit app, calls library
 
- xtsimple/	very simple Xt app, calls library
+xtsimple/	very simple Xt app, calls library
 
- vkxt/		more complex Xt or ViewKit app, keystroke callbacks show
+vkxt/		more complex Xt or ViewKit app, keystroke callbacks show
 		off more library functionality.
 		see viewer.README for usage details.
 		(Note: if you're wondering why you can't see the cycles
 		in your graph, try hitting the 'u' button!)
 
- xtnofile/	Xt app showing the use of the addNode/addLink commands
+xtnofile/	Xt app showing the use of the addNode/addLink commands
 		instead of reading data from an input file
 
- mfc/		Windows example app, includes source file directly instead
+mfc/		Windows example app, includes source file directly instead
 		of using libraries properly. someone who knows Windows
 		better could fix this up much more cleanly, I'm sure.
 

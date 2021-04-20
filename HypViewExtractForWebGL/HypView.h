@@ -36,22 +36,17 @@
 #ifndef HYPVIEW_H
 #define HYPVIEW_H
 
-#ifndef WIN32
 extern "C" {
 #include <X11/Intrinsic.h>
 #include <GL/glx.h>
 }
-#endif
 
 #include <string>
-
-
 
 #include "HypGraph.h"
 #include "HypViewer.h"
 
 /*
-
 CLASS
  HypView
 
@@ -67,9 +62,6 @@ OVERVIEW
  This class is the main interface between the entire library and the
  application programmer. No get methods are documented - see the
  corresponding set method.
-
-
-
 
 LAYOUT
 
@@ -96,7 +88,6 @@ LAYOUT
  spanning tree. The specific spanning tree policies used by the
  library are controllable with the clearSpanPolicy() and
  addSpanPolicy() methods. 
-
 
 DRAWING
 
@@ -143,7 +134,6 @@ DRAWING
  of the surrounding scene. However, the time spent on this, the idle
  frame time, should still be bounded to eventually free the CPU for
  other tasks.
-
 
 INITIALIZATION
 
@@ -213,8 +203,6 @@ setPassiveFrameTime(),
 drawFrame(), 
 redraw(), 
 reshape(),
-
-
 
 INPUT FILE FORMAT
 
@@ -318,18 +306,15 @@ corresponds to a graph that looks like:
  For example, the file
 
 <pre>
-
  0 http://hyper/ 1 html main
  1 http://hyper/index.html html main
  1 http://hyper/logo.gif image main
  1 http://hyper/old.html html orphan
-
 </pre>
 
  with the following code in the application 
 
 <pre>
-
   hv->setColorGroup(0, "image", .42, 0, .48);
   hv->setColorGroup(0, "html", 0, 1, 1);
   hv->setColorGroup(1, "main", 1, 1, 1);
@@ -337,7 +322,6 @@ corresponds to a graph that looks like:
 
   hv->setDisbleGroup(1, "orphan", 0);
   hv->setGroupKey(0);
-
 </pre>
 
  would result in three visible nodes, colored by collection 0: the
@@ -345,10 +329,8 @@ corresponds to a graph that looks like:
  top-level hyper nodes would be colored cyan. The old.html node would
  not be drawn since the orphan group is disabled.
 
-
  Finally, the third item in the input file line must be an integer,
  which should be set 1 (for historical reasons).
-
 
 DEPENDENCIES
 
@@ -387,7 +369,6 @@ AUTHOR
  http://graphics.stanford.edu
  munzner@cs.stanford.edu
 </pre>
-
 */
 
 class HypView {
@@ -395,33 +376,6 @@ class HypView {
 public:
 
   // GROUP: Initialization
-
-#ifdef WIN32
-  HypView(HDC w,HWND hwin);
-  void afterRealize(HGLRC cx, int w, int h); //(GLXContext cx);
-
-  /// Return the drawing area widget passed in at initialization time.
-  HDC getWidget();
-
-#elif HYPGLX
-
-  /// GLX version. Creation function for HypView class.
-  HypView(Widget w);
-
-  /// GLX version. This function should be called immediately after
-  // opening the window and must precede all drawing. It can be called
-  // before or after setGraph. We pass in the GL context,
-  // which cannot be created until after a window is opened.
-  // See the INITIALIZATION section for details on which functions
-  // cannot be called before afterRealize(). 
-  void afterRealize(GLXContext cx);
-
-  /// GLX version only. Return the drawing area widget passed in at
-  // initialization time.  
-  Widget getWidget();
-
-#else
-
   /// GLUT version. Creation function for HypView class. 
   HypView();
 
@@ -430,14 +384,11 @@ public:
   // before or after setGraph.
   void afterRealize();
 
-#endif
-
   /// Destructor for HypView class.
   ~HypView();
 
   // GROUP: HypView
   // 
-
   /// Output: array of node identifier strings, last one set to NULL.
   // Returns every node in the subtree beneath the input node. This
   // could be a large amount of data: in the limit, if the root node is
@@ -532,12 +483,6 @@ public:
   // if on=0. 
   void   setSelectedSubtree(const string & id, bool on);
 
-#ifdef XPMSNAP
-  /// Takes a snapshot in XPM format and stores it in the file named
-  //  by fileName.  Returns true on success, else returns false.
-  bool XpmSnapshot(const string & fileName);
-#endif //XPMSNAP
-  
   // GROUP: HypGraph 
   //
 
@@ -549,7 +494,6 @@ public:
   // exist. Returns 1 for success. A link from the parent to the child
   // is created automatically.
   int  addNode(const string & parent, const string & child);
-
 
   /// Return number of direct children of the node. 
   int  getChildCount(const string & id);
@@ -599,7 +543,6 @@ public:
   // success on existing enabled or disabled node.
   int  setDrawBackFrom(const string & id, bool on, int descend);
 
-
   /// Turn on or off the incoming non-tree links for a node. Does not
   // apply to the direct parent. The descend flag controls whether the
   // command applies to the node itself or the entire subtree beneath
@@ -643,7 +586,6 @@ public:
   // 
   // GROUP: HypViewer 
   //
-
 
   /// Initialization routine for binding specific combinations of
   // mouse events to functions. 
@@ -703,16 +645,6 @@ public:
   // application programmer use.
   void idle();
 
-#ifndef HYPGLUT
-  /// Trigger the actual idle callback.
-  //
-  // Returns 1 if the idle mode should stay on, 0 if the idle processing
-  // is done. Not usually recommended for application programmer
-  // use: requires understanding of library internals. The redraw
-  // command is usually more appropriate.
-  int idleCB();
-#endif
-
   /// Inform the library of the current (x,y) position of the mouse
   // continuously during a drag. 
   // 
@@ -724,7 +656,6 @@ public:
   // Intended for use by a window system layer above this class as
   // opposed to the application programmer.
   void motion(int x, int y, int shift, int control);
-
 
   /// Inform the library of the current (x,y) position of the mouse
   // during mousedown or mouseup: that is, a click. If the user moves
@@ -789,7 +720,6 @@ public:
   // bindCallback() documentation for more details. 
   void setPickCallback(void (*fp)(const string &,int,int));
 
-
   // GROUP: HypData 
   //
 
@@ -813,70 +743,27 @@ public:
 
   // GROUP: HypData get
 
-  ///
   struct timeval getDynamicFrameTime();
-
-  ///
   struct timeval getIdleFrameTime();
-
-  ///
   struct timeval getPickFrameTime();
-
-  ///
   float getAreaFudge();
-
-  ///
   int   getCenterShow();
-
-  ///
   int   getCenterLargest();
-
-  ///
   float getEdgeSize();
-
-  ///
   int   getGenerationNodeLimit();
-
-  ///
   int   getGenerationLinkLimit();
-
-  ///
   float getGotoStepSize();
-
-  ///
   int   getLabels();
-
-  ///
   float getLabelSize();
-
-  ///
   char* getLabelFont();
-
-  ///
   float getLeafRad();
-
-  ///
   float getLengthFudge();
-
-  ///
   float getMaxLength();
-
-  ///
   int   getMotionCull();
-
-  ///
   int   getNegativeHide();
-
-  ///
   int   getPassiveCull();
-
-  ///
   int   getSphere();
-
-  ///
   int   getSpanPolicy();
-
-  ///
   int   getTossEvents();
 
   // GROUP: HypData set
@@ -963,12 +850,7 @@ public:
   // GLUT version: not implemented, you get fixed-width 8x13 bitmap fonts.
   // Windows version: expects font name and integer size
   // Windows default: name "Arial" size 12
-#ifdef WIN32
-  void setLabelFont(const string & s, int sz);
-#else
   void setLabelFont(const string & s);
-#endif
-
 
   /// Set the size allocated to a leaf node during the layout process:
   // specifically, the radius its disk. Size is a floating point value
@@ -1129,5 +1011,4 @@ private:
   HypData    *hypData;
 };
 
-
-#endif
+#endif 

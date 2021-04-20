@@ -38,7 +38,6 @@
 
 #include <string>
 
-
 class HypGroup {
 
 public:

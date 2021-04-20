@@ -51,18 +51,10 @@
 #include <string>
 NAMESPACEHACK
 
-#ifdef WIN32
-#include <math.h>
-#include <float.h>
-
-//Inverse Hyperbolic Cosine
-double acosh(double dw) {  return log(dw+sqrt(dw*dw-1)); }
-#else
 extern "C" {
 #include <math.h>
 #include <float.h>
 }
-#endif
 
 #include "HypPoint.h"
 
@@ -134,7 +126,6 @@ double HypPoint::dotEuc(HypPoint v2) {
 }
 
 /* inner product of R(3,1) - hyperbolic */
-
 double HypPoint::dotHyp(HypPoint b) {
   return x*b.x + y*b.y + z*b.z - w*b.w;
 }

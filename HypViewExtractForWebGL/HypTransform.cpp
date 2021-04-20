@@ -52,11 +52,7 @@
 NAMESPACEHACK
 
 #include <math.h>
-#ifdef WIN32
-#include <string.h>
-#else
 #include <strings.h>
-#endif
 #include "HypTransform.h"
 
 HypTransform HypTransform::concat(HypTransform Tb) {
@@ -84,11 +80,7 @@ HypTransform HypTransform::concat(HypTransform Tb) {
 }
 
 void HypTransform::copy(HypTransform Tsrc) {
-#ifdef WIN32
-	memcpy( (char *)T, (char *)Tsrc.T, sizeof(double)*16);
-#else
   bcopy( (char *)Tsrc.T, (char *)T, sizeof(double)*16); // bcopy src dst
-#endif
 }
 
 void HypTransform::identity() {
@@ -97,7 +89,6 @@ void HypTransform::identity() {
   T[2][0] = 0.0; T[2][1] = 0.0; T[2][2] = 1.0; T[2][3] = 0.0; 
   T[3][0] = 0.0; T[3][1] = 0.0; T[3][2] = 0.0; T[3][3] = 1.0; 
 }
-
 
 void HypTransform::invert() {
   HypTransform t;
@@ -163,7 +154,6 @@ void HypTransform::rotate(double angle, HypPoint axis) {
     T[1][2] = Vu.y*Vu.z*versA + Vu.x*sinA;
     T[2][2] = Vu.z*Vu.z*versA + cosA;
 }
-
 
 void HypTransform::rotateBetween(HypPoint vfrom, HypPoint vto) {
 
@@ -353,5 +343,4 @@ void HypTransform::transpose() {
       T[j][i] = t;
     }
 }
-
 

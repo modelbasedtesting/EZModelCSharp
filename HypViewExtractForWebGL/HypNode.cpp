@@ -37,35 +37,14 @@
 #include <string>
 NAMESPACEHACK
 
-#ifdef WIN32
-#include <math.h>
-#include <stdio.h>
-
-#else
 extern "C" {
 #include <math.h>
 #include <stdio.h>
 }
-#endif
 
 #include <string>
 
 #include "HypNode.h"
-
-#ifdef WIN32
-
-#define M_PI                  3.14159265359 
-
-//Inverse Hyperbolic Cosine
-double asinh(double dw) {  return log(dw+sqrt(dw*dw+1)); }
-
-#endif
-
-///////////////////////////////////////////////////////////////////////////
-//
-// OkTPtrArray classes
-//
-///////////////////////////////////////////////////////////////////////////
 
 int SortKidArray::compareElements(void* e1, void* e2) {
   SortKid *s1 = (SortKid*) e1;
@@ -102,14 +81,7 @@ int HypNode::compareDist(HypNode* o) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-//
-// HypNode class
-//
-////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////
 // public methods
-////////////////////////////////////////////////////////////////////////
 
 HypNode::HypNode()
 {
@@ -176,7 +148,6 @@ StringArray HypNode::enumerateSubtree(int levels) {
   }
   return strs;
 }
-
 
 void HypNode::placeKids(int up, HypNode *base, SortKidArray *sk) {
 
@@ -248,27 +219,19 @@ void HypNode::placeKids(int up, HypNode *base, SortKidArray *sk) {
   }
 }
 
-
-//----------------------------------------------------------------------------
-//                       void HypNode::layout(int up)                      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypNode::layout(int up)
 {
   int i;
   HypNode *ww, *base;
   SortKidArray sk;
   int numkids;
-  double cumua = 0.0; // cumulative area
-  double newa = 0.0; // new area
+  double cumua = 0.0; // cumulative area 
   double newr;
 
   if (children.size() == 0) {
     /* leaf node */
     r = hd->leafrad;
     I.identity();
-    //    if (!up) return;
   }
   if (up) {
     if (!parent) return;
@@ -300,7 +263,7 @@ void HypNode::layout(int up)
   /* make sure to add hyperbolic amount, not euclidean amount! */
 
   if (numkids == 0) {
-    //    cumua += cumua*tanh(cumua)*.0;
+    //    cumua += cumua*tanh(cumua)*.0; 
   } else if (numkids == 1) {
     cumua += cumua*tanh(cumua)*.2;
   } else if (numkids == 2) {
@@ -358,7 +321,6 @@ void HypNode::layoutT() {
     theedge.identity();
 }
 
-
 string HypNode::save(int lev) {
   string str;
   string tab;
@@ -404,7 +366,6 @@ void HypNode::sort() {
   */
 }
 
-
 void HypNode::deleteChild(HypNode *n) {
   /*
   int gotit = -1;
@@ -429,8 +390,8 @@ void HypNode::deleteChild(HypNode *n) {
       break;
     }
   }
-  
 }
+
 void HypNode::deleteChildLink(HypLink *l) { 
   /*
   int gotit = -1;
@@ -457,6 +418,7 @@ void HypNode::deleteChildLink(HypLink *l) {
     }
   }
 }
+
 void HypNode::deleteOutgoing(HypLink *l) {
   /*
   int gotit = -1;
@@ -484,7 +446,6 @@ void HypNode::deleteOutgoing(HypLink *l) {
 }
 
 void HypNode::setEnabledOutgoing(int on, int descend) {
-  //  if (!bEnabled) return;
   for (int j = 0; j < getOutgoingCount(); j++) {
     HypLink *l = getOutgoing(j);
     HypNode *n = l->getChild();
@@ -499,7 +460,6 @@ void HypNode::setEnabledOutgoing(int on, int descend) {
 }
 
 void HypNode::setEnabledIncoming(int on, int descend) {
-  //  if (!bEnabled) return;
   for (int j = 0; j < getIncomingCount(); j++) {
     HypLink *l = getIncoming(j);
     HypNode *n = l->getParent();
@@ -512,7 +472,6 @@ void HypNode::setEnabledIncoming(int on, int descend) {
     for (int i = 0; i < getChildCount(); i++)
       children[i]->setEnabledIncoming(on, descend);
 }
-
 
 void HypNode::markEnable(int on, int descend) {
   int j;
@@ -580,11 +539,9 @@ void HypNode::insertSorted(SortKidArray *Q, SortKid *current) {
   }
 }
 
-
 double HypNode::getFurthest() { 
   double furth = C.T[3][3]; 
   return furth; 
 }
 
 unsigned long HypNode::_numObjects = 0;
-

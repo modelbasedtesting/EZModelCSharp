@@ -34,43 +34,22 @@
 // Contractor/manufacturer is Silicon Graphics, Inc., 2011 N.
 // Shoreline Blvd. Mountain View, CA 94039-7311.
 
-#ifdef WIN32
-#include <stdio.h>
-#else
 extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 }
-#endif
 
 #include <string>
 NAMESPACEHACK
 
-
 #include "HypGraph.h"
 #include "HypData.h"
 
-#ifdef WIN32
-#include <algorithm>
-#else
 #include <algo.h>
-#endif //WIN32
 
-///////////////////////////////////////////////////////////////////////////
-//
-// HypGraph class
-//
-///////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+// PRIVATE METHODS
 
-////////////////////////////////////////////////////////////////////////
-// private methods
-////////////////////////////////////////////////////////////////////////
-
-//----------------------------------------------------------------------------
-//                    int HypGraph::findUrl(string URL) const
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::findUrl(string URL) const
 {
   map<string,int,less<string> >::const_iterator  nodeMapIter;
@@ -82,11 +61,6 @@ int HypGraph::findUrl(string URL) const
   return(-1);
 }
 
-//----------------------------------------------------------------------------
-//                    int HypGraph::findLink(string id) const
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::findLink(string id) const
 {
   map<string,int,less<string> >::const_iterator  linkMapIter;
@@ -97,11 +71,6 @@ int HypGraph::findLink(string id) const
   return(-1);
 }
 
-//----------------------------------------------------------------------------
-//           void HypGraph::newNode(HypNode *newnode, string id)           
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::newNode(HypNode *newnode, string id)
 {
   int curlen = nodes.size();
@@ -132,11 +101,6 @@ void HypGraph::newNode(HypNode *newnode, string id)
   newnode->setLongLabel(longlab);
 }
 
-//----------------------------------------------------------------------------
-//           void HypGraph::newLink(HypLink *newlink, string id)           
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::newLink(HypLink *newlink, string id)
 {
   int curlen = links.size();
@@ -150,13 +114,7 @@ void HypGraph::newLink(HypLink *newlink, string id)
   
 ////////////////////////////////////////////////////////////////////////
 // public methods
-////////////////////////////////////////////////////////////////////////
 
-//----------------------------------------------------------------------------
-//                 HypGraph::HypGraph(HypData *h, istream & g)
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 HypGraph::HypGraph(HypData *h, istream & g)
 {
   if (getenv("LINKVIEW_DEBUG") != (char *)0) {
@@ -196,11 +154,6 @@ HypGraph::HypGraph(HypData * h, string & rootId,
   backstopcol[2] = .7;
 }
 
-//----------------------------------------------------------------------------
-//                          HypGraph::~HypGraph()                          
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 HypGraph::~HypGraph()
 {
   int i;
@@ -213,11 +166,6 @@ HypGraph::~HypGraph()
   links.erase(links.begin(),links.end());
 }
 
-//----------------------------------------------------------------------------
-//                       void HypGraph::clearMarks()                       
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::clearMarks()
 {
   double md = hd->maxdist;
@@ -227,11 +175,6 @@ void HypGraph::clearMarks()
   }
 }
 
-//----------------------------------------------------------------------------
-//      StringArray HypGraph::enumerateSubtree(string URL, int levels)     
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 StringArray HypGraph::enumerateSubtree(string URL, int levels)
 {
   StringArray strs;
@@ -247,11 +190,6 @@ StringArray HypGraph::enumerateSubtree(string URL, int levels)
   return strs;
 }
 
-//----------------------------------------------------------------------------
-//                 int HypGraph::getNodeEnabled(string URL)                
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::getNodeEnabled(string URL)
 {
   int i;
@@ -259,21 +197,11 @@ int HypGraph::getNodeEnabled(string URL)
   return 0; 
 }
 
-//----------------------------------------------------------------------------
-//               HypTransform HypGraph::getInitialPosition()               
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 HypTransform HypGraph::getInitialPosition()
 {
   return initPos;
 }
 
-//----------------------------------------------------------------------------
-//         string HypGraph::getNodeGroup(string URL, int groupkey)         
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 string HypGraph::getNodeGroup(string URL, int groupkey)
 {
   string str;
@@ -282,11 +210,6 @@ string HypGraph::getNodeGroup(string URL, int groupkey)
   return str;
 }
 
-//----------------------------------------------------------------------------
-//            HypTransform HypGraph::getNodePosition(string URL)           
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 HypTransform HypGraph::getNodePosition(string URL)
 {
   int i;
@@ -300,11 +223,6 @@ HypTransform HypGraph::getNodePosition(string URL)
   return T;
 }
 
-//----------------------------------------------------------------------------
-//                    void HypGraph::newGraph(istream & g)
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::newGraph(istream & g)
 {
   // toss old data
@@ -399,21 +317,11 @@ void HypGraph::newGraph(string & rootId, int rootPriority,
   return;
 }
 
-//----------------------------------------------------------------------------
-//                   void HypGraph::newLayout(HypNode *n)                  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::newLayout(HypNode *n)
 {
   doLayout(n);
 }
 
-//----------------------------------------------------------------------------
-//                   void HypGraph::doLayout(HypNode *n)                   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::doLayout(HypNode *n)
 {
   int i;
@@ -429,11 +337,6 @@ void HypGraph::doLayout(HypNode *n)
     links[i]->layout();
 }
 
-//----------------------------------------------------------------------------
-//                void HypGraph::loadSpanGraph(istream & flat)                
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::loadSpanGraph(istream & flat)
 {
   unsigned       linepos = 0;
@@ -586,11 +489,6 @@ void HypGraph::loadSpanGraph(istream & flat)
   return;
 }
 
-//----------------------------------------------------------------------------
-//                       string HypGraph::saveTree()                       
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 string HypGraph::saveTree()
 {
   string str;
@@ -602,22 +500,12 @@ string HypGraph::saveTree()
   return str;
 }
 
-//----------------------------------------------------------------------------
-//                   void HypGraph::setDrawNodes(int on)                   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::setDrawNodes(int on)
 {
   for (int i = 0; i < nodes.size(); i++)
     nodes[i]->setEnabled(on);
 }
 
-//----------------------------------------------------------------------------
-//                   void HypGraph::setDrawLinks(int on)                   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::setDrawLinks(int on)
 {
   for (int i = 0; i < links.size(); i++) {
@@ -626,11 +514,6 @@ void HypGraph::setDrawLinks(int on)
   }
 }
 
-//----------------------------------------------------------------------------
-//                  void HypGraph::setNegativeHide(int on)                 
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::setNegativeHide(int on)
 {
   hd->bNegativeHide = on;
@@ -640,12 +523,6 @@ void HypGraph::setNegativeHide(int on)
   }
 }
   
-
-//----------------------------------------------------------------------------
-//      int HypGraph::setDrawBackFrom(string URL, int on, int descend)     
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::setDrawBackFrom(string URL, int on, int descend)
 {
   int i;
@@ -659,11 +536,6 @@ int HypGraph::setDrawBackFrom(string URL, int on, int descend)
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//       int HypGraph::setDrawBackTo(string URL, int on, int descend)      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::setDrawBackTo(string URL, int on, int descend)
 {
   int i;
@@ -677,11 +549,6 @@ int HypGraph::setDrawBackTo(string URL, int on, int descend)
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//    int HypGraph::setNodeGroup(string URL, int groupkey, string group)   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::setNodeGroup(string URL, int groupkey, string group)
 {
   int i;
@@ -696,11 +563,6 @@ int HypGraph::setNodeGroup(string URL, int groupkey, string group)
   }
 }
 
-//----------------------------------------------------------------------------
-//     int HypGraph::setEnableGroup(int groupkey, string group, int on)    
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::setDisableGroup(int groupkey, string group, int on)
 {
   int i;
@@ -725,14 +587,7 @@ int HypGraph::setDisableGroup(int groupkey, string group, int on)
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//         void HypGraph::setColorGroup(int groupkey, string group,        
-//                                      float r, float g, float b)         
-//............................................................................
-//  
-//----------------------------------------------------------------------------
-void HypGraph::setColorGroup(int groupkey, string group,
-                             float r, float g, float b)
+void HypGraph::setColorGroup(int groupkey, string group, float r, float g, float b)
 {
   int gotit = -1;
   for (int i = 0; i < (colorGroup[groupkey]).size(); i++) {
@@ -752,11 +607,6 @@ void HypGraph::setColorGroup(int groupkey, string group,
   }
 }
 
-//----------------------------------------------------------------------------
-//        float *HypGraph::getColorGroup(int groupkey, string group)       
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 float *HypGraph::getColorGroup(int groupkey, string group)
 {
   HypGroup *hg;
@@ -773,23 +623,12 @@ float *HypGraph::getColorGroup(int groupkey, string group)
   return backstopcol;
 }
 
-//----------------------------------------------------------------------------
-//        float *HypGraph::getColorNode(HypNode *n)
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 float *HypGraph::getColorNode(HypNode *n) 
 {
   string id = n->getGroup(hd->groupKey);
   return getColorGroup(hd->groupKey, id);
 }
 
-
-//----------------------------------------------------------------------------
-//     int HypGraph::resetColorLink(HypNode *fromnode, HypNode *tonode)    
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::resetColorLink(HypNode *fromnode, HypNode *tonode)
 {
   string linkid = fromnode->getId() + "|" + tonode->getId(); 
@@ -804,14 +643,7 @@ int HypGraph::resetColorLink(HypNode *fromnode, HypNode *tonode)
 
 }
 
-//----------------------------------------------------------------------------
-//      int HypGraph::setColorLink(HypNode *fromnode, HypNode *tonode,     
-//                                 float r, float g, float b)              
-//............................................................................
-//  
-//----------------------------------------------------------------------------
-int HypGraph::setColorLink(HypNode *fromnode, HypNode *tonode, 
-                           float r, float g, float b) 
+int HypGraph::setColorLink(HypNode *fromnode, HypNode *tonode, float r, float g, float b) 
 {
   string linkid = fromnode->getId() + "|" + tonode->getId(); 
   HypLink *link = getLinkFromId(linkid);
@@ -824,11 +656,6 @@ int HypGraph::setColorLink(HypNode *fromnode, HypNode *tonode,
   }
 }
 
-//----------------------------------------------------------------------------
-//        int HypGraph::addLink(HypNode *fromnode, HypNode *tonode)        
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::addLink(HypNode *fromnode, HypNode *tonode)
 {
   HypLink *link;
@@ -853,11 +680,6 @@ int HypGraph::addLink(HypNode *fromnode, HypNode *tonode)
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//  int HypGraph::setDrawLink(HypNode *fromnode, HypNode *tonode, int on)  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::setDrawLink(HypNode *fromnode, HypNode *tonode, int on)
 {
   string linkid = fromnode->getId() + "|" + tonode->getId();
@@ -871,11 +693,6 @@ int HypGraph::setDrawLink(HypNode *fromnode, HypNode *tonode, int on)
   }
 }
 
-//----------------------------------------------------------------------------
-//      int HypGraph::getDrawLink(HypNode *fromnode, HypNode *tonode)      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::getDrawLink(HypNode *fromnode, HypNode *tonode)
 {
   string linkid = fromnode->getId() + "|" + tonode->getId();
@@ -887,11 +704,6 @@ int HypGraph::getDrawLink(HypNode *fromnode, HypNode *tonode)
   }
 }
 
-//----------------------------------------------------------------------------
-//              int HypGraph::setDrawNode(HypNode *n, int on)              
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::setDrawNode(HypNode *n, int on)
 {
   if (n) {
@@ -902,11 +714,6 @@ int HypGraph::setDrawNode(HypNode *n, int on)
   }
 }
 
-//----------------------------------------------------------------------------
-//          int HypGraph::addNode(string parentid, string childid)         
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::addNode(string parentid, string childid)
 {
   int i;
@@ -920,28 +727,16 @@ int HypGraph::addNode(string parentid, string childid)
   }
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 // private methods
-////////////////////////////////////////////////////////////////////////
 
 /* ensure canonical lexicographic ordering */
-//----------------------------------------------------------------------------
-//                          void HypGraph::sort()                          
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::sort()
 {
   for (int i = 0; i < nodes.size(); i++)
     nodes[i]->sort();
 }
 
-//----------------------------------------------------------------------------
-//         int HypGraph::maybeAddChild(HypNode *current, string id)        
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::maybeAddChild(HypNode *current, string id)
 {
   if (id == current->getId()) {
@@ -970,11 +765,6 @@ int HypGraph::maybeAddChild(HypNode *current, string id)
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//       int HypGraph::maybeAddOutgoing(HypNode *current, string id)       
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::maybeAddOutgoing(HypNode *current, string id)
 {
   // only add if it's not already there
@@ -1007,14 +797,7 @@ int HypGraph::maybeAddOutgoing(HypNode *current, string id)
   }
 }
 
-//----------------------------------------------------------------------------
-//        HypNode *HypGraph::doAddNode(HypNode *current, string id,        
-//                                     int level, int pri)                 
-//............................................................................
-//  
-//----------------------------------------------------------------------------
-HypNode *HypGraph::doAddNode(HypNode *current, string id,
-                             int level, int pri)
+HypNode *HypGraph::doAddNode(HypNode *current, string id, int level, int pri)
 {
   string linkid;
   int swap = 0;
@@ -1101,15 +884,9 @@ HypNode *HypGraph::doAddNode(HypNode *current, string id,
     }
 
     return newnode;
-
   }
 }
 
-//----------------------------------------------------------------------------
-//                  void HypGraph::markEnable(HypNode *n)                  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypGraph::markEnable(HypNode *n)
 {
   StringArray::iterator gotit;
@@ -1127,14 +904,7 @@ void HypGraph::markEnable(HypNode *n)
   n->markEnable(1, 0);
 }
 
-//----------------------------------------------------------------------------
-//        int HypGraph::maybeSwap(HypNode *current, HypNode *oldpar,       
-//                                string id, int pri)                      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
-int HypGraph::maybeSwap(HypNode *current, HypNode *oldpar,
-                        string id, int pri)
+int HypGraph::maybeSwap(HypNode *current, HypNode *oldpar, string id, int pri)
 {
   /* possible policies, in order of precedence
      keep - change nothing
@@ -1232,11 +1002,6 @@ int HypGraph::maybeSwap(HypNode *current, HypNode *oldpar,
   return swap;
 }
 
-//----------------------------------------------------------------------------
-//              int HypGraph::getChildCount(const string & id)             
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::getChildCount(const string & id)
 {
   int count = 0;
@@ -1251,11 +1016,6 @@ int HypGraph::getChildCount(const string & id)
   return 0;
 }
 
-//----------------------------------------------------------------------------
-//            int HypGraph::getIncomingCount(const string & id)            
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::getIncomingCount(const string & id)
 {
   int count = 0;
@@ -1275,11 +1035,6 @@ int HypGraph::getIncomingCount(const string & id)
   return 0;
 }
 
-//----------------------------------------------------------------------------
-//            int HypGraph::getOutgoingCount(const string & id)            
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypGraph::getOutgoingCount(const string & id)
 {
   int count = 0;

@@ -39,7 +39,6 @@
 #include <string>
 #include <map>
 
-
 #include "HypNode.h"
 #include "HypLink.h"
 #include "HypData.h"
@@ -197,8 +196,7 @@ protected:
   void newNode(HypNode *newnode, string id); 
   // add this node to our flat array
   void newLink(HypLink *newlink, string id); 
-  
-  
+    
 private:
 
   HypData *hd;		// misc shared data
@@ -233,6 +231,5 @@ int maybeAddOutgoing(HypNode *current, string id);
 HypNode *doAddNode(HypNode *current, string id, int level, int pri);
 
 };
-
 
 #endif

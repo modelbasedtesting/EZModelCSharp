@@ -39,82 +39,21 @@ NAMESPACEHACK
 
 #include <stdio.h>
 
-#ifdef WIN32
-#include <sys/timeb.h>
-#else
 #include <sys/time.h>
-#endif
 
 #include <math.h>
 #include "HypQuat.h"
 #include "HypViewer.h"
 
-#ifdef HYPGLUT
 #include <GL/glut.h>
-#endif //HYPGLUT
-#ifdef HYPGLX
-#include <X11/GLw/GLwMDrawA.h>
-#include <X11/cursorfont.h>
-#ifdef XPMSNAP
- #include <X11/xpm.h>
-#endif //XPMSNAP
-
-#ifdef HYPIRIX
-#include <iomanip.h>
-#else
 #include <iomanip>
-#endif
-
-#endif // HYPGLX
-
-#ifdef WIN32
-int gettimeofday(timeval *tv, int *tz)
-{
-  struct timeb timebuffer;
-
-  ftime(&timebuffer);
-  tv->tv_sec = (long) timebuffer.time;
-  tv->tv_usec = (long) (1000 * (timebuffer.millitm));
-  return 0;
-}
-#endif
 
 struct mgcontext *_mgc = NULL;
 struct mgfuncs *_mgf = NULL;
 
 HypViewer *thehv = NULL;
 
-#ifdef HYPGLX
-  static void SetWatchCursor(Widget w)
-  {
-    static Cursor watch = (Cursor)0;
-    if(!watch)
-      watch = XCreateFontCursor(XtDisplay(w),XC_watch);
-    XDefineCursor(XtDisplay(w),XtWindow(w),watch);
-    XmUpdateDisplay(w);
-    return;
-  }
-
-  static void SetDefaultCursor(Widget w)
-  {
-    XUndefineCursor(XtDisplay(w),XtWindow(w));
-    XmUpdateDisplay(w);
-    return;
-  }
-#endif  // HYPGLX
-
-#ifdef WIN32
-HypViewer::HypViewer(HypData *d, HDC w,HWND hwin) {
-  wid = w;
-  win = hwin;
-#elif HYPGLX
-HypViewer::HypViewer(HypData *d, Widget w) {
-  wid = w;
-  dpy = NULL;
-  cxt = NULL;
-#else
 HypViewer::HypViewer(HypData *d) {
-#endif
   hiliteCallback = (void (*)(const string &,int,int))0;
   pickCallback = (void (*)(const string &,int,int))0;
   hd = d;
@@ -150,14 +89,8 @@ HypViewer::HypViewer(HypData *d) {
 
 HypViewer::~HypViewer()
 {
-#ifdef HYPGLX
-  if (idleid) {
-    XtRemoveWorkProc(idleid);
-  }
-#endif
   labelscaledsize = 0;
 }
-
 
 void HypViewer::setGraph(HypGraph *h){
   DrawnQ.erase(DrawnQ.begin(),DrawnQ.end());
@@ -206,107 +139,18 @@ void HypViewer::newLayout() {
   TraverseQ.erase(TraverseQ.begin(),TraverseQ.end());
 }
 
-#ifdef HYPGLX
-
-  //--------------------------------------------------------------------------
-  //               void HypViewer::afterRealize(GLXContext cx)               
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::afterRealize(GLXContext cx)
-  {
-    cxt = cx;
-    dpy = XtDisplay(wid);
-    win = XtWindow(wid);
-    glGetIntegerv ( GL_VIEWPORT, vp );      /* get viewport size */ 
-    glInit();
-    drawStringInit();
-    idleFunc(1);
-  }
-#ifdef XPMSNAP
-  //--------------------------------------------------------------------------
-  //           bool HypViewer::XpmSnapshot(const string & fileName)          
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  bool HypViewer::XpmSnapshot(const string & fileName)
-  {
-    int         widgetWidth = 0, widgetHeight = 0;
-    XImage     *image;
-    struct timeval   start, end;
-    struct timezone  tz;
-    
-    XtVaGetValues(wid,
-                  XmNwidth,&widgetWidth,
-                  XmNheight,&widgetHeight,
-                  NULL);
-    glXWaitGL();
-    gettimeofday(&start,&tz);
-    image = XGetImage(XtDisplay(wid),XtWindow(wid),
-                      0,0,widgetWidth,widgetHeight,0xffffffff,XYPixmap);
-    gettimeofday(&end,&tz);
-    //    cerr << "XGetImage() took "
-    //         << (((end.tv_sec * 1000.0) + (end.tv_usec/1000.0)) -
-    //             ((start.tv_sec * 1000.0) + (start.tv_usec/1000.0)))
-    //         << " ms" << endl;
-    if (image == (XImage *)0) {
-      cerr << "XGetImage() failed." << endl;
-      return(false);
-    }
-    int rc = XpmWriteFileFromImage(XtDisplay(wid),(char *)fileName.c_str(),
-                                   image,(XImage *)0,(XpmAttributes *)0);
-    if (rc == XpmSuccess)
-      return(true);
-    return(false);
-  }
-#endif //XPMSNAP
-
-#endif  // HYPGLX
-
-
-#ifdef HYPGLUT
-  
-  //--------------------------------------------------------------------------
-  //                      void HypViewer::afterRealize()                     
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::afterRealize()
-  {
+void HypViewer::afterRealize()
+{
     glGetIntegerv ( GL_VIEWPORT, vp );      /* get viewport size */ 
     resetLabelSize();
     glInit();
     drawStringInit();
     idleFunc(1);
-  }
-  
-#endif  // HYPGLUT
-
-#ifdef WIN32
-void HypViewer::afterRealize(HGLRC cx, int w, int h) {
-  cxt = cx;
-  wglMakeCurrent(wid,cxt);
-  vp[0] = 0;
-  vp[1] = 0;
-  vp[2] = w;
-  vp[3] = h;
-  glInit();
-  drawStringInit();
-  idleFunc(1);
-  frameBegin();
-  drawSphere();
-  frameEnd();
 }
-#endif
-
-//--------------------------------------------------------------------------
-//                       void HypViewer::sphereInit()                      
-//..........................................................................
-//  
-//--------------------------------------------------------------------------
+  
 void HypViewer::sphereInit()
 {
-  // sphere at inifinity stuff 
+  // sphere at infinity stuff 
   // don't use GLU sphere object since can't get smooth wireframe
   float phi, theta;
   float phistep = 3.14/12.0;
@@ -332,11 +176,6 @@ void HypViewer::sphereInit()
   glEndList();
 }
 
-//----------------------------------------------------------------------------
-//                         void HypViewer::glInit()                        
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::glInit()
 {
   int i, j;
@@ -413,10 +252,6 @@ void HypViewer::glInit()
 #endif
 #endif
 
-  /*
-  glEnable(GL_TEXTURE_2D);
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-  */
   camInit();
   glMatrixMode(GL_MODELVIEW);  
   gluLookAt(0.0, 0.0, 3.0, 
@@ -424,7 +259,6 @@ void HypViewer::glInit()
 	    0.0, 1.0, 0.0);
   glGetDoublev(GL_MODELVIEW_MATRIX, (double*)viewxform.T);
   vx = (double*)(viewxform.T);
-
 
   worldxform.identity();
   // start out facing right
@@ -446,11 +280,6 @@ void HypViewer::glInit()
   return;
 }
 
-//----------------------------------------------------------------------------
-//                        void HypViewer::camInit()                        
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::camInit()
 {
   // camera setup
@@ -476,14 +305,8 @@ void HypViewer::camInit()
 
 // todo: findCenter, HypNodeQueue
 
-//----------------------------------------------------------------------------
-//                       void HypViewer::drawFrame()                       
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::drawFrame()
 {
-
   if (!labelscaledsize) return; // not yet initialized
   HypNode *centernode, *current, *node;
   HypNodeArray *nodes;
@@ -538,7 +361,7 @@ void HypViewer::drawFrame()
 	 (elapsedidle.tv_sec == hd->idletime.tv_sec && 
 	 elapsedidle.tv_usec < hd->idletime.tv_usec)) {
       frameContinue();
-      //            fprintf(stderr, "idledraw %d %d\n", now.tv_sec, now.tv_usec);
+      //            fprintf(stderr, "idledraw %d %d\n", now.tv_sec, now.tv_usec); 
     } else {
       DrawQ.erase(DrawQ.begin(),DrawQ.end());
       TraverseQ.erase(TraverseQ.begin(),TraverseQ.end());
@@ -610,16 +433,10 @@ void HypViewer::drawFrame()
     }
   }
   //    fprintf(stderr, "drew %d nodes, %d links %s\n", nodesdrawn, linksdrawn, 	    idleframe ? "idle" : "");
-
   frameEnd();
   return;
 }
 
-//----------------------------------------------------------------------------
-//                     void HypViewer::drawPickFrame()                     
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::drawPickFrame()
 {
   struct timeval now, start, allotted, elapsed;
@@ -644,15 +461,10 @@ void HypViewer::drawPickFrame()
     elapsed.tv_usec = now.tv_usec - start.tv_usec;
     index++;
   }
-  //  fprintf(stderr, "drew %d picknodes, %d picklinks\n", picknodesdrawn, picklinksdrawn);
+  //  fprintf(stderr, "drew %d picknodes, %d picklinks\n", picknodesdrawn, picklinksdrawn); 
   return;
 }
 
-//----------------------------------------------------------------------------
-//   void HypViewer::insertSorted(HypNodeDistArray *Q, HypNode *current)   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::insertSorted(HypNodeDistArray *Q, HypNode *current)
 {
   int index;
@@ -673,11 +485,6 @@ void HypViewer::insertSorted(HypNodeDistArray *Q, HypNode *current)
   return;
 }
 
-//----------------------------------------------------------------------------
-//                  void HypViewer::drawLinks(HypNode *n)                  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::drawLinks(HypNode *n)
 {
   int i;
@@ -714,11 +521,6 @@ void HypViewer::drawLinks(HypNode *n)
   return;
 }
 
-//----------------------------------------------------------------------------
-//                   void HypViewer::drawNode(HypNode *n)                  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::drawNode(HypNode *n)
 {
   if (!n ||  ! n->getEnabled())
@@ -737,7 +539,6 @@ void HypViewer::drawNode(HypNode *n)
   memcpy(&glm[8],T.T[2],sizeof(double)*4);
   memcpy(&glm[12],T.T[3],sizeof(double)*4);
   
-  // glMultMatrixd((double*)T.T);
   glMultMatrixd(glm);
   
   if (!pick) {
@@ -812,11 +613,6 @@ void HypViewer::drawNode(HypNode *n)
   return;
 }
 
-//----------------------------------------------------------------------------
-//                   void HypViewer::drawLink(HypLink *l)                  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::drawLink(HypLink *l)
 {
   if (!l->getEnabled()) return;
@@ -848,11 +644,6 @@ void HypViewer::drawLink(HypLink *l)
   return;
 }
 
-//----------------------------------------------------------------------------
-//                  void HypViewer::drawLabel(HypNode *n)                  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::drawLabel(HypNode *n)
 {
   int len;
@@ -871,12 +662,6 @@ void HypViewer::drawLabel(HypNode *n)
     str = n->getLongLabel().c_str();
   if ( (len = strlen(str)) < 1) return;
   int labw = drawStringWidth(str);
-  // this is strange, but needed to work on weevil. 
-  // remove next three lines after upgrade weevil to 6.2
-  //  if (n->getHighlighted()) lab.z = 0.0;
-  //  glColor3f(hd->colorLabel[0], hd->colorLabel[1], hd->colorLabel[2]);
-  //  glBegin(GL_TRIANGLE_STRIP);
-  //  glEnd();
   if (n->getHighlighted())
     glColor3f(hd->colorLabel[0], hd->colorLabel[1], hd->colorLabel[2]);
   else 
@@ -915,22 +700,12 @@ void HypViewer::drawLabel(HypNode *n)
   return;
 }
 
-//----------------------------------------------------------------------------
-//                       void HypViewer::drawSphere()                      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::drawSphere()
 {
   glCallList(HV_INFSPHERE);
   return;
 }
 
-//----------------------------------------------------------------------------
-//                        void HypViewer::camSetup()                       
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::camSetup()
 {
   glMatrixMode(GL_PROJECTION);
@@ -957,12 +732,6 @@ void HypViewer::camSetup()
   return;
 }
 
-
-//----------------------------------------------------------------------------
-//                       void HypViewer::frameBegin()                      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::frameBegin()
 {
   glDrawBuffer(GL_BACK);
@@ -975,11 +744,6 @@ void HypViewer::frameBegin()
   return;
 }
 
-//----------------------------------------------------------------------------
-//                     void HypViewer::frameContinue()                     
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::frameContinue()
 {
   glDrawBuffer(GL_FRONT);
@@ -989,11 +753,6 @@ void HypViewer::frameContinue()
   return;
 }
 
-//----------------------------------------------------------------------------
-//                          void HypViewer::idle()                         
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::idle()
 {
   idleframe = 1;
@@ -1003,96 +762,35 @@ void HypViewer::idle()
   return;
 }
 
-#ifdef HYPGLX
-
-  //--------------------------------------------------------------------------
-  //                       int HypViewer::idleCB(void)
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  int HypViewer::idleCB(void)
-  {
+void HypViewer::idleCB(void)
+{
     thehv->idle();
-    return 1;
-  }
-#endif //HYPGLX
-#ifdef WIN32
-   //--------------------------------------------------------------------------
-  //                       int HypViewer::idleCB(void)
-  //..........................................................................
-  //
-  //--------------------------------------------------------------------------
-  int HypViewer::idleCB(void)
-  {
-    thehv->idle();
-    return idleid;
-  }
+}
 
-
-#endif //WIN32
-#ifdef HYPGLUT
-
-  //--------------------------------------------------------------------------
-  //                       void HypViewer::idleCB(void)                      
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::idleCB(void)
-  {
-    thehv->idle();
-  }
-
-#endif //HYPGLUT
-
-//----------------------------------------------------------------------------
-//    void HypViewer::hiliteFuncCB(int x, int y, int shift, int control)   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::hiliteFuncCB(int x, int y, int shift, int control)
 {
   thehv->hiliteFunc(x,y,shift,control);
   return;
 }
 
-//----------------------------------------------------------------------------
-//     void HypViewer::pickFuncCB(int x, int y, int shift, int control)    
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::pickFuncCB(int x, int y, int shift, int control)
 {
   thehv->pickFunc(x,y,shift,control);
   return;
 }
 
-//----------------------------------------------------------------------------
-//    void HypViewer::transFuncCB(int x, int y, int shift, int control)    
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::transFuncCB(int x, int y, int shift, int control)
 { 
   thehv->transFunc(x,y,shift,control);
   return;
 }
 
-//----------------------------------------------------------------------------
-//     void HypViewer::rotFuncCB(int x, int y, int shift, int control)     
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::rotFuncCB(int x, int y, int shift, int control)
 {
   thehv->rotFunc(x,y,shift,control);
   return;
 }
 
-//----------------------------------------------------------------------------
-//                void HypViewer::bindCallback(int b, int c)               
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::bindCallback(int b, int c)
 {
   void (*fp)(int,int,int,int);
@@ -1119,36 +817,19 @@ void HypViewer::bindCallback(int b, int c)
   return;
 }
 
-//----------------------------------------------------------------------------
-//   void HypViewer::setPickCallback(void (*fp)(const string &,int,int))   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::setPickCallback(void (*fp)(const string &,int,int))
 {
   pickCallback = fp;
   return;
 }
 
-//----------------------------------------------------------------------------
-//  void HypViewer::setHiliteCallback(void (*fp)(const string &,int,int))  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::setHiliteCallback(void (*fp)(const string &,int,int))
 {
   hiliteCallback = fp;
   return;
 }
 
-//----------------------------------------------------------------------------
-//         void HypViewer::mouse(int btn, int state, int x, int y,         
-//                               int shift, int control)                   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
-void HypViewer::mouse(int btn, int state, int x, int y, 
-		      int shift, int control)
+void HypViewer::mouse(int btn, int state, int x, int y, int shift, int control)
 {
   button = btn;
   buttonstate = state;
@@ -1175,11 +856,6 @@ void HypViewer::mouse(int btn, int state, int x, int y,
   return;
 }
 
-//----------------------------------------------------------------------------
-//       void HypViewer::motion(int x, int y, int shift, int control)      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::motion(int x, int y, int shift, int control)
 {
   if (motionCount < hd->motionCull) {
@@ -1212,11 +888,6 @@ void HypViewer::motion(int x, int y, int shift, int control)
   return;
 }
 
-//----------------------------------------------------------------------------
-//      void HypViewer::passive(int x, int y, int shift, int control)      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::passive(int x, int y, int shift, int control)
 {
   if (passiveCount < hd->passiveCull) {
@@ -1234,11 +905,6 @@ void HypViewer::passive(int x, int y, int shift, int control)
   return;
 } 
 
-//----------------------------------------------------------------------------
-//     void HypViewer::hiliteFunc(int x, int y, int shift, int control)    
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::hiliteFunc(int x, int y, int shift, int control)
 {
   HypNode *n;
@@ -1272,11 +938,6 @@ void HypViewer::hiliteFunc(int x, int y, int shift, int control)
   return;
 }
 
-//----------------------------------------------------------------------------
-//      void HypViewer::pickFunc(int x, int y, int shift, int control)     
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::pickFunc(int x, int y, int shift, int control)
 {
   if (buttonstate == 0) {
@@ -1326,11 +987,6 @@ void HypViewer::pickFunc(int x, int y, int shift, int control)
   return;
 }
 
-//----------------------------------------------------------------------------
-//             void HypViewer::setSelected(HypNode *n, bool on)
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::setSelected(HypNode *n, bool on)
 {
   n->setSelected(on);    
@@ -1347,11 +1003,6 @@ void HypViewer::setSelected(HypNode *n, bool on)
   return;
 }
 
-//----------------------------------------------------------------------------
-//  void HypViewer::rotFunc(int x, int y, int /*shift*/, int /*control*/)  
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::rotFunc(int x, int y, int /*shift*/, int /*control*/)
 {
   if (buttonstate == 0) {
@@ -1381,11 +1032,6 @@ void HypViewer::rotFunc(int x, int y, int /*shift*/, int /*control*/)
     idleFunc(1);
 }
 
-//----------------------------------------------------------------------------
-// void HypViewer::transFunc(int x, int y, int /*shift*/, int /*control*/) 
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::transFunc(int x, int y, int /*shift*/, int /*control*/)
 {
   if (buttonstate == 0) {
@@ -1404,17 +1050,11 @@ void HypViewer::transFunc(int x, int y, int /*shift*/, int /*control*/)
       redraw();
     }
   }
-  //    redraw();
+  //    redraw(); 
   idleFunc(1);
   return;
 }
 
-
-//----------------------------------------------------------------------------
-//                   int HypViewer::doPick(int x, int y)                   
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypViewer::doPick(int x, int y)
 {
   int picked = -INT_MAX;
@@ -1450,17 +1090,8 @@ int HypViewer::doPick(int x, int y)
   return picked;
 }
 
-//----------------------------------------------------------------------------
-//                int HypViewer::gotoPickPoint(int animate)                
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypViewer::gotoPickPoint(int animate)
-{
-  #ifdef HYPGLX
-    SetWatchCursor(wid);
-  #endif
-    
+{    
   if (animate == HV_ANIMATE) {
     double hypdist = origin.distanceHyp(pickpoint);
     HypTransform U2W;
@@ -1473,19 +1104,10 @@ int HypViewer::gotoPickPoint(int animate)
     worldxform = worldxform.concat(T);
     redraw();
   }
-
-  #ifdef HYPGLX
-    SetDefaultCursor(wid);
-  #endif
     
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//             int HypViewer::gotoNode(HypNode *n, int animate)            
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypViewer::gotoNode(HypNode *n, int animate)
 {
   if (!n)
@@ -1494,10 +1116,6 @@ int HypViewer::gotoNode(HypNode *n, int animate)
   HypTransform U2W, W2N, T, TI, N2WT, W2NT, U2NT, N2UT, H, R, ID;
   HypQuat rq, sq;
   double ds;
-
-  #ifdef HYPGLX
-    SetWatchCursor(wid);
-  #endif
     
   W2N = n->getC();
   U2W.copy(worldxform);
@@ -1543,9 +1161,6 @@ int HypViewer::gotoNode(HypNode *n, int animate)
   if (animate == HV_JUMP) {
     worldxform = U2NT.concat(R);
     redraw();
-    #ifdef HYPGLX
-      SetDefaultCursor(wid);
-    #endif
     return 1;
   }
   else {
@@ -1553,24 +1168,12 @@ int HypViewer::gotoNode(HypNode *n, int animate)
       double hypdist = origin.distanceHyp(v);
       doAnimation(v, rq, hypdist, ds, U2W);
     }
-    #ifdef HYPGLX
-      SetDefaultCursor(wid);
-    #endif
   }
   
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//           void HypViewer::doAnimation(HypPoint v, HypQuat rq,           
-//                                       double transdist, double rotdist,  
-//                                       HypTransform U2W)                 
-//............................................................................
-//  
-//----------------------------------------------------------------------------
-void HypViewer::doAnimation(HypPoint v, HypQuat rq, 
-			    double transdist, double rotdist, 
-			    HypTransform U2W)
+void HypViewer::doAnimation(HypPoint v, HypQuat rq, double transdist, double rotdist, HypTransform U2W)
 {
   HypPoint p;
   float incr = 1.0;
@@ -1603,11 +1206,6 @@ void HypViewer::doAnimation(HypPoint v, HypQuat rq,
   return;
 }
 
-//----------------------------------------------------------------------------
-//                void HypViewer::setGraphCenter(int cindex)               
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::setGraphCenter(int cindex)
 {
   HypNode *c;
@@ -1622,11 +1220,6 @@ void HypViewer::setGraphCenter(int cindex)
   return;
 }
 
-//----------------------------------------------------------------------------
-//            void HypViewer::setGraphPosition(HypTransform pos)           
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::setGraphPosition(HypTransform pos)
 {
   worldxform.copy(identxform);
@@ -1634,21 +1227,11 @@ void HypViewer::setGraphPosition(HypTransform pos)
   return;
 }
 
-//----------------------------------------------------------------------------
-//                 void HypViewer::setLabelToRight(bool on)                 
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::setLabelToRight(bool on)
 {
   labeltoright = on;
 }
 
-//----------------------------------------------------------------------------
-//                     void HypViewer::resetLabelSize()                    
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 void HypViewer::resetLabelSize()
 {
   // labelsize is measured in x direction
@@ -1662,15 +1245,8 @@ void HypViewer::resetLabelSize()
   labelscaledsize = hd->labelsize*(scaledvp/1000.0);
 }
 
-
-//----------------------------------------------------------------------------
-//       int HypViewer::flashLink(HypNode *fromnode, HypNode *tonode)      
-//............................................................................
-//  
-//----------------------------------------------------------------------------
 int HypViewer::flashLink(HypNode *fromnode, HypNode *tonode)
 {
-
   HypLink *link = NULL;
   link = new HypLink(fromnode->getId().c_str(), tonode->getId().c_str());
   link->setEnabled(1);
@@ -1684,248 +1260,61 @@ int HypViewer::flashLink(HypNode *fromnode, HypNode *tonode)
   return 1;
 }
 
-
 // window system specific code
-
-//  glx specific code
-
-#ifdef HYPGLX
-
-  //--------------------------------------------------------------------------
-  //                     void HypViewer::drawStringInit()                    
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::drawStringInit()
-  {
-    Font id;
-    
-    unsigned int first, last;
-    if (!hd->labelfont) return;
-    fontInfo = XLoadQueryFont(dpy, hd->labelfont);
-    if (fontInfo) {
-      id = fontInfo->fid;
-      first = fontInfo->min_char_or_byte2;
-      last = fontInfo->max_char_or_byte2;
-      //    glXMakeCurrent(dpy, win, cxt);
-      GLwDrawingAreaMakeCurrent(wid, cxt);
-      /* reuse previous display lists */
-      if (!labelbase)  labelbase = glGenLists(last+1);
-      if (labelbase) {
-        glXUseXFont(id, first, last-first+1, labelbase+first);
-        labascent = fontInfo->ascent;
-        labdescent = fontInfo->descent;
-        return;
-      }
-    }
-    hd->labels = 0;
-    free(hd->labelfont);
-    hd->labelfont = NULL;
-    return;
-  }
-
-  //--------------------------------------------------------------------------
-  //             int HypViewer::drawStringWidth(const string & s)            
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  int HypViewer::drawStringWidth(const string & s)
-  {
-    return XTextWidth(fontInfo, s.c_str(), s.length());
-  }
-
-  //--------------------------------------------------------------------------
-  //               void HypViewer::drawString(const string & s)              
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::drawString(const string & s)
-  {
-    //  int len = strlen(s);
-    glListBase(labelbase);
-    glCallLists(s.length(), GL_UNSIGNED_BYTE, s.c_str());
-    return;
-  }
-
-
-  void HypViewer::framePrepare() {
-    //  glXMakeCurrent(dpy, win, cxt);
-    GLwDrawingAreaMakeCurrent(wid, cxt);
-  }
-
-  //--------------------------------------------------------------------------
-  //                        void HypViewer::frameEnd()                       
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::frameEnd()
-  {
-    //  if (!idleframe) glXSwapBuffers(dpy,win);
-    //  if (!idleframe) GLwDrawingAreaSwapBuffers(wid);
-    if (!idleframe)
-      GLwDrawingAreaSwapBuffers(wid);
-    return;
-  }
-
-  //--------------------------------------------------------------------------
-  //                         void HypViewer::redraw()                        
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::redraw()
-  {
-    drawFrame();
-    return;
-  }
-
-  //--------------------------------------------------------------------------
-  //                  void HypViewer::reshape(int w, int h)                  
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::reshape(int w, int h)
-  {
-    GLwDrawingAreaMakeCurrent(wid, cxt);
-    glXWaitX();
-    glViewport(0,0,w,h);
-    glScissor(0,0,w,h);
-    vp[2] = w;
-    vp[3] = h;
-    hd->winx = w;
-    hd->winy = h;
-    // I'm not sure why we have to do this twice, but doesn't work just once
-    // TMM 1/18/98
-    camInit();
-    drawFrame();  
-    camInit();
-    drawFrame();
-    return;
-  }
-
-  //--------------------------------------------------------------------------
-  //                    void HypViewer::idleFunc(bool on)                    
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::idleFunc(bool on)
-  {
-    //        fprintf(stderr, "idle %d\n", on);
-    if (on && !idleid)
-      idleid = XtAppAddWorkProc(XtWidgetToApplicationContext(wid), 
-                                (XtWorkProc)idleCB, NULL);
-    else if (!on && idleid) {
-      //    XtRemoveWorkProc(idleid);
-      idleid = 0;
-    }
-    return;
-  }
-
-  //--------------------------------------------------------------------------
-  //                        void HypViewer::idleCont()                     
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::idleCont()
-  {
-    if (idleid)
-      idleid = XtAppAddWorkProc(XtWidgetToApplicationContext(wid), 
-                                (XtWorkProc)idleCB, NULL);
-    return;
-  }
-
-#endif  // HYPGLX
-
 //  glut specific code
 
-#ifdef HYPGLUT
-
-  //--------------------------------------------------------------------------
-  //                     void HypViewer::drawStringInit()                    
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::drawStringInit()
-  {
+void HypViewer::drawStringInit()
+{
     labascent = 13;
     labdescent = 0;
     return;
-  }
+}
 
-  //--------------------------------------------------------------------------
-  //               void HypViewer::drawString(const string & s)              
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::drawString(const string & s)
-  {
+void HypViewer::drawString(const string & s)
+{
     if (!s.length())
       return;
     for (int i = 0; i < s.length(); i++) {
       glutBitmapCharacter(GLUT_BITMAP_8_BY_13, s[i]);
     }
     return;
-  }
+}
 
-  //--------------------------------------------------------------------------
-  //             int HypViewer::drawStringWidth(const string & s)            
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  int HypViewer::drawStringWidth(const string & s)
-  {
+int HypViewer::drawStringWidth(const string & s)
+{
     return 8 * s.length();
-  }
+}
 
-  void HypViewer::framePrepare()
-  {
-  }
+void HypViewer::framePrepare()
+{
+}
 
-  //--------------------------------------------------------------------------
-  //                        void HypViewer::frameEnd()                       
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::frameEnd()
-  {
+void HypViewer::frameEnd()
+{
     if (!pick && !idleframe)
       glutSwapBuffers();
     return;
-  }
+}
 
-  //--------------------------------------------------------------------------
-  //                     void HypViewer::idleFunc(int on)                    
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::idleFunc(bool on)
-  {
+void HypViewer::idleFunc(bool on)
+{
     if (on) 
       glutIdleFunc(idleCB);
     else 
       glutIdleFunc(NULL);
     return;
-  }
+}
 
-  void HypViewer::idleCont() {;}
+void HypViewer::idleCont() {;}
 
-  //--------------------------------------------------------------------------
-  //                         void HypViewer::redraw()                        
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::redraw()
-  {
+void HypViewer::redraw()
+{
     glutPostRedisplay();
     return;
-  }
+}
 
-  //--------------------------------------------------------------------------
-  //                  void HypViewer::reshape(int w, int h)                  
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::reshape(int w, int h)
-  {
+void HypViewer::reshape(int w, int h)
+{
     glViewport(0,0,w,h);
     vp[2] = w;
     vp[3] = h;
@@ -1935,143 +1324,4 @@ int HypViewer::flashLink(HypNode *fromnode, HypNode *tonode)
     glutPostRedisplay();  
     camInit();
     glutPostRedisplay();
-  }
-
-#endif  // HYPGLUT
-
-// window system specific code
-//  WIN32 specific code
-#ifdef WIN32
-
-void HypViewer::drawStringInit() {
-     LOGFONT     lf;
-     HFONT       hFont,hOldFont;
-
-     if (!hd->labelfont) return;
-
-     // An hDC and an hRC have already been created.
-     wglMakeCurrent( wid, cxt );
-
-     // Let's create a TrueType font to display.
-     memset(&lf,0,sizeof(LOGFONT));
-     lf.lfHeight               =   hd->labelfontsize;
-     lf.lfWeight               =   FW_NORMAL ;
-     lf.lfCharSet              =   ANSI_CHARSET ;
-     lf.lfOutPrecision         =   OUT_TT_ONLY_PRECIS;
-     lf.lfClipPrecision        =   CLIP_DEFAULT_PRECIS ;
-     lf.lfQuality              =   PROOF_QUALITY ;
-     lf.lfPitchAndFamily       =   VARIABLE_PITCH | TMPF_TRUETYPE;
-     lstrcpy (lf.lfFaceName, hd->labelfont) ;//   hd->labelfont
-     hFont = CreateFontIndirect(&lf);
-     hOldFont = (HFONT) SelectObject(wid,hFont);
-
-     labascent = 13;
-     labdescent = 0;
-
-     TEXTMETRIC *tm;
-     tm = new TEXTMETRIC;
-     bool r = GetTextMetrics(wid,tm);
-
-     labascent = tm->tmAscent;
-     labdescent = tm->tmDescent;
-     
-     delete tm;
-
-     memset(&iCharWidths,0,sizeof(iCharWidths));
-     r = GetCharWidth(wid,0,255,iCharWidths);
-
-     if (!labelbase)  labelbase = glGenLists(256);
-     if (labelbase) {
-         // Create a set of display lists based on the TT font we selected
-          wglUseFontBitmaps(wid,0,256,labelbase);
-     }
-
-     DeleteObject(SelectObject(wid,hOldFont));
-
-     return;
-
-  }
-
-  //--------------------------------------------------------------------------
-  //               void HypViewer::drawString(const string & s)              
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::drawString(const string & s)
-  {
-    //  int len = strlen(s);
-    glListBase(labelbase);
-    glCallLists(s.length(), GL_UNSIGNED_BYTE, s.c_str());
-    return;
-  }
-
-  //--------------------------------------------------------------------------
-  //             int HypViewer::drawStringWidth(const string & s)
-  //..........................................................................
-  //
-  //--------------------------------------------------------------------------
-  int HypViewer::drawStringWidth(const string & s)
-  {
-//      SIZE sz;
-//      GetTextExtentPoint32(wid, s.c_str(), s.length(), &sz);
-//     return sz.cx;
-     int iWidth = 0;
-     for (int i=0; i<s.length(); i++)
-        iWidth += iCharWidths[s[i]];
-     return iWidth;
-  }
-
-void HypViewer::framePrepare() {
-  wglMakeCurrent(wid, cxt);
 }
-
-void HypViewer::frameEnd() {
-  if (!pick && !idleframe)  SwapBuffers(wid);
-  idleCont();
-}
-
-  //--------------------------------------------------------------------------
-  //                    void HypViewer::idleFunc(bool on)                    
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void HypViewer::idleFunc(bool on)
-  {
-  if (on) {
-     idleid = 1;
-   } else {
-     idleid = 0;
-   }
-}
-
-void HypViewer::idleCont() {
-/*
-   if (idleframe == 1) {
-        char s[256];
-        sprintf(s, "idle cont\n");
-        OutputDebugString(s);
-     InvalidateRect(win,NULL,FALSE);
-   } else {
-      ValidateRect(win,NULL);
-   }
-   */
-}
-
-void HypViewer::redraw() {
-  drawFrame();
-}
-
-void HypViewer::reshape(int w, int h) {
-  wglMakeCurrent(wid,cxt);
-  glViewport(0,0,w,h);
-  glScissor(0,0,w,h);
-  vp[2] = w;
-  vp[3] = h;
-  // I'm not sure why we have to do this twice, but doesn't work just once
-  // TMM 1/18/98
- // camInit();
- // drawFrame();
- // camInit();
- // drawFrame();
-}
-#endif  //WIN32

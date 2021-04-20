@@ -36,104 +36,30 @@
 #ifndef HYPVIEWER_H
 #define HYPVIEWER_H
 
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 #include <GL/gl.h>
 #include <GL/glu.h>
 
 #include "HypGraph.h"
 #include "HypTransform.h"
 #include "HypQuat.h"
-
-#ifdef HYPGLUT
 #include "GL/glut.h"
-#endif
-
-#ifdef HYPGLX
-#include "GL/glx.h"
-#include "X11/Xlib.h"
-#include "Xm/Xm.h"
-#endif
 
 class HypViewer {
 
 public:
 
-#ifdef WIN32
-  HypViewer(HypData *d, HDC w, HWND hwin);
-  void afterRealize(HGLRC cx, int w, int h);  //(GLXContext cx);
-  HDC getWidget() {return wid;}
-  int idleCB(void);
-#elif HYPGLX
-
-  //--------------------------------------------------------------------------
-  //                     HypViewer(HypData *d, Widget w)
-  //..........................................................................
-  //  constructor
-  //  When using GLX, we want to render in a Widget.
-  //--------------------------------------------------------------------------
-  HypViewer(HypData *d, Widget w);
-
-  //--------------------------------------------------------------------------
-  //                    void afterRealize(GLXContext cx)
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  void afterRealize(GLXContext cx);
-
-  //--------------------------------------------------------------------------
-  //                            Widget getWidget()                           
-  //..........................................................................
-  //  Returns the Widget being used for rendering.
-  //--------------------------------------------------------------------------
-  Widget getWidget()
-  {
-    return wid;
-  }
-#ifdef XPMSNAP
-  //--------------------------------------------------------------------------
-  //                bool XpmSnapshot(const string & fileName)
-  //..........................................................................
-  //  Takes a snapshot of the widget and stores it in the file named by
-  //  fileName.  The output format is XPM.  Returns true on success, else
-  //  returns false.
-  //--------------------------------------------------------------------------
-  bool XpmSnapshot(const string & fileName);
-#endif
-
-  //--------------------------------------------------------------------------
-  //                        static int idleCB(void)
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
-  static int idleCB(void);
-  
-#else
 
   //--------------------------------------------------------------------------
   //                          HypViewer(HypData *d)                         
-  //..........................................................................
-  //  constructor
-  //--------------------------------------------------------------------------
   HypViewer(HypData *d);
 
   //--------------------------------------------------------------------------
   //                           void afterRealize()                         
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
   void afterRealize();
 
   //--------------------------------------------------------------------------
   //                        static void idleCB(void)
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
   static void idleCB(void);
-
-#endif
 
   ~HypViewer();
 
@@ -163,9 +89,6 @@ public:
 
   //--------------------------------------------------------------------------
   //                    void setCurrentCenter(HypNode *n)                    
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
   void setCurrentCenter(HypNode *n)
   {
     thecenter = n;
@@ -174,9 +97,6 @@ public:
   
   //--------------------------------------------------------------------------
   //                       HypNode *getCurrentCenter()                       
-  //..........................................................................
-  //  
-  //--------------------------------------------------------------------------
   HypNode *getCurrentCenter()
   {
     return thecenter;
@@ -282,26 +202,6 @@ private:
   void frameContinue();
 
   // window system specific code
-
-// WIN32 specific storage
-#ifdef WIN32
-  HWND win;
-  HDC wid;
-  HGLRC cxt;
-  int idleid;
-  int iCharWidths[256];
-#endif
-
-// GLX specific storage
-#ifdef HYPGLX
-  XFontStruct *fontInfo;
-  Display     *dpy;
-  Window       win;
-  GLXContext   cxt;
-  Widget       wid;
-  int          idleid;
-#endif
-
 // functions to instantiate
   void drawString(const string & s);
   void drawStringInit();
@@ -313,5 +213,3 @@ private:
   void redraw();
   void drawChar(char c);
 };
-
-#endif
