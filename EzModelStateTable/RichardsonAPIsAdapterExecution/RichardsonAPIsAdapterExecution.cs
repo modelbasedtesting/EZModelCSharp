@@ -1,35 +1,45 @@
 ﻿using System;
+using System.Text;
+using System.Net.Http;
 using System.Collections.Generic;
 using SeriousQualityEzModel;
+using SynchronousHttpClientExecuter;
 
 namespace RichardsonAPIsAdapterExecution
 {
     class RichardsonAPIsAdapterExecutionProgram
     {
-        static void Main()
+        static int Main(string[] args)
         {
-            APIs cient = new APIs();
-            cient.SkipSelfLinks = false;
+            APIs client = new APIs();
+            client.SkipSelfLinks = false;
 
-            GeneratedGraph graph = new GeneratedGraph(cient, 3000, 100, 30);
+            GeneratedGraph graph = new GeneratedGraph(client, 3000, 100, 30);
+
+            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
-            // write graph to dot format file
+                // write graph to dot format file
             string fname = "RichardsonAPIs";
             string suffix = "0000";
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            cient.NotifyAdapter = true;
+            client.NotifyAdapter = true;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            cient.StopOnProblem = true;
+            client.StopOnProblem = true;
 
             graph.RandomDestinationCoverage(fname);
+
+            // normal finish
+            return 0;
         }
     }
 
     public class APIs : IEzModelClient
     {
+        SynchronousHttpClient executer = new SynchronousHttpClient();
+
         bool skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
@@ -51,6 +61,11 @@ namespace RichardsonAPIsAdapterExecution
         {
             get => stopOnProblem;
             set => stopOnProblem = value;
+        }
+
+        public APIs( )
+        {
+            executer.server = "http://localhost:4567/";
         }
 
         // Initially the system is not running, and this affects a lot of
@@ -117,7 +132,11 @@ namespace RichardsonAPIsAdapterExecution
         // Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, svTodosClassString, svXAuthTokenExists, svXChallengerGuidExists);
+            // NOTE: EzModel will call SetStateOfSystemUnderTest if notifyAdapter
+            // is true, so don't call SetStateOfSystemUnderTest in this function.
+            string state = StringifyStateVector(svRunning, svTodosClassString, svXAuthTokenExists, svXChallengerGuidExists);
+
+            return state;
         }
 
         // Interface method
@@ -197,6 +216,8 @@ namespace RichardsonAPIsAdapterExecution
         // Interface method
         public void ReportTraversal(string initialState, List<string> popcornTrail)
         {
+            // The traversal started with the SUT in the following state:
+            // The following actions occurred in sequence
 
         }
 
@@ -204,21 +225,315 @@ namespace RichardsonAPIsAdapterExecution
         public string AdapterTransition(string startState, string action)
         {
             string expected = GetEndState(startState, action);
-            string observed = "";
-            // What does execution mean?
-            //
-            // read the graph
-            // follow the transition list
-            // for each transition,
-            //  - set / confirm the start state
-            //  - drive execution of the action (of the transition)
-            //  - compare endState to state of system under test
-            //    - if matching, go to next transition
-            //    - if not matching, halt and report
-            //      - start state and list of transitions up to the mismatch
-            //      - predicted versus actual endState
-            return observed;
 
+            string observed = "";
+
+            // In this model, actions are all about REST communications and
+            // whether the APIs server is up or down.
+            // With respect to the four state variables,
+
+
+            //  - set / confirm the start state
+            string[] vState = startState.Split(", ");
+            bool running = vState[0].Contains("True") ? true : false;
+            string todosClass = vState[1].Split(".")[1];
+            bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
+            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+
+            // IN CASE THE ADAPTER FINDS A DISCREPANCY BETWEEN THE SUT STATE
+            // AND THE STARTSTATE ARGUMENT, OUTPUT A NOTICE.  CONTINUE RUNNING.
+            if (running)
+            {
+                // confirm the service is running
+                // for Java, look for the pid or process status.
+
+            }
+            else
+            {
+                // confirm the service is not running
+            }
+
+            switch (todosClass)
+            {
+                case zeroTodos:
+                    // confirm the service has zero Todos
+                    break;
+                case betweenZeroAndMaximumTodos:
+                    // confirm the service has between zero and max todos
+                    break;
+                case maximumTodos:
+                    // confirm the service has maximum todos
+                    break;
+                default:
+                    Console.WriteLine("ERROR: Unknown Todos Class '{0}' AdapterTransition()", todosClass);
+                    break;
+            }
+
+            if (xAuthTokenExists)
+            {
+                // confirm the service knows the xAuthToken
+            }
+            else
+            {
+                // confirm the service does not know the xAuthToken
+            }
+
+            if (xChallengerGuidExists)
+            {
+                // confirm the service knows the xChallengerGuid
+            }
+            else
+            {
+                // confirm the service does not know the xChallengerGuid
+            }
+
+            // Define the acceptHeaders list just once, outside the
+            // switch where they are used in several cases.
+            List<string> acceptHeaders = new List<string>();
+            StringContent body;
+
+            //  - drive execution of the action (of the transition)
+            switch (action)
+            {
+                case invalidRequest:
+                    // Make a set of invalid requests, give them a weight of 16.
+                    // Generate a random number
+                    // Select a request at random, using weights.
+                    // cut the weight of the selected request in half.
+                    // Report the selected request to the console.
+                    // Issue the selected request to the APIs service.
+                    break;
+
+                case startup:
+                    // launch the java app
+                    // The app dumps a lot of information to the
+                    // standard output on startup: port it is running
+                    // on, list of challenges.
+                    bool started = executer.Startup();
+                    if (!started)
+                    {
+                        // We couldn't start the APIs server.  Stop the test run.
+                        // The exit code of -1 indicates abnormal termination,
+                        // and in this case it is because we couldn't start the
+                        // APIs server.
+            //            Environment.Exit(-1);   
+                    }
+                    break;
+
+                case shutdown:
+                    // Send the shutdown command.
+                    // Question for Alan Richardson: is it acceptable
+                    // to call the Shutdown API on the Heroku-hosted
+                    // API Challenges.
+                    acceptHeaders.Add("application/json");
+
+                    if (!executer.GetRequest(acceptHeaders, "shutdown"))
+                    {
+                        // There is a bug in shutdown on the API server:
+                        // the function does not return a response
+                        // to the caller.  It cuts off the network
+                        // conversation before the caller gets a
+                        // response, which causes an HTTP client
+                        // exception at the caller.
+            //            Environment.Exit(-15);
+                    }
+                    break;
+
+                case getTodos:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the GET request
+                    if (!executer.GetRequest(acceptHeaders, "todos"))
+                    {
+            //            Environment.Exit(-2);
+                    }
+                    break;
+
+                case headTodos:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the HEAD request
+                    if (!executer.HeadRequest(acceptHeaders, "todos"))
+                    {
+             //           Environment.Exit(-7);
+                    }
+                    break;
+
+                case getTodoId:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the GET request
+                    if (!executer.GetRequest(acceptHeaders, "todos/4"))
+                    {
+//                        Environment.Exit(-8);
+                    }
+                    break;
+
+                case headTodoId:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the HEAD request
+                    if (!executer.HeadRequest(acceptHeaders, "todos/6"))
+                    {
+             //           Environment.Exit(-6);
+                    }
+                    break;
+
+                case postTodoId:
+                    acceptHeaders.Add("application/json");
+
+                    body = new StringContent("{\"title\": \"add JSON todo and accept XML\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+
+                    if (!executer.PostRequest(acceptHeaders, "todos", body))
+                    {
+             //           Environment.Exit(-3);
+                    }
+                    break;
+
+                case putTodoId:
+                    // modify an existing todo
+                    acceptHeaders.Add("application/json");
+                    body = new StringContent("{\"id\": 9, \"title\": \"PUT done\", \"doneStatus\": false, \"description\": \"This todo modified by PUT request\"}", Encoding.UTF8, "application/json");
+
+                    if (!executer.PutRequest(acceptHeaders, "todos/9", body))
+                    {
+             //           Environment.Exit(-4);
+                    }
+                    break;
+
+                case postTodos:
+                case postBetweenZeroAndMaximumTodo:
+                case postMaximumTodo:
+                    // issue the POST request
+                    break;
+
+                case deleteTodoId:
+                case deleteBetweenZeroAndMaximumTodoId:
+                case deleteFinalTodoId:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the DELETE request
+                    if (!executer.DeleteRequest(acceptHeaders, "todos/7"))
+                    {
+  //                      Environment.Exit(-5);
+                    }
+                    break;
+
+                case showDocs:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the GET request
+                    if (!executer.GetRequest(acceptHeaders, "docs"))
+                    {
+//                        Environment.Exit(-9);
+                    }
+                    break;
+
+                case createXChallengerGuid:
+                    // Issue the ??? request
+                    break;
+
+                case restoreChallenger:
+                    // Issue the ??? request
+                    break;
+
+                case getChallenges:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the GET request
+                    if (!executer.GetRequest(acceptHeaders, "challenges"))
+                    {
+//                        Environment.Exit(-2);
+                    }
+                    break;
+
+                case optionsChallenges:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the GET request
+                    if (!executer.OptionsRequest(acceptHeaders, "challenges"))
+                    {
+            //            Environment.Exit(-10);
+                    }
+                    break;
+
+                case headChallenges:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the HEAD request
+                    if (!executer.HeadRequest(acceptHeaders, "challenges"))
+                    {
+            //            Environment.Exit(-11);
+                    }
+                    break;
+
+                case getHeartbeat:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the GET request
+                    if (!executer.GetRequest(acceptHeaders, "heartbeat"))
+                    {
+             //           Environment.Exit(-14);
+                    }
+                    break;
+
+                case optionsHeartbeat:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the GET request
+                    if (!executer.OptionsRequest(acceptHeaders, "challenges"))
+                    {
+ //                       Environment.Exit(-13);
+                    }
+                    break;
+
+                case headHeartbeat:
+                    acceptHeaders.Add("application/json");
+
+                    // issue the HEAD request
+                    if (!executer.HeadRequest(acceptHeaders, "heartbeat"))
+                    {
+//                        Environment.Exit(-12);
+                    }
+                    break;
+
+                case postSecretToken:
+                    // Issue POST request
+                    break;
+
+                case getSecretNote:
+                    // Issue GET request
+                    break;
+
+                case postSecretNote:
+                    // Issue POST request
+                    break;
+
+                default:
+                    Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
+                    break;
+            }
+
+
+            //  - report endState to state of system under test
+            //  NOTE: for shutdown, we can measure the running state but have to assume the
+            //        other state values and report thus:
+            //        todos.svNumTodos, xAuthToken.false, xChallengerGuid.false
+            //        For all other actions,
+            //
+            // 1.determine running state value
+            //
+            // If running == true
+            //   2. read the todosCount from the service
+            //      set the todos class from the count
+            //   3. read the xAuthToken from the service
+            //      set true / false based on existence of xAuthToken
+            //   4. read the xChallengerGuid from the service
+            //      set true / false based on existence of xChallengerGuid
+            // End if
+            // Build observed state string
+
+            return observed;
         }
 
         // Interface method

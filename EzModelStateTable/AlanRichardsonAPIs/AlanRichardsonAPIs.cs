@@ -13,6 +13,8 @@ namespace AlanRichardsonAPIs
 
             GeneratedGraph graph = new GeneratedGraph(client, 3000, 100, 30);
 
+            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+
             graph.DisplayStateTable(); // Display the Excel-format state table
 
             // write graph to dot format file
@@ -148,20 +150,8 @@ namespace AlanRichardsonAPIs
         {
             string expected = GetEndState(startState, action);
             string observed = "";
-            // What does execution mean?
-            //
-            // read the graph
-            // follow the transition list
-            // for each transition,
-            //  - set / confirm the start state
-            //  - drive execution of the action (of the transition)
-            //  - compare endState to state of system under test
-            //    - if matching, go to next transition
-            //    - if not matching, halt and report
-            //      - start state and list of transitions up to the mismatch
-            //      - predicted versus actual endState
-            return observed;
 
+            return observed;
         }
 
         // Interface method

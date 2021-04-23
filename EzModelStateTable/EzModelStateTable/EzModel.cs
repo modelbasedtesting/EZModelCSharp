@@ -67,6 +67,8 @@ namespace SeriousQualityEzModel
         uint transitionCount = 0;
         uint actionCount = 0;
 
+        public readonly string transitionSeparator = " | ";
+
         Random rnd = new Random(DateTime.Now.Millisecond);
 
         public StateTransitions(uint maximumTransitions, uint maximumActions)
@@ -175,6 +177,15 @@ namespace SeriousQualityEzModel
                 return actions[transitions[index].actionIndex].action;
             }
 
+            return String.Empty;
+        }
+
+        public string StringFromIndex(uint index)
+        {
+            if (index < transitionCount)
+            {
+                return String.Format("{0}{3}{1}{3}{2}", transitions[index].startState, transitions[index].endState, ActionByIndex(index), transitionSeparator);
+            }
             return String.Empty;
         }
 
@@ -492,11 +503,67 @@ namespace SeriousQualityEzModel
 
         IEzModelClient client; 
 
-        public string transitionSeparator = " | ";
+        // A sanity check for the client's model
+        public List<string> ReportDuplicateOutlinks()
+        {
+            // Call this method to learn whether any nodes have multiples of an action as an outlink.
+            // It is nonsensical to duplicate an action as an outlink.
+            // For each action in the returned list, the caller should eliminate redundancies.
+            // The GetAvailableActions() implementation is a good place to start the search
+            // for the origin of duplicate actions.
+
+            // Report the entire transition of each duplicate outlink.
+
+            List<string> duplicates = new List<string>();
+
+            for (uint i = 0; i < totalNodes.Count(); i++)
+            {
+                string state = totalNodes.StateByIndex(i);
+                List<string> actions = new List<string>();
+                List<string> duplicateActions = new List<string>();
+                List<uint> outs = transitions.GetOutlinkIndices(state);
+
+                // Reporting all the duplicates requires up to two passes on each node.
+                // The first pass detects duplicates.
+                // The second pass happens only if duplicates were detected in the
+                // first pass.
+                // The second pass copies the transitions containing the duplicate
+                // actions to the duplicates collection, which is returned to the
+                // caller.
+                for (uint j = 0; j < outs.Count; j++ )
+                {
+                    string action = transitions.ActionByIndex(outs[(int)j]);
+
+                    if (actions.Contains(action))
+                    {
+                        if (!duplicateActions.Contains(action))
+                        {
+                            duplicateActions.Add(action);
+                        }
+                    }
+                    else
+                    {
+                        actions.Add(action);
+                    }
+                }
+
+                for (uint j = 0; duplicateActions.Count > 0 && j < outs.Count; j++)
+                {
+                    string action = transitions.ActionByIndex(outs[(int)j]);
+
+                    if (duplicateActions.Contains(action))
+                    {
+                        duplicates.Add(transitions.StringFromIndex(outs[(int)j]));
+                    }
+                }
+            }
+
+            return duplicates;
+        }
 
         public void DisplayStateTable()
         {
-            Console.WriteLine("Start state{0}End state{0}Action\n", transitionSeparator);
+            Console.WriteLine("Start state{0}End state{0}Action\n", transitions.transitionSeparator);
 
             for (uint i = 0; i < transitions.Count(); i++)
             {
@@ -510,7 +577,7 @@ namespace SeriousQualityEzModel
                         continue;
                     }
                 }
-                Console.WriteLine(start + transitionSeparator + end + transitionSeparator + transitions.ActionByIndex(i));
+                Console.WriteLine(transitions.StringFromIndex(i));
             }
             Console.WriteLine("  ");
         }

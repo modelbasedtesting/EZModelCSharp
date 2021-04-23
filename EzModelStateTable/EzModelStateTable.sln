@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EzModelGenStateGraphToExcel01", "EzModelGenStateGraphToExcel01\EzModelGenStateGraphToExcel01.csproj", "{E64FC617-3492-422B-A0DB-7CC3C363A89D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesklampAndTrafficlight", "DesklampAndTrafficlight\DesklampAndTrafficlight.csproj", "{CB1CD038-320A-49CC-84F6-49EF8E2AD379}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChutesAndLadders", "ChutesAndLadders\ChutesAndLadders.csproj", "{AAD09EF6-D8BD-4701-B695-A87A671D040B}"
@@ -21,16 +19,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlanRichardsonAPIsHairball"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RichardsonAPIsAdapterExecution", "RichardsonAPIsAdapterExecution\RichardsonAPIsAdapterExecution.csproj", "{EFA1AC1E-F3C3-44D8-BBBE-2199EA6D1E74}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynchronousHttpClientExecuter", "SynchronousHttpClientExecuter\SynchronousHttpClientExecuter.csproj", "{43322E20-E3EE-4DB5-8251-0756FEE834A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E64FC617-3492-422B-A0DB-7CC3C363A89D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E64FC617-3492-422B-A0DB-7CC3C363A89D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E64FC617-3492-422B-A0DB-7CC3C363A89D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E64FC617-3492-422B-A0DB-7CC3C363A89D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CB1CD038-320A-49CC-84F6-49EF8E2AD379}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CB1CD038-320A-49CC-84F6-49EF8E2AD379}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB1CD038-320A-49CC-84F6-49EF8E2AD379}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -63,6 +59,10 @@ Global
 		{EFA1AC1E-F3C3-44D8-BBBE-2199EA6D1E74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFA1AC1E-F3C3-44D8-BBBE-2199EA6D1E74}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFA1AC1E-F3C3-44D8-BBBE-2199EA6D1E74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43322E20-E3EE-4DB5-8251-0756FEE834A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43322E20-E3EE-4DB5-8251-0756FEE834A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43322E20-E3EE-4DB5-8251-0756FEE834A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43322E20-E3EE-4DB5-8251-0756FEE834A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
