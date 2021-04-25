@@ -25,7 +25,7 @@ namespace RichardsonAPIsAdapterExecution
             string suffix = "0000";
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            client.NotifyAdapter = true;
+            client.NotifyAdapter = false;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
@@ -112,12 +112,20 @@ namespace RichardsonAPIsAdapterExecution
         const string shutdown = "Shutdown";
         const string getTodos = "GetTodosList";
         const string headTodos = "GetTodosHeaders";
-        const string postTodos = "AddTodoWithoutId";
+        // postNetTodos is modeled as a single transition but is implemented
+        // in the adapter as multiple transitions of post todo without ID and
+        // delete todo by ID, with a weighting toward post.  The transitions
+        // iterate until the goal net posts are achieved.
+        const string postNetTodos = "AddSeveralTodosWithoutId";
         const string getTodoId = "GetTodoFromId";
         const string headTodoId = "GetHeadersOfTodoFromId";
-        const string postTodoId = "AmendTodoByIdPostMethod";
+        const string postAmendTodoId = "AmendTodoByIdPostMethod";
         const string putTodoId = "AmendTodoByIdPutMethod";
-        const string deleteTodoId = "DeleteTodoById";
+        // deleteNetTodos is modeled as a single transition but is implemented
+        // in the adapter as multiple transitions of delete todo by ID and
+        // post todo without ID, with a weighting toward delete.  The transitions
+        // iterate until the goal net deletions are achieved.
+        const string deleteNetTodos = "DeleteSeveralTodosById";
         const string showDocs = "GetDocumentation";
         const string createXChallengerGuid = "GetXChallengerGuid";
         const string restoreChallenger = "RestoreSavedXChallengerGuid";
@@ -405,18 +413,14 @@ namespace RichardsonAPIsAdapterExecution
                     }
                     break;
 
-                case postTodoId:
+                case postAmendTodoId:
                     acceptHeaders.Add("application/json");
 
-                    body = new StringContent("{\"title\": \"add JSON todo and accept XML\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+                    body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"POST-amended\", \"doneStatus\": true, \"description\": \"This todo modified by POST request with Id\"}", selectedTodo), Encoding.UTF8, "application/json");
 
                     if (!executer.PostRequest(acceptHeaders, "todos", body))
                     {
              //           Environment.Exit(-3);
-                    }
-                    else
-                    {
-                        todosCount++;
                     }
                     break;
 
@@ -431,12 +435,11 @@ namespace RichardsonAPIsAdapterExecution
                     }
                     break;
 
-                case postTodos:
                 case postBetweenZeroAndMaximumTodo:
                 case postMaximumTodo:
                     acceptHeaders.Add("application/json");
 
-                    body = new StringContent("{\"title\": \"add JSON todo and accept XML\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+                    body = new StringContent("{\"title\": \"POST JSON todo and accept JSON\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
 
                     if (!executer.PostRequest(acceptHeaders, "todos", body))
                     {
@@ -448,12 +451,14 @@ namespace RichardsonAPIsAdapterExecution
                     }
                     break;
 
-                case deleteTodoId:
+                case postNetTodos:
+
+                    break;
+
                 case deleteBetweenZeroAndMaximumTodoId:
                 case deleteFinalTodoId:
                     acceptHeaders.Add("application/json");
 
-                    // issue the DELETE request
                     if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
                     {
   //                      Environment.Exit(-5);
@@ -462,6 +467,9 @@ namespace RichardsonAPIsAdapterExecution
                     {
                         todosCount--;
                     }
+                    break;
+
+                case deleteNetTodos:
                     break;
 
                 case showDocs:
@@ -613,16 +621,18 @@ namespace RichardsonAPIsAdapterExecution
             switch (todosClass)
             {
                 case zeroTodos:
-                    actions.Add(postTodos);
+                    actions.Add(postNetTodos);
                     break;
                 case betweenZeroAndMaximumTodos:
-                    actions.Add(postBetweenZeroAndMaximumTodo);
-                    actions.Add(deleteBetweenZeroAndMaximumTodoId);
                     actions.Add(postMaximumTodo);
+                    actions.Add(postBetweenZeroAndMaximumTodo);
+                    actions.Add(postNetTodos);
                     actions.Add(deleteFinalTodoId);
+                    actions.Add(deleteBetweenZeroAndMaximumTodoId);
+                    actions.Add(deleteNetTodos);
                     break;
                 case maximumTodos:
-                    actions.Add(deleteTodoId);
+                    actions.Add(deleteNetTodos);
                     break;
                 default:
                     Console.WriteLine("ERROR: Unknown Todos Class '{0}' GetAvailableActions()", todosClass);
@@ -646,9 +656,8 @@ namespace RichardsonAPIsAdapterExecution
 
             actions.Add(getTodoId);
             actions.Add(headTodoId);
-            actions.Add(postTodoId);
+            actions.Add(postAmendTodoId);
             actions.Add(putTodoId);
-            actions.Add(deleteTodoId);
 
             if (xAuthTokenExists)
             {
@@ -702,10 +711,10 @@ namespace RichardsonAPIsAdapterExecution
                 case headTodos:
                 case getTodoId:
                 case headTodoId:
-                case postTodoId:
+                case postAmendTodoId:
                 case putTodoId:
                     break;
-                case postTodos:
+                case postNetTodos:
                     if (todosClass == zeroTodos)
                     {
                         todosClass = betweenZeroAndMaximumTodos;
@@ -714,7 +723,7 @@ namespace RichardsonAPIsAdapterExecution
                 case postBetweenZeroAndMaximumTodo:
                 case deleteBetweenZeroAndMaximumTodoId:
                     break;
-                case deleteTodoId:
+                case deleteNetTodos:
                     if (todosClass == maximumTodos)
                     {
                         todosClass = betweenZeroAndMaximumTodos;

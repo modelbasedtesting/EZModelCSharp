@@ -1,9 +1,0 @@
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/bin/Debug/netcoreapp3.1/ExecuterJavaAPIs.deps.json
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/bin/Debug/netcoreapp3.1/ExecuterJavaAPIs.dll
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/bin/Debug/netcoreapp3.1/ExecuterJavaAPIs.pdb
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/obj/Debug/netcoreapp3.1/ExecuterJavaAPIs.csprojAssemblyReference.cache
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/obj/Debug/netcoreapp3.1/ExecuterJavaAPIs.AssemblyInfoInputs.cache
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/obj/Debug/netcoreapp3.1/ExecuterJavaAPIs.AssemblyInfo.cs
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/obj/Debug/netcoreapp3.1/ExecuterJavaAPIs.csproj.CoreCompileInputs.cache
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/obj/Debug/netcoreapp3.1/ExecuterJavaAPIs.dll
-/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/obj/Debug/netcoreapp3.1/ExecuterJavaAPIs.pdb

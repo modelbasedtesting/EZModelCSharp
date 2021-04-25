@@ -658,6 +658,7 @@ namespace SeriousQualityEzModel
             {
                 // preamble for the graphviz "dot format" output
                 w.WriteLine("digraph state_machine {");
+                w.WriteLine("size = \"17.8,10\";");
                 w.WriteLine("node [shape = ellipse];");
                 w.WriteLine("rankdir=LR;");
 
@@ -773,6 +774,7 @@ namespace SeriousQualityEzModel
             // Only for Windows 
             //            Process.Start("C:\\Program Files\\Graphviz\\bin\\dot.exe",
             //              fname + ".txt -Tjpg -o " + fname + ".jpg");
+            Process.Start("dot", fname + ".txt -Tsvg -o svg/" + fname + ".svg");
         }
 
         public void DisplayStateTable()
