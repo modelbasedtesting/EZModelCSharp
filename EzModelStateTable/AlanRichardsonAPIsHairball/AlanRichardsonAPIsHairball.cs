@@ -8,9 +8,8 @@ namespace AlanRichardsonAPIsHairball
     {
         static void Main()
         {
-
             APIs client = new APIs();
-            client.SkipSelfLinks = true;
+            client.SkipSelfLinks = false;
 
             GeneratedGraph graph = new GeneratedGraph( client, 5000, 100, 50);
 
@@ -21,8 +20,12 @@ namespace AlanRichardsonAPIsHairball
             string suffix = "0000";
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            client.NotifyAdapter = true;
-// If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+// If you want to drive the system under test as EzModel generates test steps,
+// set client.NotifyAdapter true.
+            client.NotifyAdapter = false;
+// If you want EzModel to stop generating test steps when a problem is
+// detected, set client.NotifyAdapter true, set client.StopOnProblem true,
+// and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
             graph.RandomDestinationCoverage(fname);
@@ -39,21 +42,13 @@ namespace AlanRichardsonAPIsHairball
     //    string title;
     //    bool doneStatus;
     //    string description;
-
-    //    // The final three properties are for checking the validation rules
-    //    // of the system under test.  If any of the properties are allowed,
-    //    // then the validation rules of the system under test allow arbitrary
-    //    // fields in the data.
-    //    string nuisanceString;
-    //    int nuisanceInt;
-    //    bool nuisanceBool;
     //}
     // Helper variables for traversals.
     //// The secret note is persisted in the playerdata of the system under test
     //// We must read the playerdata to initialize the secret note.
     //string svSecretNote = "";
     //// Populate the todos list during object constructor.
-    //List<ToDo> todosList = new List<ToDo>();
+    //List<ToDo> svTodosList = new List<ToDo>();
 
     public class APIs : IEzModelClient
     {
@@ -61,19 +56,21 @@ namespace AlanRichardsonAPIsHairball
         bool notifyAdapter;
         bool stopOnProblem;
 
-        // Interface Properties
+        // IEzModelClient Interface Property
         public bool SkipSelfLinks
         {
             get => skipSelfLinks;
             set => skipSelfLinks = value;
         }
 
+        // IEzModelClient Interface Property
         public bool NotifyAdapter
         {
             get => notifyAdapter;
             set => notifyAdapter = value;
         }
 
+        // IEzModelClient Interface Property
         public bool StopOnProblem
         {
             get => stopOnProblem;
@@ -99,8 +96,7 @@ namespace AlanRichardsonAPIsHairball
 
         // A helper variable to limit the size of the state-transition table, and
         // thus also limit the size of the model graph.
-        // This is adjusted by the command-line argument.
-        const uint maxTodos = 12;
+        const uint maxTodos = 14;
 
         // Actions handled by APIs
         const string startup = "java -jar apichallenges.jar";
@@ -125,9 +121,6 @@ namespace AlanRichardsonAPIsHairball
         const string postSecretToken = "GetSecretToken";
         const string getSecretNote = "GetSecretNoteByToken";
         const string postSecretNote = "SetSecretNoteByToken";
-        // Special actions to reduce state explosion related to number of todos
-        const string postMaximumTodo = "AddMaximumTodoWithoutId";
-        const string deleteFinalTodoId = "DeleteFinalTodoById";
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidGetTodo404 = "InvalidEndpointGetTodo";
         const string invalidGetTodos404 = "InvalidIdGetTodos";
@@ -143,79 +136,69 @@ namespace AlanRichardsonAPIsHairball
         const string invalidNotAuthorizedPostSecretNote403 = "XAuthTokenNotValidPostSecretNote";
         const string invalidAuthHeaderMissingPostSecretNote401 = "XAuthTokenMissingPostSecretNote";
 
-        // We get some state explosion due to explicit todos list length 
         string StringifyStateVector(bool running, uint numTodos, bool xAuthTokenExists, bool xChallengerGuidExists)
         {
             string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}, XChallenger.{3}", running, numTodos, xAuthTokenExists, xChallengerGuidExists);
             return s;
         }
 
-        // Interface method
+        // IEzModelClient Interface method
         public string GetInitialState()
         {
-//            if (notifyAdapter is true)
-            // TODO: For execution, this function needs to
-            // prepare the system under test, and establish the
-            // initial state conditions in the system.
-            // Whether to affect the system under test can be decided by the
-            // execute flag.
-
-            // We get state explosion due to explicit todos list length
             return StringifyStateVector(svRunning, svNumTodos, svXAuthTokenExists, svXChallengerGuidExists);
         }
 
-        // Interface method
+        // IEzModelClient Interface method
         public void SetStateOfSystemUnderTest(string state)
         {
         }
 
-        // Interface method
+        // IEzModelClient Interface method
         public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
         {
         }
 
-        // Interface method
+        // IEzModelClient Interface method
         public bool AreStatesAcceptablySimilar(string observed, string expected)
         {
             // Compare reported to expected, if unacceptable return false.
             return true;
         }
 
-        // Interface method
+        // IEzModelClient Interface method
         public void ReportTraversal(string initialState, List<string> popcornTrail)
         {
 
         }
 
-        // Interface method
+        // IEzModelClient Interface method
         public string AdapterTransition(string startState, string action )
         {
             string expected = GetEndState(startState, action);
             string observed = "";
-            // What does execution mean?
-            //
-            // read the graph
-            // follow the transition list
-            // for each transition,
-            //  - set / confirm the start state
-            //  - drive execution of the action (of the transition)
-            //  - compare endState to state of system under test
-            //    - if matching, go to next transition
-            //    - if not matching, halt and report
-            //      - start state and list of transitions up to the mismatch
-            //      - predicted versus actual endState
+
+            // Responsibilities:
+            // Optionally, validate that the state of the system under test
+            // is acceptably similar to the startState argument. 
+            // Required: drive the system under test according to the action
+            // argument.
+            // If executing the action is problematic, output a problem
+            // notice in some way, and return an empty string to the caller
+            // to indicate the start state was not reached.
+            // If the action executes without problem, then measure the state
+            // of the system under test and return the stringified SUT
+            // state vector to the caller.
+           
             return observed;
 
         }
 
-        // Interface method
+        // IEzModelClient Interface method
         public List<string> GetAvailableActions(string startState)
         {
             List<string> actions = new List<string>();
 
-            // We must parse the startState, because we will be fed
-            // a variety of start states and we keep track of only
-            // one state in this object.
+            // Parse the startState.
             string[] vState = startState.Split(", ");
             bool running = vState[0].Contains("True") ? true : false;
             uint numTodos = uint.Parse(vState[1].Split(".")[1]);
@@ -255,13 +238,14 @@ namespace AlanRichardsonAPIsHairball
 
             // Add specific, invalid actions found in the API Challenges list.
             // Being specific about invalid actions could lead to confusion
-            // when interpreting output from the
-            // traversal program in that implementing invalid actions not
-            // listed below would be outside the scope of the model.
-            // A single, invalidRequest link in the model gives latitude to
-            // the traversal program to implement any amount of specific
-            // invalid reuqests, thus the traversal program can exceed the
-            // coverage of the API Challenges list and still match the model.
+            // when interpreting output from the adapter program in that
+            // implementing invalid actions not listed below would be outside
+            // the scope of the model.
+            // Option: abstraction of invalid requests in the model.
+            // A single, invalidRequest link in the model would give latitude to
+            // the adapter program to implement any amount of specific
+            // invalid reuqests, thus the adapter program can cover more than
+            // is called for by the API Challenges list and still match the model.
             actions.Add(invalidGetTodo404);
             actions.Add(invalidGetTodos404);
             actions.Add(invalidPostTodos400);
@@ -306,7 +290,7 @@ namespace AlanRichardsonAPIsHairball
             return actions;
         }
 
-        // Interface method
+        // IEzModelClient Interface method
         public string GetEndState(string startState, string action)
         {
             // We must parse the startState, else we will 

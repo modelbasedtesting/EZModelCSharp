@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/SynchronousHttpClientExecuter.csproj",
+      "projectUniqueName": "/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/SynchronousHttpClientExecuter/SynchronousHttpClientExecuter.csproj",
       "projectName": "SynchronousHttpClientExecuter",
-      "projectPath": "/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/SynchronousHttpClientExecuter.csproj",
+      "projectPath": "/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/SynchronousHttpClientExecuter/SynchronousHttpClientExecuter.csproj",
       "packagesPath": "/Users/dougs/.nuget/packages/",
-      "outputPath": "/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/ExecuterJavaAPIs/obj/",
+      "outputPath": "/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/SynchronousHttpClientExecuter/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/dougs/.config/NuGet/NuGet.Config"

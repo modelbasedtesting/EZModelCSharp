@@ -29,6 +29,7 @@ namespace RichardsonAPIsAdapterExecution
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
+            client.WaitForObserverKeystroke = true;
             graph.RandomDestinationCoverage(fname);
 
             // normal finish
@@ -43,6 +44,7 @@ namespace RichardsonAPIsAdapterExecution
         bool skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
+        bool waitForObserverKeystroke;
 
         // Interface Properties
         public bool SkipSelfLinks
@@ -63,9 +65,19 @@ namespace RichardsonAPIsAdapterExecution
             set => stopOnProblem = value;
         }
 
+        public bool WaitForObserverKeystroke
+        {
+            get => waitForObserverKeystroke;
+            set => waitForObserverKeystroke = value;
+        }
+
         public APIs( )
         {
             executer.server = "http://localhost:4567/";
+            skipSelfLinks = false;
+            notifyAdapter = false;
+            stopOnProblem = true;
+            waitForObserverKeystroke = false;                
         }
 
         // Initially the system is not running, and this affects a lot of
@@ -89,6 +101,11 @@ namespace RichardsonAPIsAdapterExecution
         // It will be unknown during each new run of the system under test, until
         // it is requested.  It must be supplied with each multi-player session.
         bool svXChallengerGuidExists = false;
+
+        uint actionCount = 0;
+        uint todosCount = 10; // Default initial state due to jar file behavior.
+        uint maximumTodosCount = 14; // Arbitrary maximum
+        Random random = new Random(DateTime.Now.Millisecond);
 
         // Actions handled by APIs
         const string startup = "java -jar apichallenges.jar";
@@ -221,6 +238,11 @@ namespace RichardsonAPIsAdapterExecution
 
         }
 
+        void ShowActionSeparator()
+        {
+
+        }
+
         // Interface method
         public string AdapterTransition(string startState, string action)
         {
@@ -239,6 +261,10 @@ namespace RichardsonAPIsAdapterExecution
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+
+            actionCount++;
+
+            Console.WriteLine("****{0,6} **** {1,29} ****", actionCount, action );
 
             // IN CASE THE ADAPTER FINDS A DISCREPANCY BETWEEN THE SUT STATE
             // AND THE STARTSTATE ARGUMENT, OUTPUT A NOTICE.  CONTINUE RUNNING.
@@ -291,6 +317,7 @@ namespace RichardsonAPIsAdapterExecution
             // switch where they are used in several cases.
             List<string> acceptHeaders = new List<string>();
             StringContent body;
+            int selectedTodo = random.Next((int)todosCount) + 1;
 
             //  - drive execution of the action (of the transition)
             switch (action)
@@ -363,7 +390,7 @@ namespace RichardsonAPIsAdapterExecution
                     acceptHeaders.Add("application/json");
 
                     // issue the GET request
-                    if (!executer.GetRequest(acceptHeaders, "todos/4"))
+                    if (!executer.GetRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
                     {
 //                        Environment.Exit(-8);
                     }
@@ -372,8 +399,7 @@ namespace RichardsonAPIsAdapterExecution
                 case headTodoId:
                     acceptHeaders.Add("application/json");
 
-                    // issue the HEAD request
-                    if (!executer.HeadRequest(acceptHeaders, "todos/6"))
+                    if (!executer.HeadRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
                     {
              //           Environment.Exit(-6);
                     }
@@ -388,14 +414,18 @@ namespace RichardsonAPIsAdapterExecution
                     {
              //           Environment.Exit(-3);
                     }
+                    else
+                    {
+                        todosCount++;
+                    }
                     break;
 
                 case putTodoId:
                     // modify an existing todo
                     acceptHeaders.Add("application/json");
-                    body = new StringContent("{\"id\": 9, \"title\": \"PUT done\", \"doneStatus\": false, \"description\": \"This todo modified by PUT request\"}", Encoding.UTF8, "application/json");
+                    body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"PUT done\", \"doneStatus\": false, \"description\": \"This todo modified by PUT request\"}", selectedTodo), Encoding.UTF8, "application/json");
 
-                    if (!executer.PutRequest(acceptHeaders, "todos/9", body))
+                    if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo), body))
                     {
              //           Environment.Exit(-4);
                     }
@@ -404,7 +434,18 @@ namespace RichardsonAPIsAdapterExecution
                 case postTodos:
                 case postBetweenZeroAndMaximumTodo:
                 case postMaximumTodo:
-                    // issue the POST request
+                    acceptHeaders.Add("application/json");
+
+                    body = new StringContent("{\"title\": \"add JSON todo and accept XML\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+
+                    if (!executer.PostRequest(acceptHeaders, "todos", body))
+                    {
+                        //           Environment.Exit(-3);
+                    }
+                    else
+                    {
+                        todosCount++;
+                    }
                     break;
 
                 case deleteTodoId:
@@ -413,9 +454,13 @@ namespace RichardsonAPIsAdapterExecution
                     acceptHeaders.Add("application/json");
 
                     // issue the DELETE request
-                    if (!executer.DeleteRequest(acceptHeaders, "todos/7"))
+                    if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
                     {
   //                      Environment.Exit(-5);
+                    }
+                    else
+                    {
+                        todosCount--;
                     }
                     break;
 
@@ -514,6 +559,10 @@ namespace RichardsonAPIsAdapterExecution
                     break;
             }
 
+            if (waitForObserverKeystroke)
+            {
+                var keyValue = Console.ReadKey();
+            }
 
             //  - report endState to state of system under test
             //  NOTE: for shutdown, we can measure the running state but have to assume the

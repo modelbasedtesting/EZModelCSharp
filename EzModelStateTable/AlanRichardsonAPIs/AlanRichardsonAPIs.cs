@@ -22,9 +22,9 @@ namespace AlanRichardsonAPIs
             string suffix = "0000";
             graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
 
-            client.NotifyAdapter = true;
+//            client.NotifyAdapter = true;
 // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            client.StopOnProblem = true;
+//            client.StopOnProblem = true;
 
             graph.RandomDestinationCoverage(fname);
         }
