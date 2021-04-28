@@ -15,10 +15,7 @@ namespace AlanRichardsonAPIsHairball
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
-            // write graph to dot format file
-            string fname = "RichardsonHairball";
-            string suffix = "0000";
-            graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
+            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
 
 // If you want to drive the system under test as EzModel generates test steps,
 // set client.NotifyAdapter true.
@@ -28,7 +25,7 @@ namespace AlanRichardsonAPIsHairball
 // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage(fname);
+            graph.RandomDestinationCoverage("Hairball");
         }
     }
 
@@ -211,20 +208,8 @@ namespace AlanRichardsonAPIsHairball
                 return actions;
             }
 
-            switch (numTodos)
-            {
-                case 0:
-                    actions.Add(postTodos);
-                    break;
-                case maxTodos:
-                    actions.Add(deleteTodoId);
-                    break;
-                default:
-                    actions.Add(postTodos);
-                    actions.Add(deleteTodoId);
-                    break;
-            }
-
+            actions.Add(postTodos);
+            actions.Add(deleteTodoId);
             actions.Add(shutdown);
             actions.Add(getTodos);
             actions.Add(headTodos);
@@ -260,32 +245,15 @@ namespace AlanRichardsonAPIsHairball
             actions.Add(invalidNotAuthorizedPostSecretNote403);
             actions.Add(invalidAuthHeaderMissingPostSecretNote401);
 
-            if (numTodos > 0)
-            {
-                actions.Add(getTodoId);
-                actions.Add(headTodoId);
-                actions.Add(postTodoId);
-                actions.Add(putTodoId);
-            }
-
-            if (xAuthTokenExists)
-            {
-                actions.Add(getSecretNote);
-                actions.Add(postSecretNote);
-            }
-            else
-            {
-                actions.Add(postSecretToken);
-            }
-
-            if (xChallengerGuidExists)
-            {
-                actions.Add(restoreChallenger);
-            }
-            else
-            {
-                actions.Add(createXChallengerGuid);
-            }
+            actions.Add(getTodoId);
+            actions.Add(headTodoId);
+            actions.Add(postTodoId);
+            actions.Add(putTodoId);
+            actions.Add(getSecretNote);
+            actions.Add(postSecretNote);
+            actions.Add(postSecretToken);
+            actions.Add(restoreChallenger);
+            actions.Add(createXChallengerGuid);
 
             return actions;
         }
@@ -336,10 +304,16 @@ namespace AlanRichardsonAPIsHairball
                 case putTodoId:
                     break;
                 case postTodos:
-                    numTodos++;
+                    if (numTodos < maxTodos)
+                    {
+                        numTodos++;
+                    }
                     break;
                 case deleteTodoId:
-                    numTodos--;
+                    if (numTodos > 0)
+                    {
+                        numTodos--;
+                    }
                     break;
                 case showDocs:
                     break;

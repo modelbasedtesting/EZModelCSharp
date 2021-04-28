@@ -87,6 +87,36 @@ namespace SeriousQualityEzModel
             return String.Empty;
         }
 
+        public string ActionIndicesToString()
+        {
+            string result = String.Empty;
+
+            for (uint i = 0; i < transitionCount; i++)
+            {
+                result += transitions[i].actionIndex;
+                if (i < transitionCount - 1)
+                {
+                    result += ",";
+                }
+            }
+            return result;
+        }
+
+        public string ActionsToString()
+        {
+            string result = String.Empty;
+
+            for (uint i = 0; i < actionCount; i++)
+            {
+                result += "\"" + actions[i].action + "\"";
+                if (i < actionCount - 1)
+                {
+                    result += ",";
+                }
+            }
+            return result;
+        }
+
         public bool Add(string startState, string endState, string action)
         {
             if (transitionCount < transitions.Length)
@@ -287,6 +317,24 @@ namespace SeriousQualityEzModel
             }
 
             return low;
+        }
+
+        public List<uint> GetStateTransitionIndices(string state)
+        {
+            // return all transitions involving the state, i.e.,
+            // outlinks, inlinks, and self-links.
+
+            List<uint> indices = new List<uint>();
+
+            for (uint i = 0; i < transitionCount; i++)
+            {
+                if (transitions[i].startState == state || transitions[i].endState == state)
+                {
+                    indices.Add(i);
+                }
+            }
+
+            return indices;
         }
 
         public List<uint> GetOutlinkTransitionIndices(string state)
@@ -593,9 +641,29 @@ namespace SeriousQualityEzModel
         StateTransitions transitions;
         Nodes totalNodes;
         List<string> unexploredStates;
+
         Queue<int> path = new Queue<int>();
 
+        // These next 5 collections are uninitialized.  A traversal routine
+        // must call InitializeSVGDeltas before the first call to
+        // AppendSVGDeltas.  That ensures the collections are empty when the
+        // traversal begins, or when it resets.
+        List<uint> traversedEdge;
+        List<string> pathEdges;
+        List<string> pathNodes;
+        List<int> startnode;
+        List<int> pathEndNode;
+
+        const string EzModelFileName = "EzModelDigraph";
+        uint problemCount = 0;
+        uint traversalCount = 0;
+
         IEzModelClient client;
+
+        public enum GraphShape
+        {
+            Circle, Default
+        }
 
         public GeneratedGraph(IEzModelClient theEzModelClient, uint maxTransitions, uint maxNodes, uint maxActions)
         {
@@ -617,6 +685,23 @@ namespace SeriousQualityEzModel
                 state = FetchUnexploredState();
                 AddNewTransitionsToGraph(state);
             }
+        }
+
+        void EachSelfLoopOnce()
+        {
+            // for each action
+            // collect transition indices that are self-loops
+            // select one of the indices at random
+            // drop all the other transitions
+        }
+
+        void InitializeSVGDeltas()
+        {
+            traversedEdge = new List<uint>();
+            pathEdges = new List<string>();
+            pathNodes = new List<string>();
+            startnode = new List<int>();
+            pathEndNode = new List<int>();
         }
 
         void AddNewTransitionsToGraph(string startState)
@@ -645,120 +730,397 @@ namespace SeriousQualityEzModel
             }
         }
 
-        public void CreateGraphVizFileAndImage(string fname, string suffix, string title, int transitionIndex = -1, int endOfPathTransitionIndex = -1)
+        void AppendSvgDelta(uint transitionIndex, int endOfPathTransitionIndex = -1)
         {
-            // NOTE: transitionIndex and endOfPathTransitionIndex are optional.  Not every graph rendition
-            // is being traversed, and not every graph rendition has a path with an end node..
-            // If transitionIndex is non-negative, light up the start node and fatten the outlink.
-            // If endOfPathTransitionIndex is non-negative, light it up in the end of path color.
+            int endOfPathNodeIndex = -1;
 
+            if (endOfPathTransitionIndex > -1)
+            {
+                endOfPathNodeIndex = totalNodes.GetIndexByState(transitions.EndStateByTransitionIndex((uint)endOfPathTransitionIndex));
+            }
+
+            int startStateIndex = totalNodes.GetIndexByState(transitions.StartStateByTransitionIndex((uint)transitionIndex));
+
+            List<int> pathNodeIndices = new List<int>();
+
+            // Get the set of nodes involved in the path, if any.
+            foreach (uint tIndex in path)
+            {
+                int nodeIndex = totalNodes.GetIndexByState(transitions.StartStateByTransitionIndex(tIndex));
+                if (!pathNodeIndices.Contains(nodeIndex))
+                {
+                    pathNodeIndices.Add(nodeIndex);
+                }
+                nodeIndex = totalNodes.GetIndexByState(transitions.EndStateByTransitionIndex(tIndex));
+                if (!pathNodeIndices.Contains(nodeIndex))
+                {
+                    pathNodeIndices.Add(nodeIndex);
+                }
+            }
+            pathNodeIndices.Add(endOfPathNodeIndex);
+            traversedEdge.Add(transitionIndex);
+            pathEdges.Add(String.Format("[{0}]", String.Join(",", path)));
+            pathNodes.Add(String.Format("[{0}]", String.Join(",", pathNodeIndices)));
+            startnode.Add(startStateIndex);
+            pathEndNode.Add(endOfPathNodeIndex);
+        }
+
+        void WriteSvgDeltasFile(string fileName)
+        {
+            // TODO:
+            // Add a histogram of transition hitcounts.
+            // One bar for each transition.  Hitcount on the Y axis
+            // 
+            string[] ezModelGraph = File.ReadAllLines(EzModelFileName + ".svg");
+            using (FileStream fs = new FileStream(fileName, FileMode.Create))
+            {
+                using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
+                {
+                    w.WriteLine(
+@"<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+.parent {
+    width: 96vw;
+    margin: 2vw 2vw;
+    position: relative;
+}
+.child {
+	width: 100%;
+	height: 100%;
+	position: absolute
+	top: 0;
+	left: 0;
+	opacity: 0.7;
+}
+.child-2 {
+	margin-top: 30px;
+}
+</style>
+	</head>
+	<body>
+<div class=""parent"">
+<!-- Generated by graphviz version 2.47.1(20210417.1919) -->
+<!--Title: state_machine Pages: 1 -->
+<svg");
+                    for (var i=7; i < ezModelGraph.Length; i++)
+                    {
+                        w.WriteLine(ezModelGraph[i]);
+                    }
+
+                    w.WriteLine(
+@"<div class=""child"">
+    <button onclick=""traversalStep(1)"">Forward</button>
+    <button onclick=""traversalStep(-1)"">Back</button>
+    <button onclick=""startTraversal()"">Start</button>
+    <input id=""step"" type=""text"" length=""10"" size=""10"" value = ""0""/>
+    <button onclick=""stopTraversal()"">Stop</button>
+    <text id=""edge""> </text>
+</div>
+<div class=""child child-2"">
+    <button onclick=""reset()"">RESET</button>
+</div>
+</div>
+<script>
+var step = 0;
+");
+                    w.WriteLine("const actionNames = [{0}];", transitions.ActionsToString());
+                    w.WriteLine(" ");
+                    w.WriteLine("const transitionActions = [{0}];", transitions.ActionIndicesToString());
+                    w.WriteLine(" ");
+                    w.WriteLine("const transitionHitCounts = new Array({0}).fill(0);", transitions.Count());
+                    w.WriteLine(" ");
+                    w.WriteLine("const maxSteps = {0};", traversedEdge.Count);
+                    w.WriteLine("const nodeCount = {0};", totalNodes.Count());
+                    w.WriteLine(" ");
+                    w.WriteLine("const traversedEdge = [{0}];", String.Join(",", traversedEdge));
+                    w.WriteLine(" ");
+                    w.WriteLine("const pathEdges = [{0}];", String.Join(",", pathEdges));
+                    w.WriteLine(" ");
+                    w.WriteLine("const pathNodes = [{0}];", String.Join(",", pathNodes));
+                    w.WriteLine(" ");
+                    w.WriteLine("const startNode = [{0}];", String.Join(",", startnode));
+                    w.WriteLine(" ");
+                    w.WriteLine("const pathEndNode = [{0}];", String.Join(",", pathEndNode));
+                    w.WriteLine(" ");
+                    w.WriteLine(
+    @"var c = 0;
+var t;
+var timer_is_on = 0;
+
+function timedTraversal() {
+  c = c + 1;
+  traversalStep(1);
+  t = setTimeout(timedTraversal, 330);
+}
+
+function startTraversal() {
+  if (!timer_is_on) {
+    timer_is_on = 1;
+    timedTraversal();
+  }
+}
+
+function stopTraversal() {
+  clearTimeout(t);
+  timer_is_on = 0;
+}
+
+function reset() {
+	timer_is_on = 0;
+	clearTimeout(t);
+	document.getElementById(""step"").value = 0;
+
+    document.getElementById(""edge"").innerHTML = "" "";
+    for (var i = 0; i < transitionHitCounts.length; i++)
+    {
+        transitionHitCounts[i] = 0;
+    }
+    refreshGraphics(""black"");
+    step = 0;
+}
+
+function refreshGraphics(refreshColor)
+{
+    for (var i = 0; i <= step; i++)
+    {
+        if (i >= maxSteps)
+        {
+            continue;
+        }
+
+        var hitCount = transitionHitCounts[traversedEdge[i]];
+        var hitColor = getHitColor(hitCount);
+        var action = actionNames[transitionActions[i]];
+        var svgEdge = traversedEdge[i] + 1;
+        var edge = document.getElementById(""edge"" + svgEdge.toString());
+        var path = edge.getElementsByTagName(""path"");
+        if (path.length > 0)
+        {
+            path[0].setAttribute(""stroke-width"", refreshColor == null ? ""3"" : ""1"");
+            path[0].setAttribute(""stroke"", refreshColor == null ? hitColor : refreshColor);
+        }
+        var poly = edge.getElementsByTagName(""polygon"");
+        if (poly.length > 0)
+        {
+            poly[0].setAttribute(""stroke-width"", refreshColor == null ? ""3"" : ""1"");
+            poly[0].setAttribute(""fill"", refreshColor == null ? hitColor : refreshColor);
+            poly[0].setAttribute(""stroke"", refreshColor == null ? hitColor : refreshColor);
+        }
+        var text = edge.getElementsByTagName(""text"");
+        if (text.length > 0)
+        {
+            if (hitCount > 0)
+            {
+                action += "" ("" + hitCount.toString() + "")"";
+            }
+            text[0].innerHTML = action;
+        }
+    }
+    for (var i = 1; i <= nodeCount; i++)
+    {
+        var node = document.getElementById(""node"" + i.toString());
+        var ellipse = node.getElementsByTagName(""ellipse"");
+        if (ellipse.length > 0)
+        {
+            ellipse[0].setAttribute(""fill"", ""none"");
+        }
+    }
+}
+
+function traversalStep(delta)
+{
+    // Refresh the graphics:
+    // set all path and polygon strokes and stroke-width values to 2, and stroke colors to black.
+    // set the fill to none on all graph nodes.
+    refreshGraphics();
+
+    var newPosition = step + delta;
+    if (newPosition < 0 || newPosition >= maxSteps)
+    {
+        // TODO:
+        // Set a guard flag so that if the user continues
+        // tapping back or forward into this body, we actually
+        // avoid re-executing the code blocks above here.
+        // Those code blocks only need to run once when the
+        // step is taken to zero or max steps.
+        return;
+    }
+    step = newPosition;
+
+    transitionHitCounts[traversedEdge[step]] += delta;
+
+    // Now paint the current path and nodes in light grey
+    for (var i = 0; i < pathEdges[step].length; i++)
+    {
+        var svgEdge = pathEdges[step][i] + 1;
+        var edge = document.getElementById(""edge"" + svgEdge.toString());
+        var path = edge.getElementsByTagName(""path"");
+        if (path.length > 0)
+        {
+            path[0].setAttribute(""stroke-width"", ""15"");
+            path[0].setAttribute(""stroke"", ""lightgrey"");
+        }
+        var poly = edge.getElementsByTagName(""polygon"");
+        if (poly.length > 0)
+        {
+            poly[0].setAttribute(""stroke-width"", ""15"");
+            poly[0].setAttribute(""fill"", ""lightgrey"");
+            poly[0].setAttribute(""stroke"", ""lightgrey"");
+        }
+    }
+    for (var i = 0; i < pathNodes[step].length; i++)
+    {
+        var svgNode = pathNodes[step][i] + 1;
+        var node = document.getElementById(""node"" + svgNode.toString());
+        var ellipse = node.getElementsByTagName(""ellipse"");
+        if (ellipse.length > 0)
+        {
+            ellipse[0].setAttribute(""fill"", ""lightgrey"");
+        }
+    }
+
+    // Finally, paint the current transition in fat red, 
+    // paint the start node of the path in green, and 
+    // paint the end node of the path in cyan.   
+    // NOTE: Doing a gradient in svg is very difficult 
+    // because of the calculations.  Look at that later, 
+    // for when the start and end node of the path are
+    // the same. 
+    document.getElementById(""step"").value = step + ""/"" + maxSteps;
+    document.getElementById(""edge"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
+    svgEdge = traversedEdge[step] + 1;
+    edge = document.getElementById(""edge"" + svgEdge.toString());
+    var path = edge.getElementsByTagName(""path"");
+    if (path.length > 0)
+    {
+        path[0].setAttribute(""stroke-width"", ""15"");
+        var hitCount = transitionHitCounts[traversedEdge[step]];
+        var color = getHitColor(hitCount);
+        path[0].setAttribute(""stroke"", ""red"");
+    }
+    var poly = edge.getElementsByTagName(""polygon"");
+    if (poly.length > 0)
+    {
+        poly[0].setAttribute(""stroke-width"", ""15"");
+        poly[0].setAttribute(""fill"", ""red"");
+        poly[0].setAttribute(""stroke"", ""red"");
+    }
+
+    var start = startNode[step] + 1;
+    var node = document.getElementById(""node"" + start.toString());
+    var ellipse = node.getElementsByTagName(""ellipse"");
+    if (ellipse.length > 0)
+    {
+        ellipse[0].setAttribute(""fill"", ""yellowgreen"");
+    }
+
+    var pathEnd = pathEndNode[step] + 1;
+    node = document.getElementById(""node"" + pathEnd.toString());
+    ellipse = node.getElementsByTagName(""ellipse"");
+    if (ellipse.length > 0)
+    {
+        ellipse[0].setAttribute(""fill"", ""lightskyblue"");
+    }
+
+    // write all transitions with their hitcounts, use color function.
+    // write all nodes in clear fill.
+    // write all path nodes in light grey fill.
+    // write start node in green, end of path node in cyan.
+    // overdraw path edges, except the edge of the latest transition - make that fat.
+
+}
+
+function getHitColor(hitCount)
+{
+    switch (hitCount)
+    {
+        case 0:
+            return ""#000000"";
+        case 1:
+            return ""#DF0000"";
+        case 2:
+            return ""#00DF00"";
+        case 3:
+            return ""#0000DF"";
+        case 4:
+            return ""#9F9F00"";
+        case 5:
+            return ""#009F9F"";
+        case 6:
+            return ""#9F009F"";
+        case 7:
+            return ""#2F7F7F"";
+        case 8:
+            return ""#7F2F7F"";
+        case 9:
+            return ""#7F7F2F"";
+        case 10:
+            return ""#3F3FAF"";
+        case 11:
+            return ""#AF3F3F"";
+        case 12:
+            return ""#3FAF3F"";
+        case 13:
+            return ""#AF1F77"";
+        case 14:
+            return ""#1FAF77"";
+        case 15:
+            return ""#1F77AF"";
+        case 16:
+            return ""#771FAF"";
+        case 17:
+            return ""#77AF1F"";
+        default:
+            return ""#FF1F1F"";
+    }
+}
+</script>
+</body>
+</html>");
+                    w.Close();
+                }
+            }
+        }
+
+        public void CreateGraphVizFileAndImage(GraphShape shape = GraphShape.Default)
+        {
             // Create a new file.
-            using (FileStream fs = new FileStream(fname + suffix + ".txt", FileMode.Create))
+            using (FileStream fs = new FileStream(EzModelFileName + ".txt", FileMode.Create))
             using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
             {
+                switch (shape)
+                {
+                    case GraphShape.Circle:
+                        break;
+                    default: // GraphShape.Default
+                        break;
+                }
+                // TODO:
+                // lay out the nodes in a circle.
+                // size 9,9
+                // radius is then 4.5
+                // space the nodes around the circle.
+                // use the pos attribute.
+
                 // preamble for the graphviz "dot format" output
                 w.WriteLine("digraph state_machine {");
                 w.WriteLine("size = \"17.8,10\";");
                 w.WriteLine("node [shape = ellipse];");
                 w.WriteLine("rankdir=LR;");
 
-                int endOfPathNodeIndex = -1;
-
-                if (endOfPathTransitionIndex > -1)
-                {
-                    endOfPathNodeIndex = totalNodes.GetIndexByState(transitions.EndStateByTransitionIndex((uint)endOfPathTransitionIndex));
-                }
-
-                int startStateIndex = -1;
-
-                if (transitionIndex > -1)
-                {
-                    startStateIndex = totalNodes.GetIndexByState(transitions.StartStateByTransitionIndex((uint)transitionIndex));
-                }
-
-                List<int> pathNodeIndices = new List<int>();
-
-                // Get the set of nodes involved in the path, if any.
-                foreach (uint tIndex in path)
-                {
-                    int nodeIndex = totalNodes.GetIndexByState(transitions.StartStateByTransitionIndex(tIndex));
-                    if (!pathNodeIndices.Contains(nodeIndex))
-                    {
-                        pathNodeIndices.Add(nodeIndex);
-                    }
-                    nodeIndex = totalNodes.GetIndexByState(transitions.EndStateByTransitionIndex(tIndex));
-                    if (!pathNodeIndices.Contains(nodeIndex))
-                    {
-                        pathNodeIndices.Add(nodeIndex);
-                    }
-                }
-
                 // add the state nodes to the image
                 for (int i = 0; i < totalNodes.Count(); i++)
                 {
-                    string decoration = "";
-
-                    if (startStateIndex == i || endOfPathNodeIndex == i || pathNodeIndices.Contains(i))
-                    {
-                        decoration = ", style=filled, fillcolor=\"";
-                    }
-
-                    if (startStateIndex != i && endOfPathNodeIndex != i && pathNodeIndices.Contains(i))
-                    {
-                        decoration += "lightgrey\"";
-                    }
-
-                    if (startStateIndex == i && endOfPathNodeIndex != i)
-                    {
-                        decoration += "green\"";
-                    }
-
-                    if (startStateIndex == i && endOfPathNodeIndex == i)
-                    {
-                        decoration += "cyan:green\"";
-                    }
-
-                    if (startStateIndex != i && endOfPathNodeIndex == i)
-                    {
-                        decoration += "cyan\"";
-                    }
-
-                    w.WriteLine("\"{0}\"\t[label=\"{1}\"{2}]", totalNodes.GetNodeByIndex((uint)i).state, totalNodes.GetNodeByIndex((uint)i).state.Replace(",", "\\n"), decoration);
+                    w.WriteLine("\"{0}\"\t[label=\"{1}\"]", totalNodes.GetNodeByIndex((uint)i).state, totalNodes.GetNodeByIndex((uint)i).state.Replace(",", "\\n"));
                 }
-
-                // Insert the info node into the image
-                w.WriteLine();
-                w.WriteLine("node [shape = rectangle];");
-                w.Write("\"Info node\"\t[label=\"");
-                w.Write("++++++++++++++\\n");
-                w.Write("Step: {0}\\n", suffix);
-                w.Write("{0}\\n", title);
-                w.Write("Floor:  {0}\", ", transitions.GetHitcountFloor());
-                w.WriteLine("fillcolor=lightgrey, style=filled, color=black]");
-                w.WriteLine();
-
-                // Capture the target transition of the path so that we properly decorate it.
-                Queue<int> arcPath = new Queue<int>(path.ToArray());
-                arcPath.Enqueue(endOfPathTransitionIndex);
 
                 // Color each link by its hit count
                 for (uint i = 0; i < transitions.Count(); i++)
                 {
-                    // Set all path arcs to lightgrey except the currently actioned arc.
-                    string linkAppearance = ", color=lightgrey, penwidth=15";
-                    int hitCount = transitions.HitcountByTransitionIndex(i);
-
-                    if (i == transitionIndex || !arcPath.Contains((int)i))
-                    {
-                        linkAppearance = GetLinkAppearance(hitCount);
-                    }
-                    if (i == transitionIndex)
-                    {
-                        linkAppearance = linkAppearance.Replace("penwidth=3", "penwidth=15");
-                    }
-
-                    w.WriteLine("\"{0}\" -> \"{1}\" [ label=\"{2} ({3})\"{4} ];",
-                        transitions.StartStateByTransitionIndex(i), transitions.EndStateByTransitionIndex(i), transitions.ActionByTransitionIndex(i), hitCount, linkAppearance);
+                    w.WriteLine("\"{0}\" -> \"{1}\" [ label=\"{2}\",color=black, penwidth=2 ];",
+                        transitions.StartStateByTransitionIndex(i), transitions.EndStateByTransitionIndex(i), transitions.ActionByTransitionIndex(i));
                 }
 
                 w.WriteLine("}");
@@ -766,15 +1128,10 @@ namespace SeriousQualityEzModel
             }
 
             // Invoke Graphviz to create the image file
-            CreateGraphVizImage(fname + suffix);
-        }
-
-        static void CreateGraphVizImage(string fname)
-        {
-            // Only for Windows 
             //            Process.Start("C:\\Program Files\\Graphviz\\bin\\dot.exe",
             //              fname + ".txt -Tjpg -o " + fname + ".jpg");
-            Process.Start("dot", fname + ".txt -Tsvg -o svg/" + fname + ".svg");
+            Process dotProc = Process.Start("dot", EzModelFileName + ".txt -Tsvg -o " + EzModelFileName + ".svg");
+            dotProc.WaitForExit();
         }
 
         public void DisplayStateTable()
@@ -880,60 +1237,6 @@ namespace SeriousQualityEzModel
             return path;
         }
 
-        static string GetLinkAppearance(int counter)
-        {
-            string linkColor = "";
-
-            if (counter > 0)
-            {
-                if (counter >= 20 && counter < 25)
-                    linkColor = "coral";
-                else if (counter >= 25 && counter < 30)
-                    linkColor = "coral1";
-                else if (counter >= 30 && counter < 35)
-                    linkColor = "coral2";
-                else if (counter >= 35 && counter < 40)
-                    linkColor = "coral3";
-                else if (counter >= 20 && counter < 45)
-                    linkColor = "coral4";
-                else if (counter >= 45)
-                    linkColor = "gold";
-                else
-                {
-                    switch (counter)
-                    {
-                        case 1: linkColor = "red"; break;
-                        case 2: linkColor = "green"; break;
-                        case 3: linkColor = "magenta"; break;
-                        case 4: linkColor = "blue"; break;
-                        case 5: linkColor = "coral"; break;
-                        case 6: linkColor = "darkgreen"; break;
-                        case 7: linkColor = "violet"; break;
-                        case 8: linkColor = "crimson"; break;
-                        case 9: linkColor = "darkorange"; break;
-                        case 10: linkColor = "darkorchid"; break;
-                        case 11: linkColor = "deeppink"; break;
-                        case 12: linkColor = "deepskyblue"; break;
-                        case 13: linkColor = "forestgreen"; break;
-                        case 14: linkColor = "firebrick"; break;
-                        case 15: linkColor = "darkslateblue"; break;
-                        case 16: linkColor = "darkgoldenrod"; break;
-                        case 17: linkColor = "cornflowerblue"; break;
-                        case 18: linkColor = "goldenrod"; break;
-                        case 19: linkColor = "chartreuse"; break;
-                        default:
-                            Console.WriteLine("shouldn't have reached here!");
-                            Console.ReadLine();
-                            break;
-                    }
-                }
-                // color visited transitions sth not black
-                return String.Format(",color=\"{0}\", penwidth=3", linkColor);
-            }
-            else
-                return ",color=black";    // color unvisited transitions black
-        }
-
         int GetNodeIndexByState(string matchState)
         {
 
@@ -951,6 +1254,7 @@ namespace SeriousQualityEzModel
         public void RandomDestinationCoverage(string fname)
         {
         ResetPosition:
+            InitializeSVGDeltas();
 
             // Each transition will now be a target to be reached
             //  1. find a transition with a low hit count
@@ -972,13 +1276,14 @@ namespace SeriousQualityEzModel
             // This list is built up only when the rules module has NotifyAdapter == true.
             List<string> popcornTrail = new List<string>();
 
-            int fileCtr = 0;
             int loopctr = 0;
-            string suffix;
             int minimumCoverageFloor = 2;
 
             while (transitions.GetHitcountFloor() < minimumCoverageFloor)
             {
+            // The unconditional increment of loopctr on the next line is correct
+            // only because there is a transition added to the traversal at the
+            // bottom of this loop.
                 loopctr++;
 
                 path = new Queue<int>();
@@ -995,8 +1300,8 @@ namespace SeriousQualityEzModel
                     {
                         // mark the transitions covered along the way
                         transitions.IncrementHitCount((uint)tIndex);
-                        fileCtr++;
-                        suffix = String.Format("{0}", fileCtr.ToString("D4"));
+                        loopctr++;
+
                         if (client.NotifyAdapter)
                         {
                             string action = transitions.ActionByTransitionIndex((uint)tIndex);
@@ -1011,8 +1316,15 @@ namespace SeriousQualityEzModel
                                 // If the adapter wants to stop on problem, stop.
                                 if (client.StopOnProblem)
                                 {
+                                    Console.WriteLine("Stopping due to problem.  Achieved floor coverage of {0} before stop. Completed {1} iterations of traversal.", transitions.GetHitcountFloor(), loopctr);
+                                    WriteSvgDeltasFile(String.Format("{0}StopOnProblem{1}.html", fname, ++problemCount));
                                     return;
                                 }
+
+                                // TODO:
+                                // Provide a way for the user to override disabling transitions.
+                                // Reason is that the problem might not be severe enough that
+                                // disabling the transition is necessary to continue the traversal.
 
                                 // On first fault on an action, Disable the transition.
                                 if (transitions.IncrementActionFailures((uint)tIndex) == 1)
@@ -1035,11 +1347,22 @@ namespace SeriousQualityEzModel
             // same action is reason enough to avoid the action for the remainder of the run.  Development
             // team can root-cause the issue.
                                 }
+                                // Write an HTML file called Problem{problemCount}.html.  The
+                                // traversal it shows will be all the steps up to the problem,
+                                // so those are the steps to reproduce.  The dev can read the
+                                // arrays of edges, etc, at the bottom of the file to work through
+                                // the steps.  Hubba, hubba.
+                                WriteSvgDeltasFile(String.Format("{0}Problem{1}.html", fname, ++problemCount));
+
+                                // TODO:
+                                // Re-write the graph file because transitions are disabled.
+                                // *** Only write enabled transitions to the graph file!!
+
                                 // Go back to the start of this function, and reset the adapter.
                                 goto ResetPosition;
                             }
                         }
-                        this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByTransitionIndex((uint)tIndex), tIndex, targetIndex);
+                        AppendSvgDelta((uint)tIndex, targetIndex);
                     }
                 }
 
@@ -1074,12 +1397,11 @@ namespace SeriousQualityEzModel
                     }
                 }
 
-                fileCtr++;
-                suffix = String.Format("{0}", fileCtr.ToString("D4"));
-                this.CreateGraphVizFileAndImage(fname, suffix, transitions.ActionByTransitionIndex((uint)targetIndex), targetIndex, targetIndex);
+                AppendSvgDelta((uint)targetIndex, targetIndex);
             }
             // TODO: Trace floor coverage
             Console.WriteLine("Reached coverage floor of {0} in {1} iterations.", minimumCoverageFloor, loopctr);
+            WriteSvgDeltasFile(String.Format("{0}RandomDestinationCoverage{1}.html", fname, ++traversalCount));
 
             if (client.NotifyAdapter)
             {

@@ -17,16 +17,13 @@ namespace AlanRichardsonAPIs
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
-            // write graph to dot format file
-            string fname = "RichardsonAPIs";
-            string suffix = "0000";
-            graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
+            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
 
-//            client.NotifyAdapter = true;
+            client.NotifyAdapter = false;
 // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-//            client.StopOnProblem = true;
+            client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage(fname);
+            graph.RandomDestinationCoverage("RichardsonAPIs");
         }
     }
 
@@ -82,12 +79,20 @@ namespace AlanRichardsonAPIs
         const string shutdown = "Shutdown";
         const string getTodos = "GetTodosList";
         const string headTodos = "GetTodosHeaders";
-        const string postTodos = "AddTodoWithoutId";
+        // postNetTodos is modeled as a single transition but is implemented
+        // in the adapter as multiple transitions of post todo without ID and
+        // delete todo by ID, with a weighting toward post.  The transitions
+        // iterate until the goal net posts are achieved.
+        const string postNetTodos = "AddSeveralTodosWithoutId";
         const string getTodoId = "GetTodoFromId";
         const string headTodoId = "GetHeadersOfTodoFromId";
         const string postTodoId = "AmendTodoByIdPostMethod";
         const string putTodoId = "AmendTodoByIdPutMethod";
-        const string deleteTodoId = "DeleteTodoById";
+        // deleteNetTodos is modeled as a single transition but is implemented
+        // in the adapter as multiple transitions of delete todo by ID and
+        // post todo without ID, with a weighting toward delete.  The transitions
+        // iterate until the goal net deletions are achieved.
+        const string deleteNetTodos = "DeleteSeveralTodosById";
         const string showDocs = "GetDocumentation";
         const string createXChallengerGuid = "GetXChallengerGuid";
         const string restoreChallenger = "RestoreSavedXChallengerGuid";
@@ -104,8 +109,6 @@ namespace AlanRichardsonAPIs
         // Special actions to reduce state explosion related to number of todos
         const string postMaximumTodo = "AddMaximumTodoWithoutId";
         const string deleteFinalTodoId = "DeleteFinalTodoById";
-        const string postBetweenZeroAndMaximumTodo = "AddBetweenZeroAndMaximumTodoWithoutId";
-        const string deleteBetweenZeroAndMaximumTodoId = "DeleteBetweenZeroAndMaximumTodoById";
 
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
@@ -182,16 +185,15 @@ namespace AlanRichardsonAPIs
             switch (todosClass)
             {
                 case zeroTodos:
-                    actions.Add(postTodos);
+                case maximumTodos:
+                    actions.Add(deleteNetTodos);
+                    actions.Add(postNetTodos);
                     break;
                 case betweenZeroAndMaximumTodos:
-                    actions.Add(postBetweenZeroAndMaximumTodo);
-                    actions.Add(deleteBetweenZeroAndMaximumTodoId);
                     actions.Add(postMaximumTodo);
+                    actions.Add(postNetTodos);
                     actions.Add(deleteFinalTodoId);
-                    break;
-                case maximumTodos:
-                    actions.Add(deleteTodoId);
+                    actions.Add(deleteNetTodos);
                     break;
                 default:
                     Console.WriteLine("ERROR: Unknown Todos Class '{0}' GetAvailableActions()", todosClass);
@@ -222,24 +224,11 @@ namespace AlanRichardsonAPIs
 // duplicate deleteTodoById arc between nodes.
 //            actions.Add(deleteTodoId);
 
-            if (xAuthTokenExists)
-            {
-                actions.Add(getSecretNote);
-                actions.Add(postSecretNote);
-            }
-            else
-            {
-                actions.Add(postSecretToken);
-            }
-
-            if (xChallengerGuidExists)
-            {
-                actions.Add(restoreChallenger);
-            }
-            else
-            {
-                actions.Add(createXChallengerGuid);
-            }
+            actions.Add(getSecretNote);
+            actions.Add(postSecretNote);
+            actions.Add(postSecretToken);
+            actions.Add(restoreChallenger);
+            actions.Add(createXChallengerGuid);
 
             return actions;
         }
@@ -277,16 +266,13 @@ namespace AlanRichardsonAPIs
                 case postTodoId:
                 case putTodoId:
                     break;
-                case postTodos:
+                case postNetTodos:
                     if (todosClass == zeroTodos)
                     {
                         todosClass = betweenZeroAndMaximumTodos;
                     }
                     break;
-                case postBetweenZeroAndMaximumTodo:
-                case deleteBetweenZeroAndMaximumTodoId:
-                    break;
-                case deleteTodoId:
+                case deleteNetTodos:
                     if (todosClass == maximumTodos)
                     {
                         todosClass = betweenZeroAndMaximumTodos;

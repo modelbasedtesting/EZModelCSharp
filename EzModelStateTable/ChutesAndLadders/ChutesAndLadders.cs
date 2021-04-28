@@ -28,16 +28,17 @@ namespace ChutesAndLaddersExample
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
-            // write graph to dot format file
-            string fname = "ChutesAndLadders";
-            string suffix = "0000";
-            graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
+            // write graph file before traversal
+            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
 
-            client.NotifyAdapter = true;
+            // Enable NotifyAdapter ONLY when the AdapterTransition function is
+            // fully coded.  Otherwise, the decision about available actions
+            // can get screwed up by incomplete AdapterTransition code.
+            client.NotifyAdapter = false;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage(fname);
+            graph.RandomDestinationCoverage("ChutesAndLadders");
         }
     }
 

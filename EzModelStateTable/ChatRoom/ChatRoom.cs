@@ -15,16 +15,13 @@ namespace ChatRoomExample
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
-            // write graph to dot format file
-            string fname = "ChatRoom";
-            string suffix = "0000";
-            graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
+            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
 
-            client.NotifyAdapter = true;
+            client.NotifyAdapter = false;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage(fname);
+            graph.RandomDestinationCoverage("Chatroom");
         }
     }
 

@@ -20,17 +20,14 @@ namespace RichardsonAPIsAdapterExecution
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
-                // write graph to dot format file
-            string fname = "RichardsonAPIs";
-            string suffix = "0000";
-            graph.CreateGraphVizFileAndImage(fname, suffix, "Initial State");
+            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
 
-            client.NotifyAdapter = false;
+            client.NotifyAdapter = true;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
             client.WaitForObserverKeystroke = true;
-            graph.RandomDestinationCoverage(fname);
+            graph.RandomDestinationCoverage("RichardsonAPIs");
 
             // normal finish
             return 0;
@@ -142,8 +139,6 @@ namespace RichardsonAPIsAdapterExecution
         // Special actions to reduce state explosion related to number of todos
         const string postMaximumTodo = "AddMaximumTodoWithoutId";
         const string deleteFinalTodoId = "DeleteFinalTodoById";
-        const string postBetweenZeroAndMaximumTodo = "AddBetweenZeroAndMaximumTodoWithoutId";
-        const string deleteBetweenZeroAndMaximumTodoId = "DeleteBetweenZeroAndMaximumTodoById";
 
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
@@ -327,244 +322,251 @@ namespace RichardsonAPIsAdapterExecution
             StringContent body;
             int selectedTodo = random.Next((int)todosCount) + 1;
 
-            //  - drive execution of the action (of the transition)
-            switch (action)
+            try
             {
-                case invalidRequest:
-                    // Make a set of invalid requests, give them a weight of 16.
-                    // Generate a random number
-                    // Select a request at random, using weights.
-                    // cut the weight of the selected request in half.
-                    // Report the selected request to the console.
-                    // Issue the selected request to the APIs service.
-                    break;
+                //  - drive execution of the action (of the transition)
+                switch (action)
+                {
+                    case invalidRequest:
+                        // Make a set of invalid requests, give them a weight of 16.
+                        // Generate a random number
+                        // Select a request at random, using weights.
+                        // cut the weight of the selected request in half.
+                        // Report the selected request to the console.
+                        // Issue the selected request to the APIs service.
+                        break;
 
-                case startup:
-                    // launch the java app
-                    // The app dumps a lot of information to the
-                    // standard output on startup: port it is running
-                    // on, list of challenges.
-                    bool started = executer.Startup();
-                    if (!started)
-                    {
-                        // We couldn't start the APIs server.  Stop the test run.
-                        // The exit code of -1 indicates abnormal termination,
-                        // and in this case it is because we couldn't start the
-                        // APIs server.
-            //            Environment.Exit(-1);   
-                    }
-                    break;
+                    case startup:
+                        // launch the java app
+                        // The app dumps a lot of information to the
+                        // standard output on startup: port it is running
+                        // on, list of challenges.
+                        bool started = executer.Startup();
+                        if (!started)
+                        {
+                            // We couldn't start the APIs server.  Stop the test run.
+                            // The exit code of -1 indicates abnormal termination,
+                            // and in this case it is because we couldn't start the
+                            // APIs server.
+                            //            Environment.Exit(-1);   
+                        }
+                        break;
 
-                case shutdown:
-                    // Send the shutdown command.
-                    // Question for Alan Richardson: is it acceptable
-                    // to call the Shutdown API on the Heroku-hosted
-                    // API Challenges.
-                    acceptHeaders.Add("application/json");
+                    case shutdown:
+                        // Send the shutdown command.
+                        // Question for Alan Richardson: is it acceptable
+                        // to call the Shutdown API on the Heroku-hosted
+                        // API Challenges.
+                        acceptHeaders.Add("application/json");
 
-                    if (!executer.GetRequest(acceptHeaders, "shutdown"))
-                    {
-                        // There is a bug in shutdown on the API server:
-                        // the function does not return a response
-                        // to the caller.  It cuts off the network
-                        // conversation before the caller gets a
-                        // response, which causes an HTTP client
-                        // exception at the caller.
-            //            Environment.Exit(-15);
-                    }
-                    break;
+                        if (!executer.GetRequest(acceptHeaders, "shutdown"))
+                        {
+                            // There is a bug in shutdown on the API server:
+                            // the function does not return a response
+                            // to the caller.  It cuts off the network
+                            // conversation before the caller gets a
+                            // response, which causes an HTTP client
+                            // exception at the caller.
+                            //            Environment.Exit(-15);
+                        }
+                        break;
 
-                case getTodos:
-                    acceptHeaders.Add("application/json");
+                    case getTodos:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the GET request
-                    if (!executer.GetRequest(acceptHeaders, "todos"))
-                    {
-            //            Environment.Exit(-2);
-                    }
-                    break;
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        {
+                            //            Environment.Exit(-2);
+                        }
+                        break;
 
-                case headTodos:
-                    acceptHeaders.Add("application/json");
+                    case headTodos:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the HEAD request
-                    if (!executer.HeadRequest(acceptHeaders, "todos"))
-                    {
-             //           Environment.Exit(-7);
-                    }
-                    break;
+                        // issue the HEAD request
+                        if (!executer.HeadRequest(acceptHeaders, "todos"))
+                        {
+                            //           Environment.Exit(-7);
+                        }
+                        break;
 
-                case getTodoId:
-                    acceptHeaders.Add("application/json");
+                    case getTodoId:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the GET request
-                    if (!executer.GetRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
-                    {
-//                        Environment.Exit(-8);
-                    }
-                    break;
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
+                        {
+                            //                        Environment.Exit(-8);
+                        }
+                        break;
 
-                case headTodoId:
-                    acceptHeaders.Add("application/json");
+                    case headTodoId:
+                        acceptHeaders.Add("application/json");
 
-                    if (!executer.HeadRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
-                    {
-             //           Environment.Exit(-6);
-                    }
-                    break;
+                        if (!executer.HeadRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
+                        {
+                            //           Environment.Exit(-6);
+                        }
+                        break;
 
-                case postAmendTodoId:
-                    acceptHeaders.Add("application/json");
+                    case postAmendTodoId:
+                        acceptHeaders.Add("application/json");
 
-                    body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"POST-amended\", \"doneStatus\": true, \"description\": \"This todo modified by POST request with Id\"}", selectedTodo), Encoding.UTF8, "application/json");
+                        body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"POST-amended\", \"doneStatus\": true, \"description\": \"This todo modified by POST request with Id\"}", selectedTodo), Encoding.UTF8, "application/json");
 
-                    if (!executer.PostRequest(acceptHeaders, "todos", body))
-                    {
-             //           Environment.Exit(-3);
-                    }
-                    break;
+                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        {
+                            //           Environment.Exit(-3);
+                        }
+                        break;
 
-                case putTodoId:
-                    // modify an existing todo
-                    acceptHeaders.Add("application/json");
-                    body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"PUT done\", \"doneStatus\": false, \"description\": \"This todo modified by PUT request\"}", selectedTodo), Encoding.UTF8, "application/json");
+                    case putTodoId:
+                        // modify an existing todo
+                        acceptHeaders.Add("application/json");
+                        body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"PUT done\", \"doneStatus\": false, \"description\": \"This todo modified by PUT request\"}", selectedTodo), Encoding.UTF8, "application/json");
 
-                    if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo), body))
-                    {
-             //           Environment.Exit(-4);
-                    }
-                    break;
+                        if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo), body))
+                        {
+                            //           Environment.Exit(-4);
+                        }
+                        break;
 
-                case postBetweenZeroAndMaximumTodo:
-                case postMaximumTodo:
-                    acceptHeaders.Add("application/json");
+                    case postMaximumTodo:
+                        acceptHeaders.Add("application/json");
 
-                    body = new StringContent("{\"title\": \"POST JSON todo and accept JSON\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+                        body = new StringContent("{\"title\": \"POST JSON todo and accept JSON\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
 
-                    if (!executer.PostRequest(acceptHeaders, "todos", body))
-                    {
-                        //           Environment.Exit(-3);
-                    }
-                    else
-                    {
-                        todosCount++;
-                    }
-                    break;
+                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        {
+                            //           Environment.Exit(-3);
+                        }
+                        else
+                        {
+                            todosCount++;
+                        }
+                        break;
 
-                case postNetTodos:
+                    case postNetTodos:
 
-                    break;
+                        break;
 
-                case deleteBetweenZeroAndMaximumTodoId:
-                case deleteFinalTodoId:
-                    acceptHeaders.Add("application/json");
+                    case deleteFinalTodoId:
+                        acceptHeaders.Add("application/json");
 
-                    if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
-                    {
-  //                      Environment.Exit(-5);
-                    }
-                    else
-                    {
-                        todosCount--;
-                    }
-                    break;
+                        if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
+                        {
+                            //                      Environment.Exit(-5);
+                        }
+                        else
+                        {
+                            todosCount--;
+                        }
+                        break;
 
-                case deleteNetTodos:
-                    break;
+                    case deleteNetTodos:
+                        break;
 
-                case showDocs:
-                    acceptHeaders.Add("application/json");
+                    case showDocs:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the GET request
-                    if (!executer.GetRequest(acceptHeaders, "docs"))
-                    {
-//                        Environment.Exit(-9);
-                    }
-                    break;
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "docs"))
+                        {
+                            //                        Environment.Exit(-9);
+                        }
+                        break;
 
-                case createXChallengerGuid:
-                    // Issue the ??? request
-                    break;
+                    case createXChallengerGuid:
+                        // Issue the ??? request
+                        break;
 
-                case restoreChallenger:
-                    // Issue the ??? request
-                    break;
+                    case restoreChallenger:
+                        // Issue the ??? request
+                        break;
 
-                case getChallenges:
-                    acceptHeaders.Add("application/json");
+                    case getChallenges:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the GET request
-                    if (!executer.GetRequest(acceptHeaders, "challenges"))
-                    {
-//                        Environment.Exit(-2);
-                    }
-                    break;
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "challenges"))
+                        {
+                            //                        Environment.Exit(-2);
+                        }
+                        break;
 
-                case optionsChallenges:
-                    acceptHeaders.Add("application/json");
+                    case optionsChallenges:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the GET request
-                    if (!executer.OptionsRequest(acceptHeaders, "challenges"))
-                    {
-            //            Environment.Exit(-10);
-                    }
-                    break;
+                        // issue the GET request
+                        if (!executer.OptionsRequest(acceptHeaders, "challenges"))
+                        {
+                            //            Environment.Exit(-10);
+                        }
+                        break;
 
-                case headChallenges:
-                    acceptHeaders.Add("application/json");
+                    case headChallenges:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the HEAD request
-                    if (!executer.HeadRequest(acceptHeaders, "challenges"))
-                    {
-            //            Environment.Exit(-11);
-                    }
-                    break;
+                        // issue the HEAD request
+                        if (!executer.HeadRequest(acceptHeaders, "challenges"))
+                        {
+                            //            Environment.Exit(-11);
+                        }
+                        break;
 
-                case getHeartbeat:
-                    acceptHeaders.Add("application/json");
+                    case getHeartbeat:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the GET request
-                    if (!executer.GetRequest(acceptHeaders, "heartbeat"))
-                    {
-             //           Environment.Exit(-14);
-                    }
-                    break;
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "heartbeat"))
+                        {
+                            //           Environment.Exit(-14);
+                        }
+                        break;
 
-                case optionsHeartbeat:
-                    acceptHeaders.Add("application/json");
+                    case optionsHeartbeat:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the GET request
-                    if (!executer.OptionsRequest(acceptHeaders, "challenges"))
-                    {
- //                       Environment.Exit(-13);
-                    }
-                    break;
+                        // issue the GET request
+                        if (!executer.OptionsRequest(acceptHeaders, "challenges"))
+                        {
+                            //                       Environment.Exit(-13);
+                        }
+                        break;
 
-                case headHeartbeat:
-                    acceptHeaders.Add("application/json");
+                    case headHeartbeat:
+                        acceptHeaders.Add("application/json");
 
-                    // issue the HEAD request
-                    if (!executer.HeadRequest(acceptHeaders, "heartbeat"))
-                    {
-//                        Environment.Exit(-12);
-                    }
-                    break;
+                        // issue the HEAD request
+                        if (!executer.HeadRequest(acceptHeaders, "heartbeat"))
+                        {
+                            //                        Environment.Exit(-12);
+                        }
+                        break;
 
-                case postSecretToken:
-                    // Issue POST request
-                    break;
+                    case postSecretToken:
+                        // Issue POST request
+                        break;
 
-                case getSecretNote:
-                    // Issue GET request
-                    break;
+                    case getSecretNote:
+                        // Issue GET request
+                        break;
 
-                case postSecretNote:
-                    // Issue POST request
-                    break;
+                    case postSecretNote:
+                        // Issue POST request
+                        break;
 
-                default:
-                    Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
-                    break;
+                    default:
+                        Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("AdapterTransition EXCEPTION on action {0}", action);
+                Console.WriteLine("start state = {0}", startState);
+                Console.WriteLine("Exception: {0}", e.Message);
             }
 
             if (waitForObserverKeystroke)
@@ -621,17 +623,14 @@ namespace RichardsonAPIsAdapterExecution
             switch (todosClass)
             {
                 case zeroTodos:
+                case maximumTodos:
+                    actions.Add(deleteNetTodos);
                     actions.Add(postNetTodos);
                     break;
                 case betweenZeroAndMaximumTodos:
                     actions.Add(postMaximumTodo);
-                    actions.Add(postBetweenZeroAndMaximumTodo);
                     actions.Add(postNetTodos);
                     actions.Add(deleteFinalTodoId);
-                    actions.Add(deleteBetweenZeroAndMaximumTodoId);
-                    actions.Add(deleteNetTodos);
-                    break;
-                case maximumTodos:
                     actions.Add(deleteNetTodos);
                     break;
                 default:
@@ -658,25 +657,11 @@ namespace RichardsonAPIsAdapterExecution
             actions.Add(headTodoId);
             actions.Add(postAmendTodoId);
             actions.Add(putTodoId);
-
-            if (xAuthTokenExists)
-            {
-                actions.Add(getSecretNote);
-                actions.Add(postSecretNote);
-            }
-            else
-            {
-                actions.Add(postSecretToken);
-            }
-
-            if (xChallengerGuidExists)
-            {
-                actions.Add(restoreChallenger);
-            }
-            else
-            {
-                actions.Add(createXChallengerGuid);
-            }
+            actions.Add(getSecretNote);
+            actions.Add(postSecretNote);
+            actions.Add(postSecretToken);
+            actions.Add(restoreChallenger);
+            actions.Add(createXChallengerGuid);
 
             return actions;
         }
@@ -719,9 +704,6 @@ namespace RichardsonAPIsAdapterExecution
                     {
                         todosClass = betweenZeroAndMaximumTodos;
                     }
-                    break;
-                case postBetweenZeroAndMaximumTodo:
-                case deleteBetweenZeroAndMaximumTodoId:
                     break;
                 case deleteNetTodos:
                     if (todosClass == maximumTodos)
