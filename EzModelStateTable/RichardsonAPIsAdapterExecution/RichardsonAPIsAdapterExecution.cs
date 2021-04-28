@@ -327,6 +327,10 @@ namespace RichardsonAPIsAdapterExecution
                 //  - drive execution of the action (of the transition)
                 switch (action)
                 {
+                    // TODO:
+                    // Add the Trace cases
+                    // https://www.blackhillsinfosec.com/three-minutes-with-the-http-trace-method/
+
                     case invalidRequest:
                         // Make a set of invalid requests, give them a weight of 16.
                         // Generate a random number

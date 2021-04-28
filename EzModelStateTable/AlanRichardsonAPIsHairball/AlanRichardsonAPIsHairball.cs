@@ -9,7 +9,7 @@ namespace AlanRichardsonAPIsHairball
         static void Main()
         {
             APIs client = new APIs();
-            client.SkipSelfLinks = false;
+            client.SkipSelfLinks = true;
 
             GeneratedGraph graph = new GeneratedGraph( client, 5000, 100, 50);
 
