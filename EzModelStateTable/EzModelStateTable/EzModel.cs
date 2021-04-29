@@ -765,7 +765,24 @@ namespace SeriousQualityEzModel
             }
             pathNodeIndices.Add(endOfPathNodeIndex);
             traversedEdge.Add(transitionIndex);
-            pathEdges.Add(String.Format("[{0}]", String.Join(",", path)));
+            // CAUTION TODO:
+            // Here the edge of the endOfPathTransitionIndex is added to the pathEdges
+            // because it is needed to complete the path from the RandomDestinationCoverage()
+            // routine.  At time of writing this code it is unknown whether other
+            // traversals will have the same kind of path structure.  So the TODO
+            // is to analyze edges involved in the path for other traversals, and
+            // make adjustments to this bit of code if needed to keep the pathEdges
+            // correctly representing the path.
+            List<int> tempPath = new List<int>();
+            foreach( int i in path )
+            {
+                tempPath.Add(i);
+            }
+            if (endOfPathTransitionIndex > -1)
+            {
+                tempPath.Add(endOfPathTransitionIndex);
+            }
+            pathEdges.Add(String.Format("[{0}]", String.Join(",", tempPath)));
             pathNodes.Add(String.Format("[{0}]", String.Join(",", pathNodeIndices)));
             startnode.Add(startStateIndex);
             pathEndNode.Add(endOfPathNodeIndex);
@@ -827,10 +844,10 @@ namespace SeriousQualityEzModel
 
                     w.WriteLine(
 @"<div class=""child"">
-    <button onclick=""traversalStep(1)"">Forward</button>
-    <button onclick=""traversalStep(-1)"">Back</button>
+    <button onclick=""traversalStepForward()"">Forward</button>
+    <button onclick=""traversalStepBack()"">Back</button>
     <button onclick=""startTraversal()"">Start</button>
-    <input id=""step"" type=""text"" length=""10"" size=""10"" value = ""0""/>
+    <input id=""step"" type=""text"" length=""10"" size=""10"" value=""0"" />
     <button onclick=""stopTraversal()"">Stop</button>
     <text id=""edge""> </text>
 </div>
@@ -843,7 +860,7 @@ namespace SeriousQualityEzModel
 @"</div>
 </div>
 <script>
-var step = 0;
+var step = -1; // Because step is an index into an array.
 ");
                     w.WriteLine("const actionNames = [{0}];", transitions.ActionsToString());
                     w.WriteLine(" ");
@@ -851,7 +868,6 @@ var step = 0;
                     w.WriteLine(" ");
                     w.WriteLine("const transitionHitCounts = new Array({0}).fill(0);", transitions.Count());
                     w.WriteLine(" ");
-                    w.WriteLine("const maxSteps = {0};", traversedEdge.Count);
                     w.WriteLine("const nodeCount = {0};", totalNodes.Count());
                     w.WriteLine(" ");
                     w.WriteLine("const traversedEdge = [{0}];", String.Join(",", traversedEdge));
@@ -868,11 +884,15 @@ var step = 0;
     @"var c = 0;
 var t;
 var timer_is_on = 0;
+setStepText();
 
 function timedTraversal() {
   c = c + 1;
-  traversalStep(1);
-  t = setTimeout(timedTraversal, 330);
+  traversalStepForward();
+  if (timer_is_on)
+  {
+	  t = setTimeout(timedTraversal, 9);
+  }
 }
 
 function startTraversal() {
@@ -890,7 +910,6 @@ function stopTraversal() {
 function reset() {
 	timer_is_on = 0;
 	clearTimeout(t);
-	document.getElementById(""step"").value = 0;
 
     document.getElementById(""edge"").innerHTML = "" "";
     for (var i = 0; i < transitionHitCounts.length; i++)
@@ -898,21 +917,32 @@ function reset() {
         transitionHitCounts[i] = 0;
     }
     refreshGraphics(""black"");
-    step = 0;
+
+    step = -1; // Because step is an index into an array.
+    setStepText();
 }
 
-function refreshGraphics(refreshColor)
-{
-    for (var i = 0; i <= step; i++)
-    {
-        if (i >= maxSteps)
-        {
-            continue;
-        }
+function setStepText() {
+	document.getElementById(""step"").value = (step+1) + ""/"" + traversedEdge.length;
+}
 
-        var hitCount = transitionHitCounts[traversedEdge[i]];
+function refreshGraphics(refreshColor) {
+	var rendered = new Array(transitionHitCounts.length).fill(false);
+	// Walk backwards from the current step and set a 
+	// rendered flag on each transition as it is encountered.
+	// Do not render a transition that has rendered true.
+    for (var i = step; i >= 0; i--)
+    {
+    	var edgeIndex = traversedEdge[i];
+    	if (rendered[edgeIndex])
+    	{
+    		continue;
+    	}
+
+    	rendered[edgeIndex] = true;
+        var hitCount = transitionHitCounts[edgeIndex];
         var hitColor = getHitColor(hitCount);
-        var action = actionNames[transitionActions[i]];
+        var action = actionNames[transitionActions[edgeIndex]];
         var svgEdge = traversedEdge[i] + 1;
         var edge = document.getElementById(""edge"" + svgEdge.toString());
         var path = edge.getElementsByTagName(""path"");
@@ -949,15 +979,25 @@ function refreshGraphics(refreshColor)
     }
 }
 
-function traversalStep(delta)
+function traversalStepBack()
 {
-    // Refresh the graphics:
-    // set all path and polygon strokes and stroke-width values to 2, and stroke colors to black.
-    // set the fill to none on all graph nodes.
-    refreshGraphics();
+    if (step - 1 < -1)
+    {
+        return;
+    }
 
-    var newPosition = step + delta;
-    if (newPosition < 0 || newPosition >= maxSteps)
+    if (step > -1)
+    {
+        transitionHitCounts[traversedEdge[step]]--;
+        refreshGraphics();
+    }
+    step--;
+    traversalStepCommon();
+}
+
+function traversalStepForward()
+{
+    if (step + 1 >= traversedEdge.length)
     {
         // TODO:
         // Set a guard flag so that if the user continues
@@ -965,11 +1005,27 @@ function traversalStep(delta)
         // avoid re-executing the code blocks above here.
         // Those code blocks only need to run once when the
         // step is taken to zero or max steps.
+        stopTraversal(); // in case the traversal was running.  Now we can use the back button.
         return;
     }
-    step = newPosition;
+    // Refresh the graphics:
+    // set all path and polygon strokes and stroke-width values to 2, and stroke colors to black.
+    // set the fill to none on all graph nodes.
+    refreshGraphics();
+    step++;
+    transitionHitCounts[traversedEdge[step]]++;
+    traversalStepCommon();
+}
 
-    transitionHitCounts[traversedEdge[step]] += delta;
+
+function traversalStepCommon()
+{
+    setStepText();
+
+    if (step == -1)
+    {
+        return; // no work to do because we are at the initial state.
+    }
 
     // Now paint the current path and nodes in light grey
     for (var i = 0; i < pathEdges[step].length; i++)
@@ -1008,7 +1064,6 @@ function traversalStep(delta)
     // because of the calculations.  Look at that later, 
     // for when the start and end node of the path are
     // the same. 
-    document.getElementById(""step"").value = step + ""/"" + maxSteps;
     document.getElementById(""edge"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
     svgEdge = traversedEdge[step] + 1;
     edge = document.getElementById(""edge"" + svgEdge.toString());
@@ -1049,8 +1104,8 @@ function traversalStep(delta)
     // write all path nodes in light grey fill.
     // write start node in green, end of path node in cyan.
     // overdraw path edges, except the edge of the latest transition - make that fat.
-
 }
+
 
 function getHitColor(hitCount)
 {
