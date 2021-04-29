@@ -9,21 +9,30 @@ namespace AlanRichardsonAPIs
         static void Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
 
-            GeneratedGraph graph = new GeneratedGraph(client, 3000, 100, 30);
+            // We learned after generating the graph that it has 62 edges,
+            // 13 nodes, and uses 25 actions.  Those specific numbers are
+            // fed in to the constructor as a check that the graph can be
+            // created and traversed when exactly enough graph components
+            // are allocated.  Try reducing any of the three arguments and
+            // observe the consequences.
+            EzModelGraph graph = new EzModelGraph(client, 62, 13, 25);
 
-            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+            if (graph.GenerateGraph())
+            {
+                List<string> duplicateActions = graph.ReportDuplicateOutlinks();
 
-            graph.DisplayStateTable(); // Display the Excel-format state table
+                graph.DisplayStateTable(); // Display the Excel-format state table
 
-            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
+                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
 
-            client.NotifyAdapter = false;
-// If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            client.StopOnProblem = true;
+                client.NotifyAdapter = false;
+                // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+                client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("RichardsonAPIs", 21);
+                graph.RandomDestinationCoverage("RichardsonAPIs", 21);
+            }
         }
     }
 

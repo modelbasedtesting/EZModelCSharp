@@ -137,9 +137,17 @@ namespace SeriousQualityEzModel
                 }
                 if (!actionFound)
                 {
-                    transitions[transitionCount].actionIndex = actionCount;
-                    actions[actionCount].action = action;
-                    actionCount++;
+                    if (actionCount < actions.Length)
+                    {
+                        transitions[transitionCount].actionIndex = actionCount;
+                        actions[actionCount].action = action;
+                        actionCount++;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Not enough actions: choose a larger value for the maximumActions argument.");
+                        return false;  // The transition was not added because the action could not be added.
+                    }
                 }
                 transitions[transitionCount].hitCount = 0;
                 transitions[transitionCount].probability = 1.0;
@@ -641,7 +649,7 @@ namespace SeriousQualityEzModel
         void SetStateOfSystemUnderTest(string state);
     }
 
-    public class GeneratedGraph
+    public class EzModelGraph
     {
         StateTransitions transitions;
         Nodes totalNodes;
@@ -691,14 +699,17 @@ namespace SeriousQualityEzModel
             }
         };
 
-        public GeneratedGraph(IEzModelClient theEzModelClient, uint maxTransitions, uint maxNodes, uint maxActions)
+        public EzModelGraph(IEzModelClient theEzModelClient, uint maxTransitions = 1000, uint maxNodes = 20, uint maxActions = 20)
         {
             client = theEzModelClient;
 
             transitions = new StateTransitions(maxTransitions, maxActions);
 
             totalNodes = new Nodes(maxNodes);
+        }
 
+        public bool GenerateGraph()
+        {
             unexploredStates = new List<string>();
 
             string state = client.GetInitialState();
@@ -721,7 +732,12 @@ namespace SeriousQualityEzModel
                     // if generated endstate is new, add  to the totalNode & unexploredNode lists
                     if (!totalNodes.Contains(endState))
                     {
-                        totalNodes.Add(endState); // Adds a Node to Nodes class instance
+                        if (!totalNodes.Add(endState)) // try to Adds the Node to Nodes class instance
+                        {
+                            Console.WriteLine("Not enough nodes: choose a larger maximumNodes argument in the call to GeneratedGraph()");
+                            return false;
+                        }    
+                        
                         unexploredStates.Add(endState); // Adds a string to List instance
                     }
 
@@ -738,7 +754,11 @@ namespace SeriousQualityEzModel
                         // except in the case where client.SkipSelfLinks is true AND startState == endState
                         if (t.startState != t.endState)
                         {
-                            transitions.Add(t.startState, t.endState, t.action);
+                            if (!transitions.Add(t.startState, t.endState, t.action))
+                            {
+                                Console.WriteLine("Possibly not enough transitions: choose a larger maximumTransitions argument in the call to GeneratedGraph()");
+                                return false;
+                            }
                         }
                     }
                     break;
@@ -747,7 +767,11 @@ namespace SeriousQualityEzModel
                     {
                         if (tempTransitions[i].startState != tempTransitions[i].endState)
                         {
-                            transitions.Add(tempTransitions[i].startState, tempTransitions[i].endState, tempTransitions[i].action);
+                            if (!transitions.Add(tempTransitions[i].startState, tempTransitions[i].endState, tempTransitions[i].action))
+                            {
+                                Console.WriteLine("Possibly not enough transitions: choose a larger maximumTransitions argument in the call to GeneratedGraph()");
+                                return false;
+                            }
                             tempTransitions.RemoveAt(i);
                         }
                     }
@@ -769,7 +793,11 @@ namespace SeriousQualityEzModel
 
                         tempTransition t = tempTransitions[indices[index]];
 
-                        transitions.Add(t.startState, t.endState, t.action);
+                        if (!transitions.Add(t.startState, t.endState, t.action))
+                        {
+                            Console.WriteLine("Possibly not enough transitions: choose a larger maximumTransitions argument in the call to GeneratedGraph()");
+                            return false;
+                        }
 
                         for (int i=indices.Count-1; i >= 0; i--)
                         {
@@ -780,20 +808,17 @@ namespace SeriousQualityEzModel
                 case SelfLinkTreatmentChoice.AllowAll:
                     foreach (tempTransition t in tempTransitions)
                     {
-                        transitions.Add(t.startState, t.endState, t.action);
+                        if (!transitions.Add(t.startState, t.endState, t.action))
+                        {
+                            Console.WriteLine("Possibly not enough transitions: choose a larger maximumTransitions argument in the call to GeneratedGraph()");
+                            return false;
+                        }
                     }
                     break;
                 default:
                     break;
             }
-        }
-
-        void EachSelfLoopOnce()
-        {
-            // for each action
-            // collect transition indices that are self-loops
-            // select one of the indices at random
-            // drop all the other transitions
+            return true; // graph generated :-)
         }
 
         void InitializeSVGDeltas()
@@ -803,26 +828,6 @@ namespace SeriousQualityEzModel
             pathNodes = new List<string>();
             startnode = new List<int>();
             pathEndNode = new List<int>();
-        }
-
-        void AddNewTransitionsToGraph(string startState)
-        {
-            List<string> Actions = client.GetAvailableActions(startState);
-
-            foreach (string action in Actions)
-            {
-                // an endstate is generated from current state + changes from an invoked action
-                string endState = client.GetEndState(startState, action);
-
-                // if generated endstate is new, add  to the totalNode & unexploredNode lists
-                if (!totalNodes.Contains(endState))
-                {
-                    totalNodes.Add(endState); // Adds a Node to Nodes class instance
-                    unexploredStates.Add(endState); // Adds a string to List instance
-                }
-
-                transitions.Add(startState: startState, endState: endState, action: action);
-            }
         }
 
         void AppendSvgDelta(uint transitionIndex, int endOfPathTransitionIndex = -1)
@@ -917,17 +922,25 @@ namespace SeriousQualityEzModel
 <!--Title: state_machine Pages: 1 -->
 ");
                     bool copyToStream = false;
+                    bool addGradientDefs = false;
 
                     for (var i=0; i < ezModelGraph.Length; i++)
                     {
                         if (copyToStream == true)
                         {
                             w.WriteLine(ezModelGraph[i]);
+                            if (addGradientDefs == true)
+                            {
+                                w.WriteLine(
+@"<defs><linearGradient id=""greenBlue"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""100%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""yellowgreen"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""lightskyblue"" stop-opacity=""1""/></linearGradient><linearGradient id=""blueGreen"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""100%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""lightskyblue"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""yellowgreen"" stop-opacity=""1""/></linearGradient></defs>");
+                                addGradientDefs = false;
+                            }
                         }
                         if (ezModelGraph[i].StartsWith("<svg width"))
                         {
                             w.WriteLine("<svg ");
                             copyToStream = true;
+                            addGradientDefs = true;
                         }
                     }
 
@@ -970,7 +983,7 @@ var step = -1; // Because step is an index into an array.
                     w.WriteLine("const pathEndNode = [{0}];", String.Join(",", pathEndNode));
                     w.WriteLine(" ");
                     w.WriteLine(
-    @"var c = 0;
+@"var c = 0;
 var t;
 var timer_is_on = 0;
 
@@ -1021,17 +1034,57 @@ function setStepText() {
 }
 
 function refreshGraphics(refreshColor) {
-	var rendered = new Array(transitionHitCounts.length).fill(false);
+    // Set all path and polygon strokes and stroke-width values to 2,
+    // and stroke color to black.  Set the fill to none on all graph nodes.
+
 	// Walk backwards from the current step and set a 
 	// rendered flag on each transition as it is encountered.
-	// Do not render a transition that has rendered true.
-    for (var i = step; i >= 0; i--)
+	// Do not render a transition that has rendered==true.
+	var rendered = new Array(transitionHitCounts.length).fill(false);
+    var edgesToRender = traversedEdge.length;
+
+    // Before we walk backwards, clear each edge of the lookahead path
+    // that is beyond the present edge.
+    if (step > -1 && step < traversedEdge.length)
+    {
+        for (var i=1; i < pathEdges[step].length; i++)
+        {
+            var index = pathEdges[step][i];
+            var hitColor = getHitColor(transitionHitCounts[index]);
+
+            rendered[index] = true;
+            edgesToRender--;
+
+            var svgEdge = index + 1;
+            var edge = document.getElementById(""edge"" + svgEdge.toString());
+            var path = edge.getElementsByTagName(""path"");
+            if (path.length > 0)
+            {
+                path[0].setAttribute(""stroke-width"", ""3"");
+                path[0].setAttribute(""stroke"", hitColor);
+            }
+            var poly = edge.getElementsByTagName(""polygon"");
+            if (poly.length > 0)
+            {
+                poly[0].setAttribute(""stroke-width"", ""3"");
+                poly[0].setAttribute(""fill"", hitColor);
+                poly[0].setAttribute(""stroke"", hitColor);
+            }
+        }
+    }
+
+    for (var i = step; i >= 0 && edgesToRender > 0; i--)
     {
     	var edgeIndex = traversedEdge[i];
     	if (rendered[edgeIndex])
     	{
     		continue;
     	}
+
+        // When there are many steps, we will cover all the edges before we
+        // get through all the steps, and we can stop looking for edges to
+        // paint.  So count down the edges to render to zero, and stop.
+        edgesToRender--; 
 
     	rendered[edgeIndex] = true;
         var hitCount = transitionHitCounts[edgeIndex];
@@ -1062,6 +1115,8 @@ function refreshGraphics(refreshColor) {
             text[0].innerHTML = action;
         }
     }
+
+    // Clear all the nodes.
     for (var i = 1; i <= nodeCount; i++)
     {
         var node = document.getElementById(""node"" + i.toString());
@@ -1091,18 +1146,9 @@ function traversalStepBack() {
 function traversalStepForward() {
     if (step + 1 >= traversedEdge.length)
     {
-        // TODO:
-        // Set a guard flag so that if the user continues
-        // tapping back or forward into this body, we actually
-        // avoid re-executing the code blocks above here.
-        // Those code blocks only need to run once when the
-        // step is taken to zero or max steps.
         stopTraversal(); // in case the traversal was running.  Now we can use the back button.
         return;
     }
-    // Refresh the graphics:
-    // set all path and polygon strokes and stroke-width values to 2, and stroke colors to black.
-    // set the fill to none on all graph nodes.
     refreshGraphics();
     step++;
     transitionHitCounts[traversedEdge[step]]++;

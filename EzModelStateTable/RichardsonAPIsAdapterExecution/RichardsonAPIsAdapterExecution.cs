@@ -14,23 +14,27 @@ namespace RichardsonAPIsAdapterExecution
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
 
-            GeneratedGraph graph = new GeneratedGraph(client, 3000, 100, 30);
+            EzModelGraph graph = new EzModelGraph(client, 3000, 100, 30);
 
-            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+            if (graph.GenerateGraph())
+            {
+                List<string> duplicateActions = graph.ReportDuplicateOutlinks();
 
-            graph.DisplayStateTable(); // Display the Excel-format state table
+                graph.DisplayStateTable(); // Display the Excel-format state table
 
-            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
+                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Circle);
 
-            client.NotifyAdapter = true;
-            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            client.StopOnProblem = true;
+                client.NotifyAdapter = true;
+                // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+                client.StopOnProblem = true;
 
-            client.WaitForObserverKeystroke = true;
-            graph.RandomDestinationCoverage("RichardsonAPIs");
+                client.WaitForObserverKeystroke = true;
+                graph.RandomDestinationCoverage("RichardsonAPIs");
 
-            // normal finish
-            return 0;
+                // normal finish
+                return 0;
+            }
+            return -1; // Abnormal finish, unable to generate the graph.
         }
     }
 

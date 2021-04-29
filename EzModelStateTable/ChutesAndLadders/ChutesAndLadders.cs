@@ -24,21 +24,24 @@ namespace ChutesAndLaddersExample
             ChutesAndLadders client = new ChutesAndLadders();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
 
-            GeneratedGraph graph = new GeneratedGraph(client, 1100, 110, 10);
+            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 10);
 
-            graph.DisplayStateTable(); // Display the Excel-format state table
+            if (graph.GenerateGraph())
+            {
+                graph.DisplayStateTable(); // Display the Excel-format state table
 
-            // write graph file before traversal
-            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Default);
+                // write graph file before traversal
+                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
 
-            // Enable NotifyAdapter ONLY when the AdapterTransition function is
-            // fully coded.  Otherwise, the decision about available actions
-            // can get screwed up by incomplete AdapterTransition code.
-            client.NotifyAdapter = false;
-            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            client.StopOnProblem = true;
+                // Enable NotifyAdapter ONLY when the AdapterTransition function is
+                // fully coded.  Otherwise, the decision about available actions
+                // can get screwed up by incomplete AdapterTransition code.
+                client.NotifyAdapter = false;
+                // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+                client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("ChutesAndLadders", 3);
+                graph.RandomDestinationCoverage("ChutesAndLadders", 3);
+            }
         }
     }
 

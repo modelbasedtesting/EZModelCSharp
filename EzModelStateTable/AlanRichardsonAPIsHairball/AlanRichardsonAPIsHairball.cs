@@ -11,21 +11,24 @@ namespace AlanRichardsonAPIsHairball
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
 
-            GeneratedGraph graph = new GeneratedGraph( client, 5000, 100, 50);
+            EzModelGraph graph = new EzModelGraph( client, 5000, 100, 50);
 
-            graph.DisplayStateTable(); // Display the Excel-format state table
+            if (graph.GenerateGraph())
+            {
+                graph.DisplayStateTable(); // Display the Excel-format state table
 
-            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
+                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Circle);
 
-// If you want to drive the system under test as EzModel generates test steps,
-// set client.NotifyAdapter true.
-            client.NotifyAdapter = false;
-// If you want EzModel to stop generating test steps when a problem is
-// detected, set client.NotifyAdapter true, set client.StopOnProblem true,
-// and then return false from the client.AreStatesAcceptablySimilar() method.
-            client.StopOnProblem = true;
+                // If you want to drive the system under test as EzModel generates test steps,
+                // set client.NotifyAdapter true.
+                client.NotifyAdapter = false;
+                // If you want EzModel to stop generating test steps when a problem is
+                // detected, set client.NotifyAdapter true, set client.StopOnProblem true,
+                // and then return false from the client.AreStatesAcceptablySimilar() method.
+                client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("Hairball", 4);
+                graph.RandomDestinationCoverage("Hairball", 4);
+            }
         }
     }
 

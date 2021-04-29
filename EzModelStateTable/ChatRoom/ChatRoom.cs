@@ -11,17 +11,20 @@ namespace ChatRoomExample
             ChatRoom client = new ChatRoom();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
 
-            GeneratedGraph graph = new GeneratedGraph(client, 2000, 100, 20);
+            EzModelGraph graph = new EzModelGraph(client, 2000, 100, 20);
 
-            graph.DisplayStateTable(); // Display the Excel-format state table
+            if (graph.GenerateGraph())
+            {
+                graph.DisplayStateTable(); // Display the Excel-format state table
 
-            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Default);
+                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
 
-            client.NotifyAdapter = false;
-            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            client.StopOnProblem = true;
+                client.NotifyAdapter = false;
+                // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+                client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("Chatroom", 4);
+                graph.RandomDestinationCoverage("Chatroom", 4);
+            }
         }
     }
 
