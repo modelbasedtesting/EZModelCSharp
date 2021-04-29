@@ -583,6 +583,10 @@ namespace SeriousQualityEzModel
         }
     } // Nodes
 
+    public enum SelfLinkTreatmentChoice
+    {
+        SkipAll, OnePerAction, AllowAll
+    }
 
     public interface IEzModelClient
     {
@@ -611,7 +615,7 @@ namespace SeriousQualityEzModel
         // are self-links.  Set this value before calling the GeneratedGraph constructor,
         // as the creation of transitions occurs in the constructor body.
         // EzModel should not change the SkipSelfLinks setting.
-        bool SkipSelfLinks { get; set; }
+        SelfLinkTreatmentChoice SelfLinkTreatment { get; set; }
 
         // Test Execution:
         // When true, EzModel will end the current traversal strategy on the first
@@ -671,6 +675,22 @@ namespace SeriousQualityEzModel
         // to CreateGraphVizFileAndImage().
         GraphShape currentShape = GraphShape.Default;
 
+        Random rnd = new Random(DateTime.Now.Millisecond);
+
+        struct tempTransition
+        {
+            public string startState;
+            public string endState;
+            public string action;
+
+            public tempTransition(string startState, string endState, string action)
+            {
+                this.startState = startState;
+                this.endState = endState;
+                this.action = action;
+            }
+        };
+
         public GeneratedGraph(IEzModelClient theEzModelClient, uint maxTransitions, uint maxNodes, uint maxActions)
         {
             client = theEzModelClient;
@@ -685,11 +705,86 @@ namespace SeriousQualityEzModel
             unexploredStates.Add(state); // Adding to the <List> instance
             totalNodes.Add(state); // Adding to the Nodes class instance
 
+            List<tempTransition> tempTransitions = new List<tempTransition>();
+
             while (unexploredStates.Count > 0)
             {
                 // generate all transitions out of state s
                 state = FetchUnexploredState();
-                AddNewTransitionsToGraph(state);
+                List<string> Actions = client.GetAvailableActions(state);
+
+                foreach (string action in Actions)
+                {
+                    // an endstate is generated from current state + changes from an invoked action
+                    string endState = client.GetEndState(state, action);
+
+                    // if generated endstate is new, add  to the totalNode & unexploredNode lists
+                    if (!totalNodes.Contains(endState))
+                    {
+                        totalNodes.Add(endState); // Adds a Node to Nodes class instance
+                        unexploredStates.Add(endState); // Adds a string to List instance
+                    }
+
+                    tempTransitions.Add(new tempTransition(state, endState, action));
+                }
+            }
+
+            switch (client.SelfLinkTreatment)
+            {
+                case SelfLinkTreatmentChoice.SkipAll:
+                    foreach (tempTransition t in tempTransitions)
+                    {
+                        // add this {startState, endState, action} transition to the Graph
+                        // except in the case where client.SkipSelfLinks is true AND startState == endState
+                        if (t.startState != t.endState)
+                        {
+                            transitions.Add(t.startState, t.endState, t.action);
+                        }
+                    }
+                    break;
+                case SelfLinkTreatmentChoice.OnePerAction:
+                    for (int i = tempTransitions.Count-1; i >= 0; i--)
+                    {
+                        if (tempTransitions[i].startState != tempTransitions[i].endState)
+                        {
+                            transitions.Add(tempTransitions[i].startState, tempTransitions[i].endState, tempTransitions[i].action);
+                            tempTransitions.RemoveAt(i);
+                        }
+                    }
+                    while (tempTransitions.Count > 0)
+                    {
+                        // The remaining tempTransitions are all self-links.
+                        // Select one self-link for each different action.
+                        string match = tempTransitions[0].action;
+                        List<int> indices = new List<int>();
+                        for (int i=0; i < tempTransitions.Count; i++)
+                        {
+                            if (tempTransitions[i].action == match)
+                            {
+                                indices.Add(i);
+                            }
+                        }
+
+                        int index = rnd.Next(indices.Count);
+
+                        tempTransition t = tempTransitions[indices[index]];
+
+                        transitions.Add(t.startState, t.endState, t.action);
+
+                        for (int i=indices.Count-1; i >= 0; i--)
+                        {
+                            tempTransitions.RemoveAt(indices[i]);
+                        }
+                    }
+                    break;
+                case SelfLinkTreatmentChoice.AllowAll:
+                    foreach (tempTransition t in tempTransitions)
+                    {
+                        transitions.Add(t.startState, t.endState, t.action);
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -726,12 +821,6 @@ namespace SeriousQualityEzModel
                     unexploredStates.Add(endState); // Adds a string to List instance
                 }
 
-                // add this {startState, endState, action} transition to the Graph
-                // except in the case where client.SkipSelfLinks is true AND startState == endState
-                if (client.SkipSelfLinks == true && (startState == endState))
-                {
-                    continue;
-                }
                 transitions.Add(startState: startState, endState: endState, action: action);
             }
         }
@@ -884,6 +973,11 @@ var step = -1; // Because step is an index into an array.
     @"var c = 0;
 var t;
 var timer_is_on = 0;
+
+const stepElemSize = 2*Math.floor(Math.log10(traversedEdge.length)) + 3;
+var stepElem = document.getElementById(""step"");
+stepElem.setAttribute(""length"", stepElemSize);
+stepElem.setAttribute(""size"", stepElemSize);
 setStepText();
 
 function timedTraversal() {
@@ -891,7 +985,7 @@ function timedTraversal() {
   traversalStepForward();
   if (timer_is_on)
   {
-	  t = setTimeout(timedTraversal, 9);
+	  t = setTimeout(timedTraversal, 1);
   }
 }
 
@@ -979,8 +1073,7 @@ function refreshGraphics(refreshColor) {
     }
 }
 
-function traversalStepBack()
-{
+function traversalStepBack() {
     if (step - 1 < -1)
     {
         return;
@@ -995,8 +1088,7 @@ function traversalStepBack()
     traversalStepCommon();
 }
 
-function traversalStepForward()
-{
+function traversalStepForward() {
     if (step + 1 >= traversedEdge.length)
     {
         // TODO:
@@ -1018,8 +1110,7 @@ function traversalStepForward()
 }
 
 
-function traversalStepCommon()
-{
+function traversalStepCommon() {
     setStepText();
 
     if (step == -1)
@@ -1106,12 +1197,14 @@ function traversalStepCommon()
     // overdraw path edges, except the edge of the latest transition - make that fat.
 }
 
-
-function getHitColor(hitCount)
-{
-    switch (hitCount)
+function getHitColor(hitCount) {
+    switch (hitCount%19)
     {
         case 0:
+            if (hitCount != 0)
+            {
+                return ""#BFBF3F"";
+            }
             return ""#000000"";
         case 1:
             return ""#DF0000"";
@@ -1216,16 +1309,6 @@ function getHitColor(hitCount)
 
             for (uint i = 0; i < transitions.Count(); i++)
             {
-                string start = transitions.StartStateByTransitionIndex(i);
-                string end = transitions.EndStateByTransitionIndex(i);
-
-                if (client.SkipSelfLinks)
-                {
-                    if (start == end)
-                    {
-                        continue;
-                    }
-                }
                 Console.WriteLine(transitions.TransitionStringFromTransitionIndex(i));
             }
             Console.WriteLine("  ");
@@ -1327,7 +1410,7 @@ function getHitColor(hitCount)
             return -1;
         }
 
-        public void RandomDestinationCoverage(string fname)
+        public void RandomDestinationCoverage(string fname, int minimumCoverageFloor=2)
         {
             wallStartTime = DateTime.Now.Ticks;
 
@@ -1355,7 +1438,6 @@ function getHitColor(hitCount)
             List<string> popcornTrail = new List<string>();
 
             int loopctr = 0;
-            int minimumCoverageFloor = 2;
 
             while (transitions.GetHitcountFloor() < minimumCoverageFloor)
             {

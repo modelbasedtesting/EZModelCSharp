@@ -12,7 +12,7 @@ namespace RichardsonAPIsAdapterExecution
         static int Main(string[] args)
         {
             APIs client = new APIs();
-            client.SkipSelfLinks = false;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
 
             GeneratedGraph graph = new GeneratedGraph(client, 3000, 100, 30);
 
@@ -37,14 +37,14 @@ namespace RichardsonAPIsAdapterExecution
     public class APIs : IEzModelClient
     {
         SynchronousHttpClient executer = new SynchronousHttpClient();
-
-        bool skipSelfLinks;
-        bool notifyAdapter;
-        bool stopOnProblem;
         bool waitForObserverKeystroke;
 
+        SelfLinkTreatmentChoice skipSelfLinks;
+        bool notifyAdapter;
+        bool stopOnProblem;
+
         // Interface Properties
-        public bool SkipSelfLinks
+        public SelfLinkTreatmentChoice SelfLinkTreatment
         {
             get => skipSelfLinks;
             set => skipSelfLinks = value;
@@ -71,7 +71,6 @@ namespace RichardsonAPIsAdapterExecution
         public APIs( )
         {
             executer.server = "http://localhost:4567/";
-            skipSelfLinks = false;
             notifyAdapter = false;
             stopOnProblem = true;
             waitForObserverKeystroke = false;                

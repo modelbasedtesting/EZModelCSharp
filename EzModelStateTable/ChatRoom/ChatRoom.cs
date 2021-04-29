@@ -9,30 +9,30 @@ namespace ChatRoomExample
         static void Main()
         {
             ChatRoom client = new ChatRoom();
-            client.SkipSelfLinks = false;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
 
             GeneratedGraph graph = new GeneratedGraph(client, 2000, 100, 20);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
-            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
+            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Default);
 
             client.NotifyAdapter = false;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("Chatroom");
+            graph.RandomDestinationCoverage("Chatroom", 4);
         }
     }
 
     public class ChatRoom : IEzModelClient
     {
-        bool skipSelfLinks;
+        SelfLinkTreatmentChoice skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
 
         // Interface Properties
-        public bool SkipSelfLinks
+        public SelfLinkTreatmentChoice SelfLinkTreatment
         {
             get => skipSelfLinks;
             set => skipSelfLinks = value;

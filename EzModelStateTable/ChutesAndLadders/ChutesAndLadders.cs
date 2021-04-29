@@ -22,14 +22,14 @@ namespace ChutesAndLaddersExample
         public static void Main()
         {
             ChutesAndLadders client = new ChutesAndLadders();
-            client.SkipSelfLinks = false;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
 
             GeneratedGraph graph = new GeneratedGraph(client, 1100, 110, 10);
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
             // write graph file before traversal
-            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Circle);
+            graph.CreateGraphVizFileAndImage(GeneratedGraph.GraphShape.Default);
 
             // Enable NotifyAdapter ONLY when the AdapterTransition function is
             // fully coded.  Otherwise, the decision about available actions
@@ -38,18 +38,18 @@ namespace ChutesAndLaddersExample
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("ChutesAndLadders");
+            graph.RandomDestinationCoverage("ChutesAndLadders", 3);
         }
     }
 
     public class ChutesAndLadders : IEzModelClient
     {
-        bool skipSelfLinks;
+        SelfLinkTreatmentChoice skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
 
         // Interface Properties
-        public bool SkipSelfLinks
+        public SelfLinkTreatmentChoice SelfLinkTreatment
         {
             get => skipSelfLinks;
             set => skipSelfLinks = value;

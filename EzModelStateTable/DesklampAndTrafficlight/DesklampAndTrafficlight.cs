@@ -23,7 +23,7 @@ namespace DesklampAndTrafficlightExample
         public static void Main()
         {
             DeskLampAndTrafficLight client = new DeskLampAndTrafficLight();
-            client.SkipSelfLinks = false;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
 
             GeneratedGraph graph = new GeneratedGraph(client, 200, 20, 10);
 
@@ -41,12 +41,12 @@ namespace DesklampAndTrafficlightExample
 
     public class DeskLampAndTrafficLight : IEzModelClient
     {
-        bool skipSelfLinks;
+        SelfLinkTreatmentChoice skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
 
         // Interface Properties
-        public bool SkipSelfLinks
+        public SelfLinkTreatmentChoice SelfLinkTreatment
         {
             get => skipSelfLinks;
             set => skipSelfLinks = value;

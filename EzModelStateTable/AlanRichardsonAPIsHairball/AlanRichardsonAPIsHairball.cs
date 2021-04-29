@@ -9,7 +9,7 @@ namespace AlanRichardsonAPIsHairball
         static void Main()
         {
             APIs client = new APIs();
-            client.SkipSelfLinks = true;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
 
             GeneratedGraph graph = new GeneratedGraph( client, 5000, 100, 50);
 
@@ -25,7 +25,7 @@ namespace AlanRichardsonAPIsHairball
 // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("Hairball");
+            graph.RandomDestinationCoverage("Hairball", 4);
         }
     }
 
@@ -49,12 +49,12 @@ namespace AlanRichardsonAPIsHairball
 
     public class APIs : IEzModelClient
     {
-        bool skipSelfLinks;
+        SelfLinkTreatmentChoice skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
 
-        // IEzModelClient Interface Property
-        public bool SkipSelfLinks
+        // Interface Properties
+        public SelfLinkTreatmentChoice SelfLinkTreatment
         {
             get => skipSelfLinks;
             set => skipSelfLinks = value;

@@ -9,7 +9,7 @@ namespace AlanRichardsonAPIs
         static void Main()
         {
             APIs client = new APIs();
-            client.SkipSelfLinks = true;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
 
             GeneratedGraph graph = new GeneratedGraph(client, 3000, 100, 30);
 
@@ -23,18 +23,18 @@ namespace AlanRichardsonAPIs
 // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("RichardsonAPIs");
+            graph.RandomDestinationCoverage("RichardsonAPIs", 21);
         }
     }
 
     public class APIs : IEzModelClient
     {
-        bool skipSelfLinks;
+        SelfLinkTreatmentChoice skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
 
         // Interface Properties
-        public bool SkipSelfLinks
+        public SelfLinkTreatmentChoice SelfLinkTreatment
         {
             get => skipSelfLinks;
             set => skipSelfLinks = value;
