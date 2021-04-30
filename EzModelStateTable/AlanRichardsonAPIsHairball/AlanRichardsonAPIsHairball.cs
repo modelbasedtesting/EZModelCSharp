@@ -9,15 +9,20 @@ namespace AlanRichardsonAPIsHairball
         static void Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
 
-            EzModelGraph graph = new EzModelGraph( client, 5000, 100, 50);
+            // If you increase maxTodos (around line 86, below), then alter
+            // the EzModelGraph arguments like so:
+            // maxTransitions = 100 + 145 * maxTodos
+            // maxNodes = 5 + 4 * maxTodos
+            // maxActions = 35
+            EzModelGraph graph = new EzModelGraph( client, 2041, 61, 35);
 
             if (graph.GenerateGraph())
             {
                 graph.DisplayStateTable(); // Display the Excel-format state table
 
-                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Circle);
+                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
 
                 // If you want to drive the system under test as EzModel generates test steps,
                 // set client.NotifyAdapter true.
@@ -31,24 +36,6 @@ namespace AlanRichardsonAPIsHairball
             }
         }
     }
-
-    //      
-    // This struct is needed only for traversals.
-    //struct ToDo
-    //{
-    //    // The first four properties match those of a todo item in
-    //    // the system under test.
-    //    int id;
-    //    string title;
-    //    bool doneStatus;
-    //    string description;
-    //}
-    // Helper variables for traversals.
-    //// The secret note is persisted in the playerdata of the system under test
-    //// We must read the playerdata to initialize the secret note.
-    //string svSecretNote = "";
-    //// Populate the todos list during object constructor.
-    //List<ToDo> svTodosList = new List<ToDo>();
 
     public class APIs : IEzModelClient
     {
