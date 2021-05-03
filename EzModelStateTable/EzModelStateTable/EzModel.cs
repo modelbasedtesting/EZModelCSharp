@@ -1249,7 +1249,7 @@ function rescaleViewBox(scale) {
     width *= scale;
     height *= scale;
 
-    if (width < 100 || height < 100 || width > 5000 || height > 5000)
+    if (width < 20 || height < 20 || width > 5000 || height > 5000)
     {
         return viewBox;
     }
