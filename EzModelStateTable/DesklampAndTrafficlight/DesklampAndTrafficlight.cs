@@ -57,7 +57,7 @@ namespace DesklampAndTrafficlightExample
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
-            graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Circle);
+            graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
 
             client.NotifyAdapter = false;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
