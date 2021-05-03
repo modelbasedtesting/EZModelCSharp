@@ -6,34 +6,61 @@ namespace AlanRichardsonAPIsHairball
 {
     class AlanRichardsonAPIsHairballProgram
     {
-        static void Main()
+        static int Main()
         {
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
+            client.IncludeSelfLinkNoise = true;
 
             // If you increase maxTodos (around line 86, below), then alter
             // the EzModelGraph arguments like so:
             // maxTransitions = 100 + 145 * maxTodos
             // maxNodes = 5 + 4 * maxTodos
             // maxActions = 35
-            EzModelGraph graph = new EzModelGraph( client, 2041, 61, 35);
+            EzModelGraph graph = new EzModelGraph(client, 2200, 61, 35);
 
-            if (graph.GenerateGraph())
+            if (!graph.GenerateGraph())
             {
-                graph.DisplayStateTable(); // Display the Excel-format state table
-
-                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
-
-                // If you want to drive the system under test as EzModel generates test steps,
-                // set client.NotifyAdapter true.
-                client.NotifyAdapter = false;
-                // If you want EzModel to stop generating test steps when a problem is
-                // detected, set client.NotifyAdapter true, set client.StopOnProblem true,
-                // and then return false from the client.AreStatesAcceptablySimilar() method.
-                client.StopOnProblem = true;
-
-                graph.RandomDestinationCoverage("Hairball", 4);
+                Console.WriteLine("Failed to generate graph.");
+                return -1;
             }
+
+            List<string> report = graph.AnalyzeConnectivity();
+            if (report.Count > 0)
+            {
+                Console.WriteLine("The graph is not strongly connected.");
+                Console.WriteLine("problems report:");
+                foreach (string S in report)
+                {
+                    Console.WriteLine(S);
+                }
+                return -2;
+            }
+
+            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+            if (duplicateActions.Count > 0)
+            {
+                Console.WriteLine("There are duplicate outlinks in the graph.");
+                foreach (string S in duplicateActions)
+                {
+                    Console.WriteLine(S);
+                }
+            }
+
+            graph.DisplayStateTable(); // Display the Excel-format state table
+
+            graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
+
+            // If you want to drive the system under test as EzModel generates test steps,
+            // set client.NotifyAdapter true.
+            client.NotifyAdapter = false;
+            // If you want EzModel to stop generating test steps when a problem is
+            // detected, set client.NotifyAdapter true, set client.StopOnProblem true,
+            // and then return false from the client.AreStatesAcceptablySimilar() method.
+            client.StopOnProblem = true;
+
+            graph.RandomDestinationCoverage("Hairball", 4);
+            return 0;
         }
     }
 
@@ -42,6 +69,7 @@ namespace AlanRichardsonAPIsHairball
         SelfLinkTreatmentChoice skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
+        bool includeSelfLinkNoise = false;
 
         // Interface Properties
         public SelfLinkTreatmentChoice SelfLinkTreatment
@@ -64,22 +92,35 @@ namespace AlanRichardsonAPIsHairball
             set => stopOnProblem = value;
         }
 
+        public bool IncludeSelfLinkNoise
+        {
+            get => includeSelfLinkNoise;
+            set => includeSelfLinkNoise = value;
+        }
+
         // Initially the system is not running, and this affects a lot of
         // state.
         bool svRunning = false;
 
-        // A counter of items in the todos list.
-        // The system under test initializes the list with 10 items.
-        uint svNumTodos = 10;
+        // Reduce state explosion on todos by classifing the quantity of todos
+        // into either zero or more than zero.
+        bool svHasTodos = true;
+
+        // Reduce state explosion on todos that remain todo by classifying the
+        // quantity of todos todo into either zero or more than zero.
+        bool svHasActiveTodos = true;
 
         // Once the X-AUTH-TOKEN exists, there isn't a way to get rid of it
         // except for stopping the system under test.
         bool svXAuthTokenExists = false;
 
-        // The X-CHALLENGER GUID is created / returned from the system under test.
-        // It will be unknown during each new run of the system under test, until
-        // it is requested.  It must be supplied with each multi-player session.
-        bool svXChallengerGuidExists = false;
+        // DATA VARIABLES.  Not state variables....
+        // Not done todos count can be imputed from todosCount - doneTodosCount
+        uint resolvedTodosCount = 0;
+        
+        // A counter of items in the todos list.
+        // The system under test initializes the list with 10 items.
+        uint todosCount = 10;
 
         // A helper variable to limit the size of the state-transition table, and
         // thus also limit the size of the model graph.
@@ -97,17 +138,19 @@ namespace AlanRichardsonAPIsHairball
         const string putTodoId = "AmendTodoByIdPutMethod";
         const string deleteTodoId = "DeleteTodoById";
         const string showDocs = "GetDocumentation";
-        const string createXChallengerGuid = "GetXChallengerGuid";
-        const string restoreChallenger = "RestoreSavedXChallengerGuid";
+//        const string createXChallengerGuid = "GetXChallengerGuid";
+//        const string restoreChallenger = "RestoreSavedXChallengerGuid";
         const string getChallenges = "GetChallenges";
         const string optionsChallenges = "GetOptionsChallenges";
         const string headChallenges = "GetHeadersChallenges";
         const string getHeartbeat = "GetHeartbeatIsServerRunning";
         const string optionsHeartbeat = "GetOptionsForHeartbeat";
         const string headHeartbeat = "GetHeadersForHeartbeat";
+
         const string postSecretToken = "GetSecretToken";
         const string getSecretNote = "GetSecretNoteByToken";
         const string postSecretNote = "SetSecretNoteByToken";
+
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidGetTodo404 = "InvalidEndpointGetTodo";
         const string invalidGetTodos404 = "InvalidIdGetTodos";
@@ -123,16 +166,16 @@ namespace AlanRichardsonAPIsHairball
         const string invalidNotAuthorizedPostSecretNote403 = "XAuthTokenNotValidPostSecretNote";
         const string invalidAuthHeaderMissingPostSecretNote401 = "XAuthTokenMissingPostSecretNote";
 
-        string StringifyStateVector(bool running, uint numTodos, bool xAuthTokenExists, bool xChallengerGuidExists)
+        string StringifyStateVector(bool running, uint numTodos, bool xAuthTokenExists)
         {
-            string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}, XChallenger.{3}", running, numTodos, xAuthTokenExists, xChallengerGuidExists);
+            string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}", running, numTodos, xAuthTokenExists);
             return s;
         }
 
         // IEzModelClient Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, svNumTodos, svXAuthTokenExists, svXChallengerGuidExists);
+            return StringifyStateVector(svRunning, todosCount, svXAuthTokenExists);
         }
 
         // IEzModelClient Interface method
@@ -200,7 +243,10 @@ namespace AlanRichardsonAPIsHairball
 
             actions.Add(postTodos);
             actions.Add(deleteTodoId);
-            actions.Add(shutdown);
+            if (numTodos == todosCount && xAuthTokenExists == svXAuthTokenExists && xChallengerGuidExists == svXAuthTokenExists && running)
+            {
+                actions.Add(shutdown);
+            }
             actions.Add(getTodos);
             actions.Add(headTodos);
             actions.Add(showDocs);
@@ -242,8 +288,8 @@ namespace AlanRichardsonAPIsHairball
             actions.Add(getSecretNote);
             actions.Add(postSecretNote);
             actions.Add(postSecretToken);
-            actions.Add(restoreChallenger);
-            actions.Add(createXChallengerGuid);
+//            actions.Add(restoreChallenger);
+//            actions.Add(createXChallengerGuid);
 
             return actions;
         }
@@ -256,7 +302,7 @@ namespace AlanRichardsonAPIsHairball
             bool running = vState[0].Contains("True") ? true : false;
             uint numTodos = uint.Parse(vState[1].Split(".")[1]);
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+//            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
             switch (action)
             {
@@ -282,10 +328,11 @@ namespace AlanRichardsonAPIsHairball
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
                     running = false;
-                    xChallengerGuidExists = svXChallengerGuidExists;
+//                    xChallengerGuidExists = svXChallengerGuidExists;
                     xAuthTokenExists = svXAuthTokenExists;
-                    numTodos = svNumTodos;
+                    numTodos = todosCount;
                     break;
+
                 case getTodos:
                 case headTodos:
                 case getTodoId:
@@ -307,11 +354,11 @@ namespace AlanRichardsonAPIsHairball
                     break;
                 case showDocs:
                     break;
-                case createXChallengerGuid:
-                    xChallengerGuidExists = true;
-                    break;
-                case restoreChallenger:
-                    break;
+                //case createXChallengerGuid:
+                //    xChallengerGuidExists = true;
+                //    break;
+                //case restoreChallenger:
+                //    break;
                 case getChallenges:
                 case optionsChallenges:
                 case headChallenges:
@@ -330,7 +377,7 @@ namespace AlanRichardsonAPIsHairball
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, numTodos, xAuthTokenExists, xChallengerGuidExists);
+            return StringifyStateVector(running, numTodos, xAuthTokenExists);
         }
     }
 }

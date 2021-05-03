@@ -821,6 +821,64 @@ namespace SeriousQualityEzModel
             return true; // graph generated :-)
         }
 
+        public List<string> AnalyzeConnectivity()
+        {
+            // Per Harry Robinson, algorithm to determine connection problems or
+            // strongly connected graph: select a node.  Determine whether there
+            // is a path from that node to each of the other nodes in the graph.
+            // Any nodes for which there is not a path are not strongly connected.
+            // For each of the other nodes, determine whether there is a path back
+            // to the selected node.  Any nodes for which there is not a path are
+            // not strongly connected.
+            // Bonus: report transitions where the start or end state does not
+            // match a node.
+            // The return string will be empty for a strongly connected graph.
+            // For a graph with connection problems, the returned string will
+            // contain all the problem assessments from this routine.
+            List<string> report = new List<string>();
+
+            string startState = totalNodes.GetStateByIndex(0);
+
+            for (uint i = 1; i < totalNodes.Count(); i++)
+            {
+                string endState = totalNodes.GetStateByIndex(i);
+                Queue<int> pathList = FindShortestPath(startState, endState);
+                if (pathList.Count == 0)
+                {
+                    // There is no path from the startState to the endState.
+                    report.Add(String.Format("There is no path from [{0}] to [{1}].\n", startState, endState));
+                }
+
+                pathList.Clear();
+                pathList = FindShortestPath(endState, startState);
+                if (pathList.Count == 0)
+                {
+                    // There is no path from the startState to the endState.
+                    report.Add(String.Format("There is no path from [{0}] to [{1}].\n", endState, startState));
+                }
+            }
+
+            // Transition check.  Report each transition where the start or end state does not match a node.
+            for (uint i = 0; i < transitions.Count(); i++)
+            {
+                string s = transitions.StartStateByTransitionIndex(i);
+                string e = transitions.EndStateByTransitionIndex(i);
+                bool startExists = totalNodes.GetIndexByState(s) > -1;
+                bool endExists = totalNodes.GetIndexByState(e) > -1;
+
+                if (!startExists && !endExists)
+                {
+                    report.Add(String.Format("The start and end states do not exist for the transition {0} -> {1} : {2}", s, e, transitions.ActionByTransitionIndex(i)));
+                }
+                else if (!startExists || !endExists)
+                {
+                    report.Add(String.Format("The {0}{1} state does not exist for the transition {2} -> {3} : {4}", startExists ? "" : "start", endExists ? "" : "end", s, e, transitions.ActionByTransitionIndex(i)));
+                }
+            }
+
+            return report;
+        }
+
         void InitializeSVGDeltas()
         {
             traversedEdge = new List<uint>();
@@ -927,6 +985,26 @@ namespace SeriousQualityEzModel
                     {
                         if (copyToStream == true)
                         {
+                            if (ezModelGraph[i].StartsWith("<!-- "))
+                            {
+                                continue;
+                            }
+                            if (ezModelGraph[i].StartsWith("<polygon fill=\"white\" "))
+                            {
+                                continue;
+                            }
+                            if (ezModelGraph[i].StartsWith("<ellipse "))
+                            {
+                                ezModelGraph[i] = ezModelGraph[i].Replace(" stroke=", " onclick=\"attr(evt)\" stroke=");
+                            }
+                            if (ezModelGraph[i].StartsWith("<polygon "))
+                            {
+                                ezModelGraph[i] = ezModelGraph[i].Replace(" stroke=", " onclick=\"attr(evt)\" stroke=");
+                            }
+                            if (ezModelGraph[i].StartsWith("<text "))
+                            {
+                                ezModelGraph[i] = ezModelGraph[i].Replace(" text-anchor=\"middle\" ", " text-anchor=\"middle\" onclick=\"attr(evt)\" ");
+                            }
                             w.WriteLine(ezModelGraph[i]);
                             if (addGradientDefs == true)
                             {
@@ -937,11 +1015,15 @@ namespace SeriousQualityEzModel
                         }
                         if (ezModelGraph[i].StartsWith("<svg width"))
                         {
-                            w.WriteLine("<svg ");
+                            w.WriteLine(
+@"<svg id=""svgOuter"" onmousedown=""svgMouseDown(evt)"" onmouseup=""svgMouseUp(evt)"" onmouseleave=""svgMouseLeave(evt)"" onwheel=""svgMouseWheel(evt)"" ");
                             copyToStream = true;
                             addGradientDefs = true;
                         }
                     }
+
+                    //double wallTime = 1.0e-7 * (DateTime.Now.Ticks - wallStartTime);
+                    //w.WriteLine("<text id=\"wallTime\">Traversal wall time {0} seconds</text>", wallTime.ToString("F3", CultureInfo.CreateSpecificCulture("en-US")));
 
                     w.WriteLine(
 @"<div class=""child"">
@@ -952,18 +1034,18 @@ namespace SeriousQualityEzModel
     <button onclick=""stopTraversal()"">Stop</button>
     <text id=""edge""> </text>
 </div>
-<div class=""child child-1"">
+<div id=""info"" class=""child child-1"">
+    <text>button</text>
+    <text> x, y </text>
+    <text> scale 1.0 </text>
     <text id=""transitionFloor""> </text>
 </div>
 <div class=""child child-1"">
-    <button onclick=""reset()"">RESET</button>
-");
-                    double wallTime = 1.0e-7 * (DateTime.Now.Ticks - wallStartTime);
-                    w.WriteLine("<text id=\"wallTime\">Traversal wall time {0} seconds</text>", wallTime.ToString("F3", CultureInfo.CreateSpecificCulture("en-US")));
-                    w.WriteLine(
-@"</div>
+    <button onclick = ""reset()"">RESET TRAVERSAL</button>
+    <text id=""selectedSvgElementInfo""> </text>
 </div>
-<script>
+</div>
+<script type=""text/ecmascript"">
 var step = -1; // Because step is an index into an array.
 ");
                     w.WriteLine("const actionNames = [{0}];", transitions.ActionsToString());
@@ -997,6 +1079,198 @@ stepElem.setAttribute(""length"", stepElemSize);
 stepElem.setAttribute(""size"", stepElemSize);
 setStepText();
 assessCoverageFloor();
+
+var selectedSvgElement = undefined;
+
+function releaseSelection() {
+    if (selectedSvgElement != undefined)
+    {
+        var text = selectedSvgElement.getElementsByTagName(""text"");
+        if (text && text.length > 0)
+        {
+            for (var i = 0; i < text.length; i++)
+            {
+                text[i].setAttribute(""fill"", ""black"");
+            }
+        }
+        document.getElementById(""selectedSvgElementInfo"").innerHTML = "" "";
+        selectedSvgElement = undefined;
+    }
+}
+
+function attr(event) {
+    releaseSelection();
+    var t = event.target;
+    var p = t.parentNode;
+    selectedSvgElement = p;
+    var id = p.getAttribute(""id"");
+    var msg = id + "" "";
+
+    switch (id.substring(0,4))
+    {
+        case ""node"":
+            var title = p.getElementsByTagName(""title"");
+            if (title && title.length > 0)
+            {
+                msg += title[0].innerHTML;
+            }
+            var text = p.getElementsByTagName(""text"");
+            if (text && text.length > 0)
+            {
+                for (var i=0; i<text.length; i++)
+                {
+                    text[i].setAttribute(""fill"", ""red"");
+                }
+            }
+            break;
+        case ""edge"":
+            var text = p.getElementsByTagName(""text"");
+            if (text && text.length > 0)
+            {
+                msg += text[0].innerHTML;
+                text[0].setAttribute(""fill"", ""red"");
+            }
+            break;
+        default:
+            break;
+    }
+
+    document.getElementById(""selectedSvgElementInfo"").innerHTML = msg;
+}
+
+var viewBoxBits = document.getElementById(""svgOuter"").getAttribute(""viewBox"").split("" "");
+var originalBits = [parseFloat(viewBoxBits[0]), parseFloat(viewBoxBits[1]),
+    parseFloat(viewBoxBits[2]), parseFloat(viewBoxBits[3])];
+var newBits = originalBits;
+var translateScale = newBits[2] / originalBits[2];
+
+function svgMouseDown(event) {
+    var t = event.target;
+    elem = document.getElementById(""info"");
+    text = elem.getElementsByTagName(""text"");
+    if (text.length > 0)
+    {
+        text[0].innerHTML = ""BTN "" + event.button.toString();
+    }
+    switch (event.button)
+    {
+        case 0: // main button, e.g., left on a default setup
+            t.onmousemove = svgMouseMove;
+            didTranslate = false;
+            break;
+        case 1: // mouse wheel
+            break;
+        case 2: // secondary button, e.g., right on a default setup
+            break;
+        default: // we don't interepret any other mouse buttons, yet
+            break;
+    }
+    // https://www.javascripttutorial.net/javascript-dom/javascript-mouse-events/
+}
+
+var mouseMovePreviousX = undefined;
+var mouseMovePreviousY = undefined;
+var didTranslate = false;
+
+function svgMouseMove(event) {
+    didTranslate = true;
+    var t = event.target;
+    var x = event.clientX;
+    var y = event.clientY;
+    if (mouseMovePreviousX == undefined || mouseMovePreviousY == undefined)
+    {
+        mouseMovePreviousX = x;
+        mouseMovePreviousY = y;
+    }
+    else
+    {
+        var dx = translateScale * 0.5 * (mouseMovePreviousX - x);
+        var dy = translateScale * 0.5 * (mouseMovePreviousY - y);
+        mouseMovePreviousX = x;
+        mouseMovePreviousY = y;
+        translateViewBox(dx, dy);
+    }
+    elem = document.getElementById(""info"");
+    text = elem.getElementsByTagName(""text"");
+    if (text.length > 0)
+    {
+        text[1].innerHTML = ""x,y = "" + event.clientX.toString() + "", "" + event.clientY.toString();
+    }
+}
+
+function svgMouseWheel(event) {
+    didTranslate = true;
+    newBox = rescaleViewBox( event.deltaY > 0 ? 1.02 : 0.98);
+    elem = document.getElementById(""info"");
+    text = elem.getElementsByTagName(""text"");
+    if (text.length > 0)
+    {
+        text[2].innerHTML = ""viewBox "" + newBox;
+    }
+}
+
+function svgMouseLeave(event) {
+    svgMouseChange(event);
+}
+
+function svgMouseUp(event) {
+    if (!didTranslate && selectedSvgElement != undefined)
+    {
+        releaseSelection();
+    }
+    svgMouseChange(event);
+}
+
+function svgMouseChange(event) {
+    didTranslate = false;
+    mouseMovePreviousX = undefined;
+    mouseMovePreviousY = undefined;
+    var t = event.target;
+    t.onmousemove = null;
+}
+
+function rescaleViewBox(scale) {
+    var svgOuter = document.getElementById(""svgOuter"");
+    var viewBox = svgOuter.getAttribute(""viewBox"");
+    var boxBits = viewBox.split("" "");
+    var width = parseFloat(boxBits[2]);
+    var height = parseFloat(boxBits[3]);
+    var xMin = parseFloat(boxBits[0]);
+    var yMin = parseFloat(boxBits[1]);
+
+    if (Math.abs(scale - 1.0) < 0.001)
+    {
+        // do nothing on an almost nothing scale change.
+        return;
+    }
+
+    xMin += 0.5 * (1.0 - scale) * width;
+    yMin += 0.5 * (1.0 - scale) * height;
+    width *= scale;
+    height *= scale;
+
+    if (width < 100 || height < 100 || width > 5000 || height > 5000)
+    {
+        return viewBox;
+    }
+
+    newBits = [xMin, yMin, width, height];
+    translateScale = newBits[2] / originalBits[2];
+    var newViewBox = xMin.toFixed(2).toString() + "" "" + yMin.toFixed(2).toString() + "" "" + width.toFixed(2).toString() + "" "" + height.toFixed(2).toString();
+    svgOuter.setAttribute(""viewBox"", newViewBox);
+    return newViewBox;
+}
+
+function translateViewBox(dx, dy) {
+    var svgOuter = document.getElementById(""svgOuter"");
+    var viewBox = svgOuter.getAttribute(""viewBox"");
+    var boxBits = viewBox.split("" "");
+    var xMin = parseFloat(boxBits[0]) + dx;
+    var yMin = parseFloat(boxBits[1]) + dy;
+
+    var newViewBox = xMin.toFixed(2).toString() + "" "" + yMin.toFixed(2).toString() + "" "" + boxBits[2] + "" "" + boxBits[3];
+    svgOuter.setAttribute(""viewBox"", newViewBox);
+}
 
 function setTransitionFloorText() {
 	document.getElementById(""transitionFloor"").innerHTML = ""Transition coverage floor: "" + coverageFloor;
@@ -1133,7 +1407,7 @@ function refreshGraphics(refreshColor) {
         var ellipse = node.getElementsByTagName(""ellipse"");
         if (ellipse.length > 0)
         {
-            ellipse[0].setAttribute(""fill"", ""none"");
+            ellipse[0].setAttribute(""fill"", ""#f7f5eb"");
         }
     }
 }
@@ -1165,13 +1439,12 @@ function traversalStepForward() {
         stopTraversal(); // in case the traversal was running.  Now we can use the back button.
         return;
     }
-    refreshGraphics();
     step++;
     transitionHitCounts[traversedEdge[step]]++;
+    refreshGraphics();
     assessCoverageFloor();
     traversalStepCommon();
 }
-
 
 function assessCoverageFloor()
 {
@@ -1228,22 +1501,13 @@ function traversalStepCommon() {
         }
     }
 
-    // Finally, paint the current transition in fat red, 
-    // paint the start node of the path in green, and 
-    // paint the end node of the path in cyan.   
-    // NOTE: Doing a gradient in svg is very difficult 
-    // because of the calculations.  Look at that later, 
-    // for when the start and end node of the path are
-    // the same. 
-    document.getElementById(""edge"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
+    // Finally, paint the current transition
     svgEdge = traversedEdge[step] + 1;
     edge = document.getElementById(""edge"" + svgEdge.toString());
     var path = edge.getElementsByTagName(""path"");
     if (path.length > 0)
     {
         path[0].setAttribute(""stroke-width"", ""15"");
-        var hitCount = transitionHitCounts[traversedEdge[step]];
-        var color = getHitColor(hitCount);
         path[0].setAttribute(""stroke"", ""url(#greenBlueGradient)"");
     }
     var poly = edge.getElementsByTagName(""polygon"");
@@ -1385,8 +1649,7 @@ function getHitColor(hitCount) {
                 // add the state nodes to the image
                 for (int i = 0; i < totalNodes.Count(); i++)
                 {
-                    string pos = "";
-                    w.WriteLine("\"{0}\"\t[label=\"{1}\" {2}]", totalNodes.GetNodeByIndex((uint)i).state, totalNodes.GetNodeByIndex((uint)i).state.Replace(",", "\\n"), pos);
+                    w.WriteLine("\"{0}\"\t[label=\"{1}\" fillcolor=\"#f7f5eb\", style=filled]", totalNodes.GetNodeByIndex((uint)i).state, totalNodes.GetNodeByIndex((uint)i).state.Replace(",", "\\n"));
                 }
 
                 // Color each link by its hit count
@@ -1401,7 +1664,10 @@ function getHitColor(hitCount) {
             }
 
             Process dotProc = Process.Start(layoutProgram, EzModelFileName + ".txt -Tsvg -o " + EzModelFileName + traversalCount + ".svg");
-            dotProc.WaitForExit();
+            if (!dotProc.WaitForExit(60000))
+            {
+                Console.WriteLine("ERROR: Layout program {0} did not produce a graph image file after 60 seconds of execution time.", layoutProgram);
+            }            
         }
 
         public void DisplayStateTable()
@@ -1452,13 +1718,15 @@ function getHitColor(hitCount) {
                     string parentState = transitions.StartStateByTransitionIndex(tIndex);
                     int startIndex = GetNodeIndexByState(parentState);
 
-                    if (startIndex < 0) { continue; }
+                    if (startIndex < 0)
+                    { continue; }
 
                     totalNodes.Visit((uint)startIndex);
 
                     int endIndex = GetNodeIndexByState(transitions.EndStateByTransitionIndex(tIndex));
 
-                    if (endIndex < 0) { continue; }
+                    if (endIndex < 0)
+                    { continue; }
 
                     if (!totalNodes.WasVisited((uint)endIndex))
                     {
@@ -1557,6 +1825,12 @@ function getHitColor(hitCount) {
                 if (state != targetStartState)
                 {
                     path = FindShortestPath(state, targetStartState);
+                    // TODO: Handle graphs that are not strongly connected.
+                    // We will eventually get a path of zero length when we have
+                    // a graph that is not strongly connected, and in this traversal
+                    // that means the foreach loop below will not get executed,
+                    // and we will "teleport" from where we were to the target that
+                    // has no path to it, and we will continue.  That's not right.
                     foreach (int tIndex in path)
                     {
                         // mark the transitions covered along the way

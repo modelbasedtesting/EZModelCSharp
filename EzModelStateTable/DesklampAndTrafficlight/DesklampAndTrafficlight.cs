@@ -20,25 +20,51 @@ namespace DesklampAndTrafficlightExample
 {
     class DesklampAndTrafficlightProgram
     {
-        public static void Main()
+        public static int Main()
         {
             DeskLampAndTrafficLight client = new DeskLampAndTrafficLight();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
 
             EzModelGraph graph = new EzModelGraph(client, 200, 20, 10);
 
-            if (graph.GenerateGraph())
+            if (!graph.GenerateGraph())
             {
-                graph.DisplayStateTable(); // Display the Excel-format state table
-
-                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Circle);
-
-                client.NotifyAdapter = false;
-                // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-                client.StopOnProblem = true;
-
-                graph.RandomDestinationCoverage("DesklampAndTrafficlight");
+                Console.WriteLine("Failed to generate graph.");
+                return -1;
             }
+
+            List<string> report = graph.AnalyzeConnectivity();
+            if (report.Count > 0)
+            {
+                Console.WriteLine("The graph is not strongly connected.");
+                Console.WriteLine("problems report:");
+                foreach (string S in report)
+                {
+                    Console.WriteLine(S);
+                }
+                return -2;
+            }
+
+            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+            if (duplicateActions.Count > 0)
+            {
+                Console.WriteLine("There are duplicate outlinks in the graph.");
+                foreach (string S in duplicateActions)
+                {
+                    Console.WriteLine(S);
+                }
+            }
+
+            graph.DisplayStateTable(); // Display the Excel-format state table
+
+            graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Circle);
+
+            client.NotifyAdapter = false;
+            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+            client.StopOnProblem = true;
+
+            graph.RandomDestinationCoverage("DesklampAndTrafficlight");
+            return 0;
         }
     }
 

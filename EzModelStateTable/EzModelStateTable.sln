@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RichardsonAPIsAdapterExecut
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynchronousHttpClientExecuter", "SynchronousHttpClientExecuter\SynchronousHttpClientExecuter.csproj", "{43322E20-E3EE-4DB5-8251-0756FEE834A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RichardsonAPIsActiveTodos", "RichardsonAPIsTodosTodo\RichardsonAPIsActiveTodos.csproj", "{35745A34-034E-4BB9-B282-2E6E018F84F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{43322E20-E3EE-4DB5-8251-0756FEE834A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43322E20-E3EE-4DB5-8251-0756FEE834A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43322E20-E3EE-4DB5-8251-0756FEE834A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35745A34-034E-4BB9-B282-2E6E018F84F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35745A34-034E-4BB9-B282-2E6E018F84F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35745A34-034E-4BB9-B282-2E6E018F84F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35745A34-034E-4BB9-B282-2E6E018F84F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,25 +6,51 @@ namespace ChatRoomExample
 {
     class ChatRoomProgram
     {
-        static void Main()
+        static int Main()
         {
             ChatRoom client = new ChatRoom();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
 
             EzModelGraph graph = new EzModelGraph(client, 2000, 100, 20);
 
-            if (graph.GenerateGraph())
+            if (!graph.GenerateGraph())
             {
-                graph.DisplayStateTable(); // Display the Excel-format state table
-
-                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
-
-                client.NotifyAdapter = false;
-                // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-                client.StopOnProblem = true;
-
-                graph.RandomDestinationCoverage("Chatroom", 4);
+                Console.WriteLine("Failed to generate graph.");
+                return -1;
             }
+
+            List<string> report = graph.AnalyzeConnectivity();
+            if (report.Count > 0)
+            {
+                Console.WriteLine("The graph is not strongly connected.");
+                Console.WriteLine("problems report:");
+                foreach (string S in report)
+                {
+                    Console.WriteLine(S);
+                }
+                return -2;
+            }
+
+            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+            if (duplicateActions.Count > 0)
+            {
+                Console.WriteLine("There are duplicate outlinks in the graph.");
+                foreach (string S in duplicateActions)
+                {
+                    Console.WriteLine(S);
+                }
+            }
+
+            graph.DisplayStateTable(); // Display the Excel-format state table
+
+            graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
+
+            client.NotifyAdapter = false;
+            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+            client.StopOnProblem = true;
+
+            graph.RandomDestinationCoverage("Chatroom", 4);
+            return 0;
         }
     }
 

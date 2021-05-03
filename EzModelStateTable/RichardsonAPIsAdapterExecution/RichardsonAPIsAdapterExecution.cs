@@ -13,28 +13,51 @@ namespace RichardsonAPIsAdapterExecution
         {
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
+            client.IncludeSelfLinkNoise = true;
 
             EzModelGraph graph = new EzModelGraph(client, 3000, 100, 30);
 
-            if (graph.GenerateGraph())
+            if (!graph.GenerateGraph())
             {
-                List<string> duplicateActions = graph.ReportDuplicateOutlinks();
-
-                graph.DisplayStateTable(); // Display the Excel-format state table
-
-                graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Circle);
-
-                client.NotifyAdapter = true;
-                // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-                client.StopOnProblem = true;
-
-                client.WaitForObserverKeystroke = true;
-                graph.RandomDestinationCoverage("RichardsonAPIs");
-
-                // normal finish
-                return 0;
+                Console.WriteLine("Failed to generate graph.");
+                return -1;
             }
-            return -1; // Abnormal finish, unable to generate the graph.
+
+            List<string> report = graph.AnalyzeConnectivity();
+            if (report.Count > 0)
+            {
+                Console.WriteLine("The graph is not strongly connected.");
+                Console.WriteLine("problems report:");
+                foreach (string S in report)
+                {
+                    Console.WriteLine(S);
+                }
+                return -2;
+            }
+
+            List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+            if (duplicateActions.Count > 0)
+            {
+                Console.WriteLine("There are duplicate outlinks in the graph.");
+                foreach (string S in duplicateActions)
+                {
+                    Console.WriteLine(S);
+                }
+            }
+
+            graph.DisplayStateTable(); // Display the Excel-format state table
+
+            graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
+
+            client.NotifyAdapter = true;
+            // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
+            client.StopOnProblem = true;
+
+            client.WaitForObserverKeystroke = true;
+            graph.RandomDestinationCoverage("RichardsonAPIs");
+
+            // normal finish
+            return 0;
         }
     }
 
@@ -46,24 +69,33 @@ namespace RichardsonAPIsAdapterExecution
         SelfLinkTreatmentChoice skipSelfLinks;
         bool notifyAdapter;
         bool stopOnProblem;
+        bool includeSelfLinkNoise = false;
 
-        // Interface Properties
+        // IEzModelClient Interface Property
         public SelfLinkTreatmentChoice SelfLinkTreatment
         {
             get => skipSelfLinks;
             set => skipSelfLinks = value;
         }
 
+        // IEzModelClient Interface Property
         public bool NotifyAdapter
         {
             get => notifyAdapter;
             set => notifyAdapter = value;
         }
 
+        // IEzModelClient Interface Property
         public bool StopOnProblem
         {
             get => stopOnProblem;
             set => stopOnProblem = value;
+        }
+
+        public bool IncludeSelfLinkNoise
+        {
+            get => includeSelfLinkNoise;
+            set => includeSelfLinkNoise = value;
         }
 
         public bool WaitForObserverKeystroke
@@ -100,7 +132,7 @@ namespace RichardsonAPIsAdapterExecution
         // The X-CHALLENGER GUID is created / returned from the system under test.
         // It will be unknown during each new run of the system under test, until
         // it is requested.  It must be supplied with each multi-player session.
-        bool svXChallengerGuidExists = false;
+        //bool svXChallengerGuidExists = false;
 
         uint actionCount = 0;
         uint todosCount = 10; // Default initial state due to jar file behavior.
@@ -127,8 +159,8 @@ namespace RichardsonAPIsAdapterExecution
         // iterate until the goal net deletions are achieved.
         const string deleteNetTodos = "DeleteSeveralTodosById";
         const string showDocs = "GetDocumentation";
-        const string createXChallengerGuid = "GetXChallengerGuid";
-        const string restoreChallenger = "RestoreSavedXChallengerGuid";
+        //const string createXChallengerGuid = "GetXChallengerGuid";
+        //const string restoreChallenger = "RestoreSavedXChallengerGuid";
         const string getChallenges = "GetChallenges";
         const string optionsChallenges = "GetOptionsChallenges";
         const string headChallenges = "GetHeadersChallenges";
@@ -146,9 +178,9 @@ namespace RichardsonAPIsAdapterExecution
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
-        string StringifyStateVector(bool running, string todosClass, bool xAuthTokenExists, bool xChallengerGuidExists)
+        string StringifyStateVector(bool running, string todosClass, bool xAuthTokenExists)
         {
-            string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}, XChallenger.{3}", running, todosClass, xAuthTokenExists, xChallengerGuidExists);
+            string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}", running, todosClass, xAuthTokenExists);
             return s;
         }
 
@@ -157,7 +189,7 @@ namespace RichardsonAPIsAdapterExecution
         {
             // NOTE: EzModel will call SetStateOfSystemUnderTest if notifyAdapter
             // is true, so don't call SetStateOfSystemUnderTest in this function.
-            string state = StringifyStateVector(svRunning, svTodosClassString, svXAuthTokenExists, svXChallengerGuidExists);
+            string state = StringifyStateVector(svRunning, svTodosClassString, svXAuthTokenExists);
 
             return state;
         }
@@ -173,7 +205,7 @@ namespace RichardsonAPIsAdapterExecution
             bool running = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+            //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
             if (!running)
             {
@@ -195,12 +227,12 @@ namespace RichardsonAPIsAdapterExecution
                 // check whether the token exists.  If it does not exist, get it by calling the API.
             }
 
-            if (xChallengerGuidExists)
-            {
+            //if (xChallengerGuidExists)
+            //{
                 // check whether the GUID exists.  If it does not exist, get it by calling
 				// the API. (do we get a GUID when we are running locally?  If not, then
 				// we need to do something here for local runs.
-            }
+            //}
 
             switch (todosClass) {
                 case zeroTodos:
@@ -266,7 +298,7 @@ namespace RichardsonAPIsAdapterExecution
             bool running = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+            //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
             actionCount++;
 
@@ -310,14 +342,14 @@ namespace RichardsonAPIsAdapterExecution
                 // confirm the service does not know the xAuthToken
             }
 
-            if (xChallengerGuidExists)
-            {
-                // confirm the service knows the xChallengerGuid
-            }
-            else
-            {
-                // confirm the service does not know the xChallengerGuid
-            }
+            //if (xChallengerGuidExists)
+            //{
+            //    // confirm the service knows the xChallengerGuid
+            //}
+            //else
+            //{
+            //    // confirm the service does not know the xChallengerGuid
+            //}
 
             // Define the acceptHeaders list just once, outside the
             // switch where they are used in several cases.
@@ -484,13 +516,13 @@ namespace RichardsonAPIsAdapterExecution
                         }
                         break;
 
-                    case createXChallengerGuid:
-                        // Issue the ??? request
-                        break;
+                    //case createXChallengerGuid:
+                    //    // Issue the ??? request
+                    //    break;
 
-                    case restoreChallenger:
-                        // Issue the ??? request
-                        break;
+                    //case restoreChallenger:
+                    //    // Issue the ??? request
+                    //    break;
 
                     case getChallenges:
                         acceptHeaders.Add("application/json");
@@ -614,7 +646,7 @@ namespace RichardsonAPIsAdapterExecution
             bool running = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+            //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
             if (!running)
             {
@@ -667,8 +699,8 @@ namespace RichardsonAPIsAdapterExecution
             actions.Add(getSecretNote);
             actions.Add(postSecretNote);
             actions.Add(postSecretToken);
-            actions.Add(restoreChallenger);
-            actions.Add(createXChallengerGuid);
+            //actions.Add(restoreChallenger);
+            //actions.Add(createXChallengerGuid);
 
             return actions;
         }
@@ -681,7 +713,7 @@ namespace RichardsonAPIsAdapterExecution
             bool running = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+            //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
             switch (action)
             {
@@ -696,7 +728,7 @@ namespace RichardsonAPIsAdapterExecution
                     // on those initial state values.
                     running = false;
                     todosClass = svTodosClassString;
-                    xChallengerGuidExists = svXChallengerGuidExists;
+                    //xChallengerGuidExists = svXChallengerGuidExists;
                     xAuthTokenExists = svXAuthTokenExists;
                     break;
                 case getTodos:
@@ -732,11 +764,11 @@ namespace RichardsonAPIsAdapterExecution
                     break;
                 case showDocs:
                     break;
-                case createXChallengerGuid:
-                    xChallengerGuidExists = true;
-                    break;
-                case restoreChallenger:
-                    break;
+                //case createXChallengerGuid:
+                //    xChallengerGuidExists = true;
+                //    break;
+                //case restoreChallenger:
+                //    break;
                 case getChallenges:
                 case optionsChallenges:
                 case headChallenges:
@@ -755,7 +787,7 @@ namespace RichardsonAPIsAdapterExecution
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, todosClass, xAuthTokenExists, xChallengerGuidExists);
+            return StringifyStateVector(running, todosClass, xAuthTokenExists);
         }
     }
 }

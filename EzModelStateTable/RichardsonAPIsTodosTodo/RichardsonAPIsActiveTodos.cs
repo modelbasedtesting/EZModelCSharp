@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 
-namespace AlanRichardsonAPIs
+namespace RichardsonAPIsActiveTodos
 {
-    class AlanRichardsonAPIsProgram
+    class RichardsonAPIsActiveTodosProgram
     {
         static int Main()
         {
@@ -18,16 +18,15 @@ namespace AlanRichardsonAPIs
             // created and traversed when exactly enough graph components
             // are allocated.  Try reducing any of the three arguments and
             // observe the consequences.
-            EzModelGraph graph = new EzModelGraph(client, 2000, 32, 40);
+            EzModelGraph graph = new EzModelGraph(client, 800, 20, 36);
 
             if (!graph.GenerateGraph())
             {
-                Console.WriteLine("Unable to generate the graph");
+                Console.WriteLine("Failed to generate graph.");
                 return -1;
             }
 
-            List<String> report = graph.AnalyzeConnectivity();
-
+            List<string> report = graph.AnalyzeConnectivity();
             if (report.Count > 0)
             {
                 Console.WriteLine("The graph is not strongly connected.");
@@ -40,6 +39,14 @@ namespace AlanRichardsonAPIs
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+            if (duplicateActions.Count > 0)
+            {
+                Console.WriteLine("There are duplicate outlinks in the graph.");
+                foreach (string S in duplicateActions)
+                {
+                    Console.WriteLine(S);
+                }
+            }
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
@@ -50,14 +57,13 @@ namespace AlanRichardsonAPIs
             client.StopOnProblem = true;
 
             graph.RandomDestinationCoverage("RichardsonAPIs", 3);
-
             return 0;
         }
     }
 
     public class APIs : IEzModelClient
     {
-        SelfLinkTreatmentChoice skipSelfLinks;
+        SelfLinkTreatmentChoice selfLinkTreatment;
         bool notifyAdapter;
         bool stopOnProblem;
         bool includeSelfLinkNoise = false;
@@ -65,8 +71,8 @@ namespace AlanRichardsonAPIs
         // IEzModelClient Interface Property
         public SelfLinkTreatmentChoice SelfLinkTreatment
         {
-            get => skipSelfLinks;
-            set => skipSelfLinks = value;
+            get => selfLinkTreatment;
+            set => selfLinkTreatment = value;
         }
 
         // IEzModelClient Interface Property
@@ -101,15 +107,6 @@ namespace AlanRichardsonAPIs
         // quantity of todos todo into either zero or more than zero.
         bool svHasActiveTodos = true;
 
-        // Once the X-AUTH-TOKEN exists, there isn't a way to get rid of it
-        // except for stopping the system under test.
-        bool svXAuthTokenExists = false;
-
-        // The X-CHALLENGER GUID is created / returned from the system under test.
-        // It will be unknown during each new run of the system under test, until
-        // it is requested.  It must be supplied with each multi-player session.
-        bool svXChallengerGuidExists = false;
-
         // Actions handled by APIs
         const string startup = "java -jar apichallenges.jar";
         const string shutdown = "Shutdown";
@@ -143,25 +140,19 @@ namespace AlanRichardsonAPIs
         const string resolveAllActiveTodos = "ResolveAllActiveTodos";
         const string activateAnyResolvedTodos = "ActivateAnyResolvedTodos";
 
-        const string createXChallengerGuid = "GetXChallengerGuid";
-        const string restoreChallenger = "RestoreSavedXChallengerGuid";
-        const string postSecretToken = "GetSecretToken";
-        const string getSecretNote = "GetSecretNoteByToken";
-        const string postSecretNote = "SetSecretNoteByToken";
-
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
-        string StringifyStateVector(bool running, bool hasTodos, bool hasActiveTodos, bool xAuthTokenExists, bool xChallengerGuidExists)
+        string StringifyStateVector(bool running, bool hasTodos, bool hasActiveTodos)
         {
-            string s = String.Format("Running.{0}, HasTodos.{1}, HasTodosTodo{2}, XAuth.{3}, XChallenger.{4}", running, hasTodos, hasActiveTodos, xAuthTokenExists, xChallengerGuidExists);
+            string s = String.Format("Running.{0}, HasTodos.{1}, HasActiveTodos.{2}", running, hasTodos, hasActiveTodos);
             return s;
         }
 
         // Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, svHasTodos, svHasActiveTodos, svXAuthTokenExists, svXChallengerGuidExists);
+            return StringifyStateVector(svRunning, svHasTodos, svHasActiveTodos);
         }
 
         // Interface method
@@ -208,8 +199,6 @@ namespace AlanRichardsonAPIs
             bool running = vState[0].Contains("True") ? true : false;
             bool hasTodos = vState[1].Contains("True") ? true : false;
             bool hasActiveTodos = vState[2].Contains("True") ? true : false;
-            bool xAuthTokenExists = vState[3].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[4].Contains("True") ? true : false;
 
             if (!running)
             {
@@ -222,11 +211,7 @@ namespace AlanRichardsonAPIs
             if (includeSelfLinkNoise)
             {
                 actions.Add(getTodos);
-                actions.Add(getTodoId);
                 actions.Add(headTodos);
-                actions.Add(headTodoId);
-                actions.Add(postTodoId);
-                actions.Add(putTodoId);
                 actions.Add(showDocs);
                 actions.Add(getChallenges);
                 actions.Add(optionsChallenges);
@@ -234,7 +219,11 @@ namespace AlanRichardsonAPIs
                 actions.Add(getHeartbeat);
                 actions.Add(optionsHeartbeat);
                 actions.Add(headHeartbeat);
-
+                actions.Add(getTodoId);
+                actions.Add(getActiveTodos);
+                actions.Add(headTodoId);
+                actions.Add(postTodoId);
+                actions.Add(putTodoId);
                 // Add an action for a class of invalid actions that extend beyond
                 // specific invalid actions cited in the API Challenges list.
                 actions.Add(invalidRequest);
@@ -256,12 +245,6 @@ namespace AlanRichardsonAPIs
                 actions.Add(resolveAllActiveTodos);
             }
 
-            actions.Add(getSecretNote);
-            actions.Add(postSecretNote);
-            actions.Add(postSecretToken);
-            actions.Add(restoreChallenger);
-            actions.Add(createXChallengerGuid);
-
             return actions;
         }
 
@@ -273,8 +256,6 @@ namespace AlanRichardsonAPIs
             bool running = vState[0].Contains("True") ? true : false;
             bool hasTodos = vState[1].Contains("True") ? true : false;
             bool hasActiveTodos = vState[2].Contains("True") ? true : false;
-            bool xAuthTokenExists = vState[3].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[4].Contains("True") ? true : false;
 
             switch (action)
             {
@@ -290,8 +271,6 @@ namespace AlanRichardsonAPIs
                     running = false;
                     hasTodos = svHasTodos;
                     hasActiveTodos = svHasActiveTodos;
-                    xChallengerGuidExists = svXChallengerGuidExists;
-                    xAuthTokenExists = svXAuthTokenExists;
                     break;
                 case getTodos:
                 case headTodos:
@@ -330,11 +309,6 @@ namespace AlanRichardsonAPIs
                     break;
                 case showDocs:
                     break;
-                case createXChallengerGuid:
-                    xChallengerGuidExists = true;
-                    break;
-                case restoreChallenger:
-                    break;
                 case getChallenges:
                 case optionsChallenges:
                 case headChallenges:
@@ -343,17 +317,11 @@ namespace AlanRichardsonAPIs
                 case optionsHeartbeat:
                 case headHeartbeat:
                     break;
-                case postSecretToken:
-                    xAuthTokenExists = true;
-                    break;
-                case getSecretNote:
-                case postSecretNote:
-                    break;
                 default:
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, hasTodos, hasActiveTodos, xAuthTokenExists, xChallengerGuidExists);
+            return StringifyStateVector(running, hasTodos, hasActiveTodos);
         }
     }
 }
