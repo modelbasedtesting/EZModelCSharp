@@ -233,7 +233,7 @@ namespace AlanRichardsonAPIsHairball
             bool running = vState[0].Contains("True") ? true : false;
             uint numTodos = uint.Parse(vState[1].Split(".")[1]);
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+            //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
             if (!running)
             {
@@ -243,43 +243,44 @@ namespace AlanRichardsonAPIsHairball
 
             actions.Add(postTodos);
             actions.Add(deleteTodoId);
-            if (numTodos == todosCount && xAuthTokenExists == svXAuthTokenExists && xChallengerGuidExists == svXAuthTokenExists && running)
-            {
-                actions.Add(shutdown);
-            }
             actions.Add(getTodos);
-            actions.Add(headTodos);
-            actions.Add(showDocs);
-            actions.Add(getChallenges);
-            actions.Add(optionsChallenges);
-            actions.Add(headChallenges);
-            actions.Add(getHeartbeat);
-            actions.Add(optionsHeartbeat);
-            actions.Add(headHeartbeat);
+            actions.Add(shutdown);
 
-            // Add specific, invalid actions found in the API Challenges list.
-            // Being specific about invalid actions could lead to confusion
-            // when interpreting output from the adapter program in that
-            // implementing invalid actions not listed below would be outside
-            // the scope of the model.
-            // Option: abstraction of invalid requests in the model.
-            // A single, invalidRequest link in the model would give latitude to
-            // the adapter program to implement any amount of specific
-            // invalid reuqests, thus the adapter program can cover more than
-            // is called for by the API Challenges list and still match the model.
-            actions.Add(invalidGetTodo404);
-            actions.Add(invalidGetTodos404);
-            actions.Add(invalidPostTodos400);
-            actions.Add(invalidGetTodos406);
-            actions.Add(invalidPostTodos415);
-            actions.Add(invalidDeleteHeartbeat405);
-            actions.Add(serverErrorPatchHeartbeat500);
-            actions.Add(serverErrorTraceHeartbeat501);
-            actions.Add(invalidAuthGetSecretToken401);
-            actions.Add(invalidNotAuthorizedGetSecretNote403);
-            actions.Add(invalidAuthHeaderMissingGetSecretNote401);
-            actions.Add(invalidNotAuthorizedPostSecretNote403);
-            actions.Add(invalidAuthHeaderMissingPostSecretNote401);
+            if (includeSelfLinkNoise)
+            {
+                actions.Add(headTodos);
+                actions.Add(showDocs);
+                actions.Add(getChallenges);
+                actions.Add(optionsChallenges);
+                actions.Add(headChallenges);
+                actions.Add(getHeartbeat);
+                actions.Add(optionsHeartbeat);
+                actions.Add(headHeartbeat);
+
+                // Add specific, invalid actions found in the API Challenges list.
+                // Being specific about invalid actions could lead to confusion
+                // when interpreting output from the adapter program in that
+                // implementing invalid actions not listed below would be outside
+                // the scope of the model.
+                // Option: abstraction of invalid requests in the model.
+                // A single, invalidRequest link in the model would give latitude to
+                // the adapter program to implement any amount of specific
+                // invalid reuqests, thus the adapter program can cover more than
+                // is called for by the API Challenges list and still match the model.
+                actions.Add(invalidGetTodo404);
+                actions.Add(invalidGetTodos404);
+                actions.Add(invalidPostTodos400);
+                actions.Add(invalidGetTodos406);
+                actions.Add(invalidPostTodos415);
+                actions.Add(invalidDeleteHeartbeat405);
+                actions.Add(serverErrorPatchHeartbeat500);
+                actions.Add(serverErrorTraceHeartbeat501);
+                actions.Add(invalidAuthGetSecretToken401);
+                actions.Add(invalidNotAuthorizedGetSecretNote403);
+                actions.Add(invalidAuthHeaderMissingGetSecretNote401);
+                actions.Add(invalidNotAuthorizedPostSecretNote403);
+                actions.Add(invalidAuthHeaderMissingPostSecretNote401);
+            }
 
             actions.Add(getTodoId);
             actions.Add(headTodoId);
