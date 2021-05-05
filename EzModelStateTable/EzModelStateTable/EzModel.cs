@@ -1039,7 +1039,8 @@ TH {
                             if (addGradientDefs == true)
                             {
                                 w.WriteLine(
-@"<defs><linearGradient id=""greenBlueGradient"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""0%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""yellowgreen"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""lightskyblue"" stop-opacity=""1""/></linearGradient><linearGradient id=""blueGreenGradient"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""0%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""lightskyblue"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""yellowgreen"" stop-opacity=""1""/></linearGradient></defs>");
+@"<defs><linearGradient id=""greenBlueGradient"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""0%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""yellowgreen"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""lightskyblue"" stop-opacity=""1""/></linearGradient><linearGradient id=""blueGreenGradient"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""0%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""lightskyblue"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""yellowgreen"" stop-opacity=""1""/></linearGradient></defs>
+<svg>"); // The svg tag at the left encapsulates the SVG of the graph.  We need an extra closing svg at the end of everything.
                                 addGradientDefs = false;
                             }
                         }
@@ -1051,9 +1052,41 @@ TH {
                             addGradientDefs = true;
                         }
                     }
+                    // Transcode node subgraphs
+                    for (uint j = 0; j < totalNodes.Count(); j++)
+                    {
+                        w.WriteLine("<!-- subgraph for node {0} -->", j + 1);
+                        string[] subGraph = File.ReadAllLines(EzModelFileName + "node" + j + "_" + traversalCount + ".svg");
+                        copyToStream = false;
 
-                    w.WriteLine(
-@"			</td>
+                        for (var i = 0; i < subGraph.Length; i++)
+                        {
+                            if (copyToStream == true)
+                            {
+                                if (subGraph[i].StartsWith("<!-- "))
+                                {
+                                    continue;
+                                }
+                                if (subGraph[i].StartsWith("<polygon fill=\"white\" "))
+                                {
+                                    subGraph[i] = subGraph[i].Replace("transparent", "#5f5f5f").Replace("white", "#ffff7f");
+                                }
+                                w.WriteLine(subGraph[i]);
+                            }
+
+                            if (subGraph[i].StartsWith("<svg width"))
+                            {
+                                w.WriteLine("<svg id=\"subGraph{0}\" display=\"none\">", j+1);
+                                i++; // skip the viewBox on subgraphs.
+                                copyToStream = true;
+                            }
+                        }
+                    }
+
+
+                    w.WriteLine( // This block starts with a closing svg tag, matching an encapsulating svg tag way above.
+@"</svg>
+            </td>
 		</tr>
 	</table>
 </td>
@@ -1168,6 +1201,12 @@ function fitGraph() {
 }
 
 function releaseSelection() {
+	if (currentSubgraph != undefined)
+	{
+		document.getElementById(""subGraph"" + currentSubgraph).setAttribute(""display"", ""none"");
+        currentSubgraph = undefined;
+    }
+
     if (selectedSvgElement != undefined)
     {
         var text = selectedSvgElement.getElementsByTagName(""text"");
@@ -1183,17 +1222,32 @@ function releaseSelection() {
     }
 }
 
+var currentSubgraph = undefined;
+
 function attr(event) {
     releaseSelection();
     var t = event.target;
     var p = t.parentNode;
     selectedSvgElement = p;
     var id = p.getAttribute(""id"");
-    var msg = id + "" "";
+    var msg = """";
 
     switch (id.substring(0,4))
     {
         case ""node"":
+        	var nodenum = id.substring(4);
+        	if (currentSubgraph != undefined)
+        	{
+        		if (currentSubgraph == nodenum)
+        		{
+        			return;
+        		}
+        		var subGraph = document.getElementById(""subGraph"" + currentSubgraph);
+        		subGraph.setAttribute(""display"", ""none"");
+        	}
+            currentSubgraph = nodenum;
+        	var subGraph = document.getElementById(""subGraph"" + nodenum);
+        	subGraph.setAttribute(""display"", ""contents"");
             var title = p.getElementsByTagName(""title"");
             if (title && title.length > 0)
             {
@@ -1764,7 +1818,7 @@ function getHitColor(hitCount) {
                     // https://stackoverflow.com/questions/5343899/how-to-force-node-position-x-and-y-in-graphviz
             }
 
-            // Create a new file.
+            // Create a GraphViz input file for the whole graph.
             using (FileStream fs = new FileStream(EzModelFileName + ".txt", FileMode.Create))
             using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
             {
@@ -1781,7 +1835,7 @@ function getHitColor(hitCount) {
                 // add the state nodes to the image
                 for (int i = 0; i < totalNodes.Count(); i++)
                 {
-                    w.WriteLine("\"{0}\"\t[label=\"{1}\" fillcolor=\"#f7f5eb\", style=filled]", totalNodes.GetNodeByIndex((uint)i).state, totalNodes.GetNodeByIndex((uint)i).state.Replace(",", "\\n"));
+                    w.WriteLine("\"{0}\"\t[label=\"{1}\" fillcolor=\"#f7f5eb\", style=filled]", totalNodes.GetNodeByIndex((uint)i).state, totalNodes.GetNodeByIndex((uint)i).state.Replace(", ", "\\n"));
                 }
 
                 // Put a hitcount suffix on the action string so that GraphViz
@@ -1798,11 +1852,92 @@ function getHitColor(hitCount) {
                 w.Close();
             }
 
-            Process dotProc = Process.Start(layoutProgram, EzModelFileName + ".txt -Tsvg -o " + EzModelFileName + traversalCount + ".svg");
+            string inputFile = EzModelFileName + ".txt";
+            string outputFile = EzModelFileName + traversalCount + ".svg";
+
+            Process dotProc = Process.Start(layoutProgram, inputFile + " -Tsvg -o " + outputFile);
+            Console.WriteLine("Producing {0} from {1}", outputFile, inputFile);
             if (!dotProc.WaitForExit(60000))
             {
-                Console.WriteLine("ERROR: Layout program {0} did not produce a graph image file after 60 seconds of execution time.", layoutProgram);
-            }            
+                Console.WriteLine("ERROR: Layout program {0} did not produce file {1} after 60 seconds of execution time.", layoutProgram, outputFile);
+                dotProc.Kill(true);
+            }
+
+            // Create a set of GraphViz input files, a subgraph for each node in the graph
+            for (int i = 0; i < totalNodes.Count(); i++)
+            {
+                using (FileStream fs = new FileStream(EzModelFileName + "node" + i + ".txt", FileMode.Create))
+                using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
+                {
+                    // In case we have to create a new GraphViz file during a traversal..
+                    currentShape = shape;
+
+                    // preamble for the graphviz "dot format" output
+                    w.WriteLine("digraph state_machine {");
+                    w.WriteLine("size = \"13,7.5\";");
+                    w.WriteLine("node [shape = ellipse];");
+                    w.WriteLine("rankdir=LR;");
+
+                    string nodeState = totalNodes.GetStateByIndex((uint)i);
+
+                    // Output the node that the subgraph is about.
+                    w.WriteLine("\"{0}\"\t[label=\"{1}\" penwidth=2, fillcolor=\"#ffbf5f\", style=filled]", nodeState, nodeState.Replace(", ", "\\n"));
+
+                    // Get the outlinks and inlinks of the node
+                    List<uint> inOutSelf = transitions.GetStateTransitionIndices(nodeState);
+
+                    // First output the nodes related to the transitions.
+                    List<string> stateList = new List<string>();
+                    stateList.Add(nodeState);
+
+                    foreach (uint tIndex in inOutSelf)
+                    {
+                        string s = transitions.StartStateByTransitionIndex(tIndex);
+                        if (!stateList.Contains(s))
+                        {
+                            stateList.Add(s);
+                            // Output the node that the subgraph is about.
+                            w.WriteLine("\"{0}\"\t[label=\"{1}\" fillcolor=\"#f7f5eb\", style=filled]", s, s.Replace(", ", "\\n"));
+                        }
+                        s = transitions.EndStateByTransitionIndex(tIndex);
+                        if (!stateList.Contains(s))
+                        {
+                            stateList.Add(s);
+                            // Output the node that the subgraph is about.
+                            w.WriteLine("\"{0}\"\t[label=\"{1}\" fillcolor=\"#f7f5eb\", style=filled]", s, s.Replace(", ", "\\n"));
+                        }
+                    }    
+
+                    // TODO: Include the actual edge number for the graph in the
+                    // GraphViz edge command.  Right now it is not included, so the
+                    // arbitrary index is the value that shows up in the SVG file and
+                    // that doesn't map to the edge number in the complete graph.
+                    // Put a hitcount suffix on the action string so that GraphViz
+                    // lays out the action with enough space for a hitcount.  In the
+                    // subgraph, we can show the hitcount if we know the edge number.
+                    // On the first render, replace the text on each transition with
+                    // just the action name, no hitcount.
+                    foreach (uint tIndex in inOutSelf)
+                    {
+                        w.WriteLine("\"{0}\" -> \"{1}\" [ label=\"{2}\",color=black, penwidth=1 ];",
+                            transitions.StartStateByTransitionIndex(tIndex), transitions.EndStateByTransitionIndex(tIndex), transitions.ActionByTransitionIndex(tIndex));
+                    }
+
+                    w.WriteLine("}");
+                    w.Close();
+
+                    inputFile = EzModelFileName + "node" + i + ".txt";
+                    outputFile = EzModelFileName + "node" + i + "_" + traversalCount + ".svg";
+
+                    dotProc = Process.Start(layoutProgram, inputFile + " -Tsvg -o " + outputFile);
+                    Console.WriteLine("Producing {0} from {1}", outputFile, inputFile);
+                    if (!dotProc.WaitForExit(60000))
+                    {
+                        Console.WriteLine("ERROR: Layout program {0} did not produce file {1} for node {2} after 60 seconds of execution time.", layoutProgram, outputFile, i);
+                        dotProc.Kill(true);
+                    }
+                }
+            }
         }
 
         public void DisplayStateTable()
