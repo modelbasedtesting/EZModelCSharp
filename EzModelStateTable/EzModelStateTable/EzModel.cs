@@ -124,7 +124,10 @@ namespace SeriousQualityEzModel
             {
                 transitions[transitionCount].startState = startState;
                 transitions[transitionCount].endState = endState;
+                transitions[transitionCount].enabled = true;
+
                 TransitionAction ta = new TransitionAction(action);
+
                 bool actionFound = false;
                 for (uint i = 0; i < actionCount; i++)
                 {
@@ -213,7 +216,7 @@ namespace SeriousQualityEzModel
             List<int> lowHitList = new List<int>();
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].hitCount == lowHit)
+                if (transitions[i].enabled && transitions[i].hitCount == lowHit)
                 {
                     lowHitList.Add(i);
                 }
@@ -230,7 +233,7 @@ namespace SeriousQualityEzModel
 
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].hitCount < floor)
+                if (transitions[i].enabled && transitions[i].hitCount < floor)
                 {
                     floor = transitions[i].hitCount;
                 }
@@ -254,7 +257,7 @@ namespace SeriousQualityEzModel
 
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].hitCount == lowHit)
+                if (transitions[i].enabled && transitions[i].hitCount == lowHit)
                 {
                     if (transitions[i].startState != state)
                     {
@@ -301,7 +304,7 @@ namespace SeriousQualityEzModel
 
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].hitCount == lowHit)
+                if (transitions[i].enabled && transitions[i].hitCount == lowHit)
                 {
                     if (transitions[i].startState == state)
                     {
@@ -337,7 +340,7 @@ namespace SeriousQualityEzModel
 
             for (uint i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].startState == state || transitions[i].endState == state)
+                if (transitions[i].enabled && transitions[i].startState == state || transitions[i].endState == state)
                 {
                     indices.Add(i);
                 }
@@ -352,7 +355,7 @@ namespace SeriousQualityEzModel
 
             for (uint i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].startState == state)
+                if (transitions[i].enabled && transitions[i].startState == state)
                 {
                     indices.Add(i);
                 }
@@ -372,7 +375,7 @@ namespace SeriousQualityEzModel
                 // Track the index of the transition with the lowest hitCount.
                 // Return the tracked index to the caller, so that coverage is
                 // increased.
-                if (transitions[i].startState == startState && transitions[i].endState == endState)
+                if (transitions[i].enabled && transitions[i].startState == startState && transitions[i].endState == endState)
                 {
                     if (transitions[i].hitCount <= lowHit)
                     {
@@ -430,7 +433,7 @@ namespace SeriousQualityEzModel
         {
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].endState == endState)
+                if (transitions[i].enabled && transitions[i].endState == endState)
                 {
                     return i;
                 }
@@ -444,7 +447,7 @@ namespace SeriousQualityEzModel
         {
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].startState == startState)
+                if (transitions[i].enabled && transitions[i].startState == startState)
                 {
                     return i;
                 }
@@ -951,31 +954,58 @@ namespace SeriousQualityEzModel
             {
                 using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
                 {
+                    // NOTE: <!DOCTYPE html> means HTML 5 to the browser.
                     w.WriteLine(
 @"<!DOCTYPE html>
 <html>
 	<head>
 		<style>
-.parent {
-    width: 96vw;
-    margin: 2vw 2vw;
-    position: relative;
+input[type=""range""] {
+	width:300px;
 }
-.child {
-	width: 100%;
-	height: 100%;
-	position: absolute
-	top: 0;
-	left: 0;
-	opacity: 0.7;
+TD { 
+	font-family: Arial; 
+	font-size: 10pt; 
 }
-.child-1 {
-    margin-top: 12px;
+TH {
+	font-family: Arial;
+	font-size: 12pt;
 }
 </style>
 	</head>
 	<body>
-<div class=""parent"">
+	<table border=""0"" width=""100%"" height=""100%"">
+		<tr>
+			<th colspan=""2"" id=""selectedSvgElementInfo"" style=""height:20px; color:#e00000""></th> 
+		</tr>
+		<tr>
+			<td width=""50"">
+				<table border=""0"">
+					<tr><td style=""text-align:right"">18</td><td style=""width:50%; background-color:#FF7F7F""></td></tr> 
+					<tr><td style=""text-align:right"">17</td><td style=""width:50%; background-color:#97FF2F""></td></tr>
+					<tr><td style=""text-align:right"">16</td><td style=""width:50%; background-color:#771FAF""></td></tr>
+					<tr><td style=""text-align:right"">15</td><td style=""width:50%; background-color:#4F7FEF""></td></tr>
+					<tr><td style=""text-align:right"">14</td><td style=""width:50%; background-color:#8FCF27""></td></tr>
+					<tr><td style=""text-align:right"">13</td><td style=""width:50%; background-color:#A71770""></td></tr>
+					<tr><td style=""text-align:right"">12</td><td style=""width:50%; background-color:#77EF77""></td></tr>
+					<tr><td style=""text-align:right"">11</td><td style=""width:50%; background-color:#CF77CF""></td></tr>
+					<tr><td style=""text-align:right"">10</td><td style=""width:50%; background-color:#BF4F4F""></td></tr>
+					<tr><td style=""text-align:right"">9</td><td style=""width:50%; background-color:#3737AF""></td></tr>
+					<tr><td style=""text-align:right"">8</td><td style=""width:50%; background-color:#008F00""></td></tr>
+					<tr><td style=""text-align:right"">7</td><td style=""width:50%; background-color:#EFD700""></td></tr>
+					<tr><td style=""text-align:right"">6</td><td style=""width:50%; background-color:#8F008F""></td></tr>
+					<tr><td style=""text-align:right"">5</td><td style=""width:50%; background-color:#0000DF""></td></tr>
+					<tr><td style=""text-align:right"">4</td><td style=""width:50%; background-color:#FFAF00""></td></tr>
+					<tr><td style=""text-align:right"">3</td><td style=""width:50%; background-color:#DF00DF""></td></tr>
+					<tr><td style=""text-align:right"">2</td><td style=""width:50%; background-color:#00DF00""></td></tr>
+					<tr><td style=""text-align:right"">1</td><td style=""width:50%; background-color:#00AFFF""></td></tr>
+					<tr><td style=""text-align:right"">0</td><td style=""width:50%; background-color:#000000""></td></tr>
+				</table>
+			</td>
+			<td>
+				<table border=""1"" rules=""none"" width=""100%"" height=""100%"">
+					<tr>
+						<td>
 <!-- Generated by graphviz -->
 ");
                     bool copyToStream = false;
@@ -1022,29 +1052,63 @@ namespace SeriousQualityEzModel
                         }
                     }
 
-                    //double wallTime = 1.0e-7 * (DateTime.Now.Ticks - wallStartTime);
-                    //w.WriteLine("<text id=\"wallTime\">Traversal wall time {0} seconds</text>", wallTime.ToString("F3", CultureInfo.CreateSpecificCulture("en-US")));
-
                     w.WriteLine(
-@"<div class=""child"">
-    <button onclick=""traversalStepBack()"">Back</button>
-    <button onclick=""traversalStepForward()"">Forward</button>
-    <button onclick=""startTraversal()"">Start</button>
-    <input id=""step"" type=""text"" length=""10"" size=""10"" value=""0"" />
-    <button onclick=""stopTraversal()"">Stop</button>
-    <text id=""edge""> </text>
-</div>
-<div id=""info"" class=""child child-1"">
-    <text>button</text>
-    <text> x, y </text>
-    <text> scale 1.0 </text>
-    <text id=""transitionFloor""> </text>
-</div>
-<div class=""child child-1"">
-    <button onclick = ""reset()"">RESET TRAVERSAL</button>
-    <text id=""selectedSvgElementInfo""> </text>
-</div>
-</div>
+@"			</td>
+		</tr>
+	</table>
+</td>
+</tr>
+<tr>
+	<td></td>
+	<td>
+		<table>
+			<tr>
+			    <td>
+			    	<table border=""1"" rules=""none"">
+			    		<tr>
+			    			<td style=""text-align:center; padding-top:2px; padding-left:2px; padding-right:2px"" colspan=""3"">Transition</td>
+			    		</tr>
+			    		<tr>
+			    			<td style=""padding-left:2px""><button onclick=""traversalStepBack()"">&lt;</button></td>
+							<td id=""stepTD"" style=""text-align:center; width:100""><label id=""step""></label></td>
+						    <td style=""padding-right:2px""><button onclick=""traversalStepForward()"">&gt;</button></td>
+						</tr>
+						<tr>
+							<td style=""text-align:center; padding-bottom:2px; padding-left:2px; padding-right:2px"" colspan=""3""><label id=""transitionFloor""></label></td>
+						</tr>
+					</table>
+				</td>
+				<td style=""width:30px""></td>
+				<td>
+					<table border=""1"" rules=""none"">
+						<tr>
+						    <td style=""padding-top:5px; padding-left:20px;""><button onclick=""startTraversal()"">&#9654;</button></td>
+							<td style=""text-align:center; padding-top:5px""><label id=""speedLabel"">Speed: 1</label></td>
+						    <td style=""text-align:right; padding-top:5px; padding-right:20px""><button onclick=""stopTraversal()"">&#9209;</button></td>
+						</tr>
+			    		<tr>
+							<td style=""padding-bottom:5px; padding-left:2px; padding-right:2px"" colspan=""3"">1<input type=""range"" min=""1"" max=""60"" oninput=""changeSpeed()"" value=""1"" id=""traversalSpeed"">60</td>
+						</tr>
+					</table>
+				</td>
+				<td style=""width:30px""></td>
+				<td>
+					<table>
+						<tr>
+							<td><button onclick=""fitGraph()"">FIT GRAPH</button></td>
+							<td><input type=""checkbox"" id=""recycleCbox"" name=""recycleCBox"" value=""recycleColors""><label for=""recycleCbox""> Recycle hitcount colors</label><br></td>
+							<td><button id=""btnReset"" onclick=""reset()"">RESET TRAVERSAL</button></td>
+						</tr>
+						<tr>
+							<td colspan=""3"" style=""padding-top:4px; height:22px; text-align:center; font-size:12pt""><label id=""edge""> </label></td>
+						</tr>
+					</table>
+				</td>
+		    </tr>
+		</table>
+	</td>
+</tr>
+</table>
 <script type=""text/ecmascript"">
 var step = -1; // Because step is an index into an array.
 ");
@@ -1073,14 +1137,35 @@ var timer_is_on = 0;
 
 var coverageFloor;
 
-const stepElemSize = 2*Math.floor(Math.log10(traversedEdge.length)) + 3;
-var stepElem = document.getElementById(""step"");
-stepElem.setAttribute(""length"", stepElemSize);
-stepElem.setAttribute(""size"", stepElemSize);
+var initialBox = svgOuter.getAttribute(""viewBox"");
+var initialBits = initialBox.split("" "");
+
+const stepElemSize = 18*Math.floor(Math.log10(traversedEdge.length)) + 27;
+var stepElem = document.getElementById(""stepTD"");
+stepElem.setAttribute(""style"", ""text-align:center; width:"" + stepElemSize.toString() + ""px"");
 setStepText();
 assessCoverageFloor();
 
 var selectedSvgElement = undefined;
+
+for (var j=0; j < transitionActions.length; j++)
+{
+    var action = actionNames[transitionActions[j]];
+    var svgEdge = j + 1;
+    var text = document.getElementById(""edge"" + svgEdge.toString()).getElementsByTagName(""text"");
+    if (text.length > 0)
+    {
+        text[0].innerHTML = action;
+    }
+}
+
+function changeSpeed(e) {
+	document.getElementById(""speedLabel"").innerHTML = ""Speed: "" + document.getElementById(""traversalSpeed"").value.toString();
+}
+
+function fitGraph() {
+    document.getElementById(""svgOuter"").setAttribute(""viewBox"", initialBox);
+}
 
 function releaseSelection() {
     if (selectedSvgElement != undefined)
@@ -1146,12 +1231,6 @@ var translateScale = newBits[2] / originalBits[2];
 
 function svgMouseDown(event) {
     var t = event.target;
-    elem = document.getElementById(""info"");
-    text = elem.getElementsByTagName(""text"");
-    if (text.length > 0)
-    {
-        text[0].innerHTML = ""BTN "" + event.button.toString();
-    }
     switch (event.button)
     {
         case 0: // main button, e.g., left on a default setup
@@ -1190,23 +1269,39 @@ function svgMouseMove(event) {
         mouseMovePreviousY = y;
         translateViewBox(dx, dy);
     }
-    elem = document.getElementById(""info"");
-    text = elem.getElementsByTagName(""text"");
-    if (text.length > 0)
-    {
-        text[1].innerHTML = ""x,y = "" + event.clientX.toString() + "", "" + event.clientY.toString();
-    }
 }
+
+var svgRescale = 1.0;
+var previousDeltaYWasPositive = true;
 
 function svgMouseWheel(event) {
     didTranslate = true;
-    newBox = rescaleViewBox( event.deltaY > 0 ? 1.02 : 0.98);
-    elem = document.getElementById(""info"");
-    text = elem.getElementsByTagName(""text"");
-    if (text.length > 0)
+    if (event.deltaY > 0)
     {
-        text[2].innerHTML = ""viewBox "" + newBox;
+    	if (previousDeltaYWasPositive)
+    	{
+	    	svgRescale *= 1.01;
+	    }
+	    else
+	    {
+	    	svgRescale = 1.01;
+	    }
+	    previousDeltaYWasPositive = true;
     }
+    else
+    {
+    	if (previousDeltaYWasPositive)
+    	{
+    		svgRescale = 0.99;
+    	}
+    	else
+    	{
+    		svgRescale *= 0.99;
+    	}
+    	previousDeltaYWasPositive = false;
+    }
+
+    newBox = rescaleViewBox( svgRescale );
 }
 
 function svgMouseLeave(event) {
@@ -1222,6 +1317,7 @@ function svgMouseUp(event) {
 }
 
 function svgMouseChange(event) {
+	svgRescale = 1.0;
     didTranslate = false;
     mouseMovePreviousX = undefined;
     mouseMovePreviousY = undefined;
@@ -1256,7 +1352,11 @@ function rescaleViewBox(scale) {
 
     newBits = [xMin, yMin, width, height];
     translateScale = newBits[2] / originalBits[2];
-    var newViewBox = xMin.toFixed(2).toString() + "" "" + yMin.toFixed(2).toString() + "" "" + width.toFixed(2).toString() + "" "" + height.toFixed(2).toString();
+    xString = xMin.toFixed(2).toString();
+    yString = yMin.toFixed(2).toString();
+    wString = width.toFixed(2).toString();
+    hString = height.toFixed(2).toString();
+    var newViewBox = xString + "" "" + yString + "" "" + wString + "" "" + hString;
     svgOuter.setAttribute(""viewBox"", newViewBox);
     return newViewBox;
 }
@@ -1267,22 +1367,25 @@ function translateViewBox(dx, dy) {
     var boxBits = viewBox.split("" "");
     var xMin = parseFloat(boxBits[0]) + dx;
     var yMin = parseFloat(boxBits[1]) + dy;
+    xString = xMin.toFixed(2).toString();
+    yString = yMin.toFixed(2).toString();
 
-    var newViewBox = xMin.toFixed(2).toString() + "" "" + yMin.toFixed(2).toString() + "" "" + boxBits[2] + "" "" + boxBits[3];
+    var newViewBox = xString + "" "" + yString + "" "" + boxBits[2] + "" "" + boxBits[3];
     svgOuter.setAttribute(""viewBox"", newViewBox);
 }
 
 function setTransitionFloorText() {
-	document.getElementById(""transitionFloor"").innerHTML = ""Transition coverage floor: "" + coverageFloor;
+	document.getElementById(""transitionFloor"").innerHTML = ""Hitcount floor: "" + coverageFloor;
 }
 
 function timedTraversal() {
-  c = c + 1;
-  traversalStepForward();
-  if (timer_is_on)
-  {
-	  t = setTimeout(timedTraversal, 1);
-  }
+	c = c + 1;
+	traversalStepForward();
+	if (timer_is_on)
+	{
+		var dt = 1000.0 / parseFloat(document.getElementById(""traversalSpeed"").value);
+		t = setTimeout(timedTraversal, Math.round(dt));
+	}
 }
 
 function startTraversal() {
@@ -1314,7 +1417,7 @@ function reset() {
 }
 
 function setStepText() {
-	document.getElementById(""step"").value = (step+1) + ""/"" + traversedEdge.length;
+	document.getElementById(""step"").innerHTML = (step+1) + ""/"" + traversedEdge.length;
 }
 
 function refreshGraphics(refreshColor) {
@@ -1446,6 +1549,30 @@ function traversalStepForward() {
     traversalStepCommon();
 }
 
+window.addEventListener( 'keydown', (e) => { 
+    var key = 0;
+
+
+    if (e == null) { key = event.keyCode;}  
+    else {  key = e.which;} 
+
+
+    switch(key) {
+        case 37: // left arrow                
+          stopTraversal();
+          traversalStepBack();
+          break;
+        case 38: // up arrow          
+          break;
+        case 39: // right arrow
+        	stopTraversal();
+        	traversalStepForward();                     
+          break;
+        case 40: // down arrow 
+          break;
+    }     
+});
+
 function assessCoverageFloor()
 {
 	var floor = 2000000000;
@@ -1460,6 +1587,7 @@ function assessCoverageFloor()
 	{
 		coverageFloor = floor;
 		setTransitionFloorText();
+
 	}
 }
 
@@ -1470,6 +1598,8 @@ function traversalStepCommon() {
     {
         return; // no work to do because we are at the initial state.
     }
+
+    document.getElementById(""edge"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
 
     // Now paint the current path and nodes in light grey
     for (var i = 0; i < pathEdges[step].length; i++)
@@ -1563,50 +1693,52 @@ function traversalStepCommon() {
 }
 
 function getHitColor(hitCount) {
-    switch (hitCount%19)
+	var caseNum = document.getElementById(""recycleCbox"").checked ? hitCount%19 : hitCount;
+
+    switch (caseNum)
     {
         case 0:
             if (hitCount != 0)
             {
-                return ""#BFBF3F"";
+                return ""#FF7F7F"";
             }
             return ""#000000"";
         case 1:
-            return ""#DF0000"";
+            return ""#00AFFF"";
         case 2:
             return ""#00DF00"";
         case 3:
-            return ""#0000DF"";
+            return ""#DF00DF"";
         case 4:
-            return ""#9F9F00"";
+            return ""#FFAF00"";
         case 5:
-            return ""#009F9F"";
+            return ""#0000DF"";
         case 6:
-            return ""#9F009F"";
+            return ""#8F008F"";
         case 7:
-            return ""#2F7F7F"";
+            return ""#EFD700"";
         case 8:
-            return ""#7F2F7F"";
+            return ""#008F00"";
         case 9:
-            return ""#7F7F2F"";
+            return ""#3737AF"";
         case 10:
-            return ""#3F3FAF"";
+            return ""#BF4F4F"";
         case 11:
-            return ""#AF3F3F"";
+            return ""#77EF77"";
         case 12:
             return ""#3FAF3F"";
         case 13:
-            return ""#AF1F77"";
+            return ""#A71770"";
         case 14:
-            return ""#1FAF77"";
+            return ""#8FCF27"";
         case 15:
-            return ""#1F77AF"";
+            return ""#4F7FEF"";
         case 16:
             return ""#771FAF"";
         case 17:
-            return ""#77AF1F"";
+            return ""#97FF2F"";
         default:
-            return ""#FF1F1F"";
+            return ""#FF7F7F"";
     }
 }
 </script>
@@ -1652,11 +1784,14 @@ function getHitColor(hitCount) {
                     w.WriteLine("\"{0}\"\t[label=\"{1}\" fillcolor=\"#f7f5eb\", style=filled]", totalNodes.GetNodeByIndex((uint)i).state, totalNodes.GetNodeByIndex((uint)i).state.Replace(",", "\\n"));
                 }
 
-                // Color each link by its hit count
+                // Put a hitcount suffix on the action string so that GraphViz
+                // lays out the action with enough space for a hitcount.
+                // On the first render, replace the text on each transition with
+                // just the action name, no hitcount.
                 for (uint i = 0; i < transitions.Count(); i++)
                 {
                     w.WriteLine("\"{0}\" -> \"{1}\" [ label=\"{2}\",color=black, penwidth=1 ];",
-                        transitions.StartStateByTransitionIndex(i), transitions.EndStateByTransitionIndex(i), transitions.ActionByTransitionIndex(i));
+                        transitions.StartStateByTransitionIndex(i), transitions.EndStateByTransitionIndex(i), transitions.ActionByTransitionIndex(i) + " (0)");
                 }
 
                 w.WriteLine("}");
@@ -1817,6 +1952,7 @@ function getHitColor(hitCount) {
 
                 path = new Queue<int>();
 
+            InitializeNewPath:
                 // Prefer an outlink transition with a low hit count
                 int targetIndex = transitions.GetLowHitTransitionIndexPreferOutlink(state);
 
@@ -1825,12 +1961,24 @@ function getHitColor(hitCount) {
                 if (state != targetStartState)
                 {
                     path = FindShortestPath(state, targetStartState);
-                    // TODO: Handle graphs that are not strongly connected.
-                    // We will eventually get a path of zero length when we have
-                    // a graph that is not strongly connected, and in this traversal
-                    // that means the foreach loop below will not get executed,
-                    // and we will "teleport" from where we were to the target that
-                    // has no path to it, and we will continue.  That's not right.
+
+                    // Handle graphs that are not strongly connected.  In such a 
+                    // graph, eventually a path of zero length is returned.  In
+                    // the code above this, we see that it is the target transition
+                    // that there is no path to.  So, we will remove that transition
+                    // from the list of candidates - disable it - and ask for
+                    // an alternative low hitcount transition.  If we get through
+                    // the whole list of transitions and find no candidates, then
+                    // the traversal stops with a note that there are no more
+                    // traversal paths available in the graph, due to lack of strong
+                    // connections.
+                    if (path.Count == 0)
+                    {
+                        transitions.DisableTransition((uint)targetIndex);
+                        Console.WriteLine("Disabled transition #{0} because there is no path to it from state {1}", targetIndex + 1, state);
+                        goto InitializeNewPath;
+                    }
+
                     foreach (int tIndex in path)
                     {
                         // mark the transitions covered along the way
