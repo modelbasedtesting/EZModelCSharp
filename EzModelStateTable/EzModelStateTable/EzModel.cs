@@ -1023,6 +1023,20 @@ TH {
                             {
                                 continue;
                             }
+                            if (ezModelGraph[i].StartsWith("<g id=\"edge"))
+                            {  // zero-base the edge IDs by decrementing.
+                                string substr = ezModelGraph[i].Substring(11);
+                                int edgeId = int.Parse(substr.Substring(0, substr.IndexOf("\" class=\"")));
+                                int newId = edgeId - 1;
+                                ezModelGraph[i] = ezModelGraph[i].Replace("\"edge" + edgeId.ToString(), "\"edge" + newId.ToString());
+                            }
+                            if (ezModelGraph[i].StartsWith("<g id=\"node"))
+                            {  // zero-base the node IDs by decrementing.
+                                string substr = ezModelGraph[i].Substring(11);
+                                int nodeId = int.Parse(substr.Substring(0, substr.IndexOf("\" class=\"")));
+                                int newId = nodeId - 1;
+                                ezModelGraph[i] = ezModelGraph[i].Replace("\"node" + nodeId.ToString(), "\"node" + newId.ToString());
+                            }
                             if (ezModelGraph[i].StartsWith("<ellipse "))
                             {
                                 ezModelGraph[i] = ezModelGraph[i].Replace(" stroke=", " onclick=\"attr(evt)\" stroke=");
@@ -1039,8 +1053,7 @@ TH {
                             if (addGradientDefs == true)
                             {
                                 w.WriteLine(
-@"<defs><linearGradient id=""greenBlueGradient"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""0%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""yellowgreen"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""lightskyblue"" stop-opacity=""1""/></linearGradient><linearGradient id=""blueGreenGradient"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""0%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""lightskyblue"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""yellowgreen"" stop-opacity=""1""/></linearGradient></defs>
-<svg>"); // The svg tag at the left encapsulates the SVG of the graph.  We need an extra closing svg at the end of everything.
+@"<defs><linearGradient id=""greenBlueGradient"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""0%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""yellowgreen"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""lightskyblue"" stop-opacity=""1""/></linearGradient><linearGradient id=""blueGreenGradient"" x1=""0%"" y1=""0%"" x2=""100%"" y2=""0%"" spreadMethod=""pad"">    <stop offset=""0%"" stop-color=""lightskyblue"" stop-opacity=""1""/>    <stop offset=""100%"" stop-color=""yellowgreen"" stop-opacity=""1""/></linearGradient></defs>");
                                 addGradientDefs = false;
                             }
                         }
@@ -1052,41 +1065,8 @@ TH {
                             addGradientDefs = true;
                         }
                     }
-                    // Transcode node subgraphs
-                    for (uint j = 0; j < totalNodes.Count(); j++)
-                    {
-                        w.WriteLine("<!-- subgraph for node {0} -->", j + 1);
-                        string[] subGraph = File.ReadAllLines(EzModelFileName + "node" + j + "_" + traversalCount + ".svg");
-                        copyToStream = false;
-
-                        for (var i = 0; i < subGraph.Length; i++)
-                        {
-                            if (copyToStream == true)
-                            {
-                                if (subGraph[i].StartsWith("<!-- "))
-                                {
-                                    continue;
-                                }
-                                if (subGraph[i].StartsWith("<polygon fill=\"white\" "))
-                                {
-                                    subGraph[i] = subGraph[i].Replace("transparent", "#5f5f5f").Replace("white", "#ffff7f");
-                                }
-                                w.WriteLine(subGraph[i]);
-                            }
-
-                            if (subGraph[i].StartsWith("<svg width"))
-                            {
-                                w.WriteLine("<svg id=\"subGraph{0}\" display=\"none\">", j+1);
-                                i++; // skip the viewBox on subgraphs.
-                                copyToStream = true;
-                            }
-                        }
-                    }
-
-
                     w.WriteLine( // This block starts with a closing svg tag, matching an encapsulating svg tag way above.
-@"</svg>
-            </td>
+@"            </td>
 		</tr>
 	</table>
 </td>
@@ -1129,11 +1109,12 @@ TH {
 					<table>
 						<tr>
 							<td><button onclick=""fitGraph()"">FIT GRAPH</button></td>
-							<td><input type=""checkbox"" id=""recycleCbox"" name=""recycleCBox"" value=""recycleColors""><label for=""recycleCbox""> Recycle hitcount colors</label><br></td>
+							<td><input type=""checkbox"" id=""recycleCbox"" name=""recycleCBox"" value=""recycleColors""><label for=""recycleCbox""> Recycle hitcount colors</label></td>
 							<td><button id=""btnReset"" onclick=""reset()"">RESET TRAVERSAL</button></td>
 						</tr>
 						<tr>
-							<td colspan=""3"" style=""padding-top:4px; height:22px; text-align:center; font-size:12pt""><label id=""edge""> </label></td>
+							<td colspan=""2""><input type=""range"" min=""0"" max=""75"" oninput=""updateDisplayAttributes()"" value=""35"" id=""subgraphOpacity""></td>
+							<td><input type=""checkbox"" onclick=""updateDisplayAttributes()"" id=""isolateSubgraph""><label for=""isolateSubgraph""> Isolate subgraph</label></td>
 						</tr>
 					</table>
 				</td>
@@ -1163,6 +1144,49 @@ var step = -1; // Because step is an index into an array.
                     w.WriteLine(" ");
                     w.WriteLine("const pathEndNode = [{0}];", String.Join(",", pathEndNode));
                     w.WriteLine(" ");
+
+                    List<string> subgraphNodes = new List<string>();
+                    List<string> subgraphEdges = new List<string>();
+
+                    for (int i = 0; i < totalNodes.Count(); i++)
+                    {
+                        string nodeState = totalNodes.GetStateByIndex((uint)i);
+
+                        // Get the outlinks and inlinks of the node
+                        List<uint> inOutSelf = transitions.GetStateTransitionIndices(nodeState);
+
+                        List<int> nodeIds = new List<int>();
+                        nodeIds.Add(i); // The node IDs in GraphViz are 1-based.
+
+                        // First output the nodes related to the transitions.
+                        List<string> stateList = new List<string>();
+
+                        stateList.Add(nodeState);
+
+                        foreach (uint tIndex in inOutSelf)
+                        {
+                            string s = transitions.StartStateByTransitionIndex(tIndex);
+                            if (!stateList.Contains(s))
+                            {
+                                nodeIds.Add(totalNodes.GetIndexByState(s));
+                                stateList.Add(s);
+                            }
+                            s = transitions.EndStateByTransitionIndex(tIndex);
+                            if (!stateList.Contains(s))
+                            {
+                                nodeIds.Add(totalNodes.GetIndexByState(s));
+                                stateList.Add(s);
+                            }
+                        }
+
+                        subgraphNodes.Add("[" + string.Join(",", nodeIds) + "]");
+                        subgraphEdges.Add("[" + String.Join(",", inOutSelf) + "]");
+                    }
+
+                    w.WriteLine("const subgraphNodes = [{0}];", String.Join(",", subgraphNodes));
+                    w.WriteLine(" ");
+                    w.WriteLine("const subgraphEdges = [{0}];", String.Join(",", subgraphEdges));
+                    w.WriteLine(" ");
                     w.WriteLine(
 @"var c = 0;
 var t;
@@ -1184,8 +1208,7 @@ var selectedSvgElement = undefined;
 for (var j=0; j < transitionActions.length; j++)
 {
     var action = actionNames[transitionActions[j]];
-    var svgEdge = j + 1;
-    var text = document.getElementById(""edge"" + svgEdge.toString()).getElementsByTagName(""text"");
+    var text = document.getElementById(""edge"" + j.toString()).getElementsByTagName(""text"");
     if (text.length > 0)
     {
         text[0].innerHTML = action;
@@ -1200,12 +1223,61 @@ function fitGraph() {
     document.getElementById(""svgOuter"").setAttribute(""viewBox"", initialBox);
 }
 
+var previousSubgraph = undefined;
+var previousFill = undefined;
+var currentSubgraph = undefined;
+
+function allComponentsToFullOpacity() {
+    for (var i=0; i < transitionHitCounts.length; i++)
+    {
+        document.getElementById(""edge"" + i).setAttribute(""opacity"", ""1.0"");
+    }
+    for (var i=0; i < nodeCount; i++)
+    {
+        document.getElementById(""node"" + i).setAttribute(""opacity"", ""1.0"");
+    }
+}
+
+function updateDisplayAttributes() {
+    if (currentSubgraph == undefined || !document.getElementById(""isolateSubgraph"").checked)
+    {
+    	if (previousSubgraph != undefined)
+    	{
+	    	var ellipse = document.getElementById(""node"" + previousSubgraph).getElementsByTagName(""ellipse"")[0];
+	    	ellipse.setAttribute(""fill"", previousFill);
+		}
+		allComponentsToFullOpacity();
+    }
+    if (document.getElementById(""isolateSubgraph"").checked && currentSubgraph != undefined)
+    {
+    	opacityValue = document.getElementById(""subgraphOpacity"").value / 100.0;
+        for (var i=0; i < transitionHitCounts.length; i++)
+        {
+            document.getElementById(""edge"" + i).setAttribute(""opacity"", subgraphEdges[currentSubgraph].includes(i) ? ""1.0"" : opacityValue.toString());
+        }
+        for (var i=0; i < nodeCount; i++)
+        {
+            document.getElementById(""node"" + i).setAttribute(""opacity"", subgraphNodes[currentSubgraph].includes(i) ? ""1.0"" : opacityValue.toString());
+        }
+
+        if (previousSubgraph != undefined)
+        {
+	        var ellipse = document.getElementById(""node"" + previousSubgraph).getElementsByTagName(""ellipse"")[0];
+	        ellipse.setAttribute(""fill"", previousFill);
+	    }
+        previousSubgraph = subgraphNodes[currentSubgraph][0];
+        var ellipse = document.getElementById(""node"" + previousSubgraph).getElementsByTagName(""ellipse"")[0];
+        previousFill = ellipse.getAttribute(""fill"");
+        ellipse.setAttribute(""fill"", ""#ffff77"");
+    }
+}
+
 function releaseSelection() {
 	if (currentSubgraph != undefined)
 	{
-		document.getElementById(""subGraph"" + currentSubgraph).setAttribute(""display"", ""none"");
         currentSubgraph = undefined;
     }
+    updateDisplayAttributes();
 
     if (selectedSvgElement != undefined)
     {
@@ -1221,8 +1293,6 @@ function releaseSelection() {
         selectedSvgElement = undefined;
     }
 }
-
-var currentSubgraph = undefined;
 
 function attr(event) {
     releaseSelection();
@@ -1242,12 +1312,9 @@ function attr(event) {
         		{
         			return;
         		}
-        		var subGraph = document.getElementById(""subGraph"" + currentSubgraph);
-        		subGraph.setAttribute(""display"", ""none"");
         	}
             currentSubgraph = nodenum;
-        	var subGraph = document.getElementById(""subGraph"" + nodenum);
-        	subGraph.setAttribute(""display"", ""contents"");
+            updateDisplayAttributes();
             var title = p.getElementsByTagName(""title"");
             if (title && title.length > 0)
             {
@@ -1458,7 +1525,7 @@ function reset() {
 	timer_is_on = 0;
 	clearTimeout(t);
 
-    document.getElementById(""edge"").innerHTML = "" "";
+    document.getElementById(""selectedSvgElementInfo"").innerHTML = "" "";
     for (var i = 0; i < transitionHitCounts.length; i++)
     {
         transitionHitCounts[i] = 0;
@@ -1496,8 +1563,7 @@ function refreshGraphics(refreshColor) {
             rendered[index] = true;
             edgesToRender--;
 
-            var svgEdge = index + 1;
-            var edge = document.getElementById(""edge"" + svgEdge.toString());
+            var edge = document.getElementById(""edge"" + index.toString());
             var path = edge.getElementsByTagName(""path"");
             if (path.length > 0)
             {
@@ -1531,8 +1597,7 @@ function refreshGraphics(refreshColor) {
         var hitCount = transitionHitCounts[edgeIndex];
         var hitColor = getHitColor(hitCount);
         var action = actionNames[transitionActions[edgeIndex]];
-        var svgEdge = traversedEdge[i] + 1;
-        var edge = document.getElementById(""edge"" + svgEdge.toString());
+        var edge = document.getElementById(""edge"" + edgeIndex.toString());
         var path = edge.getElementsByTagName(""path"");
         if (path.length > 0)
         {   // for hitCount 0 set the stroke width to 1.
@@ -1558,7 +1623,7 @@ function refreshGraphics(refreshColor) {
     }
 
     // Clear all the nodes.
-    for (var i = 1; i <= nodeCount; i++)
+    for (var i = 0; i < nodeCount; i++)
     {
         var node = document.getElementById(""node"" + i.toString());
         var ellipse = node.getElementsByTagName(""ellipse"");
@@ -1653,12 +1718,12 @@ function traversalStepCommon() {
         return; // no work to do because we are at the initial state.
     }
 
-    document.getElementById(""edge"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
+    document.getElementById(""selectedSvgElementInfo"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
 
     // Now paint the current path and nodes in light grey
     for (var i = 0; i < pathEdges[step].length; i++)
     {
-        var svgEdge = pathEdges[step][i] + 1;
+        var svgEdge = pathEdges[step][i];
         var edge = document.getElementById(""edge"" + svgEdge.toString());
         var path = edge.getElementsByTagName(""path"");
         if (path.length > 0)
@@ -1676,7 +1741,7 @@ function traversalStepCommon() {
     }
     for (var i = 0; i < pathNodes[step].length; i++)
     {
-        var svgNode = pathNodes[step][i] + 1;
+        var svgNode = pathNodes[step][i];
         var node = document.getElementById(""node"" + svgNode.toString());
         var ellipse = node.getElementsByTagName(""ellipse"");
         if (ellipse.length > 0)
@@ -1686,7 +1751,7 @@ function traversalStepCommon() {
     }
 
     // Finally, paint the current transition
-    svgEdge = traversedEdge[step] + 1;
+    svgEdge = traversedEdge[step];
     edge = document.getElementById(""edge"" + svgEdge.toString());
     var path = edge.getElementsByTagName(""path"");
     if (path.length > 0)
@@ -1704,7 +1769,7 @@ function traversalStepCommon() {
 
     if (startNode[step] == pathEndNode[step])
     {
-    	var nodeNum = startNode[step] + 1;
+    	var nodeNum = startNode[step];
     	var node = document.getElementById(""node"" + nodeNum.toString());
 
         var ellipse = node.getElementsByTagName(""ellipse"");
@@ -1728,7 +1793,7 @@ function traversalStepCommon() {
     }
     else
     {
-        var start = startNode[step] + 1;
+        var start = startNode[step];
         var node = document.getElementById(""node"" + start.toString());
         var ellipse = node.getElementsByTagName(""ellipse"");
         if (ellipse.length > 0)
@@ -1736,7 +1801,7 @@ function traversalStepCommon() {
             ellipse[0].setAttribute(""fill"", ""yellowgreen"");
         }
 
-        var pathEnd = pathEndNode[step] + 1;
+        var pathEnd = pathEndNode[step];
         node = document.getElementById(""node"" + pathEnd.toString());
         ellipse = node.getElementsByTagName(""ellipse"");
         if (ellipse.length > 0)
@@ -1861,82 +1926,6 @@ function getHitColor(hitCount) {
             {
                 Console.WriteLine("ERROR: Layout program {0} did not produce file {1} after 60 seconds of execution time.", layoutProgram, outputFile);
                 dotProc.Kill(true);
-            }
-
-            // Create a set of GraphViz input files, a subgraph for each node in the graph
-            for (int i = 0; i < totalNodes.Count(); i++)
-            {
-                using (FileStream fs = new FileStream(EzModelFileName + "node" + i + ".txt", FileMode.Create))
-                using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
-                {
-                    // In case we have to create a new GraphViz file during a traversal..
-                    currentShape = shape;
-
-                    // preamble for the graphviz "dot format" output
-                    w.WriteLine("digraph state_machine {");
-                    w.WriteLine("size = \"13,7.5\";");
-                    w.WriteLine("node [shape = ellipse];");
-                    w.WriteLine("rankdir=LR;");
-
-                    string nodeState = totalNodes.GetStateByIndex((uint)i);
-
-                    // Output the node that the subgraph is about.
-                    w.WriteLine("\"{0}\"\t[label=\"{1}\" penwidth=2, fillcolor=\"#ffbf5f\", style=filled]", nodeState, nodeState.Replace(", ", "\\n"));
-
-                    // Get the outlinks and inlinks of the node
-                    List<uint> inOutSelf = transitions.GetStateTransitionIndices(nodeState);
-
-                    // First output the nodes related to the transitions.
-                    List<string> stateList = new List<string>();
-                    stateList.Add(nodeState);
-
-                    foreach (uint tIndex in inOutSelf)
-                    {
-                        string s = transitions.StartStateByTransitionIndex(tIndex);
-                        if (!stateList.Contains(s))
-                        {
-                            stateList.Add(s);
-                            // Output the node that the subgraph is about.
-                            w.WriteLine("\"{0}\"\t[label=\"{1}\" fillcolor=\"#f7f5eb\", style=filled]", s, s.Replace(", ", "\\n"));
-                        }
-                        s = transitions.EndStateByTransitionIndex(tIndex);
-                        if (!stateList.Contains(s))
-                        {
-                            stateList.Add(s);
-                            // Output the node that the subgraph is about.
-                            w.WriteLine("\"{0}\"\t[label=\"{1}\" fillcolor=\"#f7f5eb\", style=filled]", s, s.Replace(", ", "\\n"));
-                        }
-                    }    
-
-                    // TODO: Include the actual edge number for the graph in the
-                    // GraphViz edge command.  Right now it is not included, so the
-                    // arbitrary index is the value that shows up in the SVG file and
-                    // that doesn't map to the edge number in the complete graph.
-                    // Put a hitcount suffix on the action string so that GraphViz
-                    // lays out the action with enough space for a hitcount.  In the
-                    // subgraph, we can show the hitcount if we know the edge number.
-                    // On the first render, replace the text on each transition with
-                    // just the action name, no hitcount.
-                    foreach (uint tIndex in inOutSelf)
-                    {
-                        w.WriteLine("\"{0}\" -> \"{1}\" [ label=\"{2}\",color=black, penwidth=1 ];",
-                            transitions.StartStateByTransitionIndex(tIndex), transitions.EndStateByTransitionIndex(tIndex), transitions.ActionByTransitionIndex(tIndex));
-                    }
-
-                    w.WriteLine("}");
-                    w.Close();
-
-                    inputFile = EzModelFileName + "node" + i + ".txt";
-                    outputFile = EzModelFileName + "node" + i + "_" + traversalCount + ".svg";
-
-                    dotProc = Process.Start(layoutProgram, inputFile + " -Tsvg -o " + outputFile);
-                    Console.WriteLine("Producing {0} from {1}", outputFile, inputFile);
-                    if (!dotProc.WaitForExit(60000))
-                    {
-                        Console.WriteLine("ERROR: Layout program {0} did not produce file {1} for node {2} after 60 seconds of execution time.", layoutProgram, outputFile, i);
-                        dotProc.Kill(true);
-                    }
-                }
             }
         }
 
