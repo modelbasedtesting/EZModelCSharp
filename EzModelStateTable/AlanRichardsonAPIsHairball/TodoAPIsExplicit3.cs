@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 
-namespace AlanRichardsonAPIsHairball
+namespace TodoAPIsExplicit3
 {
-    class AlanRichardsonAPIsHairballProgram
+    class TodoAPIsExplicit3Program
     {
         static int Main()
         {
@@ -17,7 +17,7 @@ namespace AlanRichardsonAPIsHairball
             // maxTransitions = 100 + 145 * maxTodos
             // maxNodes = 5 + 4 * maxTodos
             // maxActions = 35
-            EzModelGraph graph = new EzModelGraph(client, 2200, 61, 35);
+            EzModelGraph graph = new EzModelGraph(client, 1000, 130, 25);
 
             if (!graph.GenerateGraph())
             {
@@ -34,7 +34,7 @@ namespace AlanRichardsonAPIsHairball
                 {
                     Console.WriteLine(S);
                 }
-                return -2;
+               //  return -2;
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
@@ -102,80 +102,44 @@ namespace AlanRichardsonAPIsHairball
         // state.
         bool svRunning = false;
 
-        // Reduce state explosion on todos by classifing the quantity of todos
-        // into either zero or more than zero.
-        bool svHasTodos = true;
-
-        // Reduce state explosion on todos that remain todo by classifying the
-        // quantity of todos todo into either zero or more than zero.
-        bool svHasActiveTodos = true;
-
-        // Once the X-AUTH-TOKEN exists, there isn't a way to get rid of it
-        // except for stopping the system under test.
-        bool svXAuthTokenExists = false;
-
         // DATA VARIABLES.  Not state variables....
         // Not done todos count can be imputed from todosCount - doneTodosCount
         uint resolvedTodosCount = 0;
         
         // A counter of items in the todos list.
         // The system under test initializes the list with 10 items.
-        uint todosCount = 10;
+        uint activeTodosCount = 10;
 
         // A helper variable to limit the size of the state-transition table, and
         // thus also limit the size of the model graph.
-        const uint maxTodos = 14;
+        const uint maxTodos = 11;
 
         // Actions handled by APIs
         const string startup = "java -jar apichallenges.jar";
         const string shutdown = "Shutdown";
         const string getTodos = "GetTodosList";
         const string headTodos = "GetTodosHeaders";
-        const string postTodos = "AddTodoWithoutId";
+        const string addActiveTodo = "AddActiveTodo";
+        const string addResolvedTodo = "AddResolvedTodo";
+        const string resolveActiveTodo = "ResolveActiveTodo";
+        const string activateResolvedTodo = "ActivateResolvedToodo";
         const string getTodoId = "GetTodoFromId";
         const string headTodoId = "GetHeadersOfTodoFromId";
         const string postTodoId = "AmendTodoByIdPostMethod";
         const string putTodoId = "AmendTodoByIdPutMethod";
-        const string deleteTodoId = "DeleteTodoById";
-        const string showDocs = "GetDocumentation";
-//        const string createXChallengerGuid = "GetXChallengerGuid";
-//        const string restoreChallenger = "RestoreSavedXChallengerGuid";
-        const string getChallenges = "GetChallenges";
-        const string optionsChallenges = "GetOptionsChallenges";
-        const string headChallenges = "GetHeadersChallenges";
-        const string getHeartbeat = "GetHeartbeatIsServerRunning";
-        const string optionsHeartbeat = "GetOptionsForHeartbeat";
-        const string headHeartbeat = "GetHeadersForHeartbeat";
+        const string deleteActiveTodo = "DeleteActiveTodo";
+        const string deleteResolvedTodo = "DeleteResolvedTodo";
 
-        const string postSecretToken = "GetSecretToken";
-        const string getSecretNote = "GetSecretNoteByToken";
-        const string postSecretNote = "SetSecretNoteByToken";
-
-        // Actions outside of the APIs that cover legitimate REST methods
-        const string invalidGetTodo404 = "InvalidEndpointGetTodo";
-        const string invalidGetTodos404 = "InvalidIdGetTodos";
-        const string invalidPostTodos400 = "InvalidContentPostTodos";
-        const string invalidGetTodos406 = "InvalidAcceptGetTodos";
-        const string invalidPostTodos415 = "InvalidContentTypePostTodos";
-        const string invalidDeleteHeartbeat405 = "MethodNotAllowedDeleteHeartbeat";
-        const string serverErrorPatchHeartbeat500 = "InternalServerErrorPatchHeartbeat";
-        const string serverErrorTraceHeartbeat501 = "ServerNotImplementedTraceHeartbeat";
-        const string invalidAuthGetSecretToken401 = "InvalidAuthGetSecretToken";
-        const string invalidNotAuthorizedGetSecretNote403 = "XAuthTokenNotValidGetSecretNote";
-        const string invalidAuthHeaderMissingGetSecretNote401 = "XAuthTokenMissingGetSecretNote";
-        const string invalidNotAuthorizedPostSecretNote403 = "XAuthTokenNotValidPostSecretNote";
-        const string invalidAuthHeaderMissingPostSecretNote401 = "XAuthTokenMissingPostSecretNote";
-
-        string StringifyStateVector(bool running, uint numTodos, bool xAuthTokenExists)
+        string StringifyStateVector(bool running, uint numActiveTodos, uint numResolvedTodos)
         {
-            string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}", running, numTodos, xAuthTokenExists);
+            string s = String.Format("Running.{0}, ActiveTodos.{1}, ResolvedTodos.{2}", running, numActiveTodos, numResolvedTodos);
             return s;
         }
 
         // IEzModelClient Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, todosCount, svXAuthTokenExists);
+            return StringifyStateVector(svRunning, activeTodosCount, resolvedTodosCount);
         }
 
         // IEzModelClient Interface method
@@ -231,9 +195,8 @@ namespace AlanRichardsonAPIsHairball
             // Parse the startState.
             string[] vState = startState.Split(", ");
             bool running = vState[0].Contains("True") ? true : false;
-            uint numTodos = uint.Parse(vState[1].Split(".")[1]);
-            bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
-            //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+            uint numActiveTodos = uint.Parse(vState[1].Split(".")[1]);
+            uint numResolvedTodos = uint.Parse(vState[2].Split(".")[1]);
 
             if (!running)
             {
@@ -241,56 +204,23 @@ namespace AlanRichardsonAPIsHairball
                 return actions;
             }
 
-            actions.Add(postTodos);
-            actions.Add(deleteTodoId);
+            actions.Add(addActiveTodo);
+            actions.Add(addResolvedTodo);
+            actions.Add(deleteActiveTodo);
+            actions.Add(deleteResolvedTodo);
+            actions.Add(activateResolvedTodo);
+            actions.Add(resolveActiveTodo);
             actions.Add(getTodos);
-            actions.Add(shutdown);
+//            actions.Add(shutdown);
 
             if (includeSelfLinkNoise)
             {
-                actions.Add(headTodos);
-                actions.Add(showDocs);
-                actions.Add(getChallenges);
-                actions.Add(optionsChallenges);
-                actions.Add(headChallenges);
-                actions.Add(getHeartbeat);
-                actions.Add(optionsHeartbeat);
-                actions.Add(headHeartbeat);
-
-                // Add specific, invalid actions found in the API Challenges list.
-                // Being specific about invalid actions could lead to confusion
-                // when interpreting output from the adapter program in that
-                // implementing invalid actions not listed below would be outside
-                // the scope of the model.
-                // Option: abstraction of invalid requests in the model.
-                // A single, invalidRequest link in the model would give latitude to
-                // the adapter program to implement any amount of specific
-                // invalid reuqests, thus the adapter program can cover more than
-                // is called for by the API Challenges list and still match the model.
-                actions.Add(invalidGetTodo404);
-                actions.Add(invalidGetTodos404);
-                actions.Add(invalidPostTodos400);
-                actions.Add(invalidGetTodos406);
-                actions.Add(invalidPostTodos415);
-                actions.Add(invalidDeleteHeartbeat405);
-                actions.Add(serverErrorPatchHeartbeat500);
-                actions.Add(serverErrorTraceHeartbeat501);
-                actions.Add(invalidAuthGetSecretToken401);
-                actions.Add(invalidNotAuthorizedGetSecretNote403);
-                actions.Add(invalidAuthHeaderMissingGetSecretNote401);
-                actions.Add(invalidNotAuthorizedPostSecretNote403);
-                actions.Add(invalidAuthHeaderMissingPostSecretNote401);
             }
 
             actions.Add(getTodoId);
             actions.Add(headTodoId);
             actions.Add(postTodoId);
             actions.Add(putTodoId);
-            actions.Add(getSecretNote);
-            actions.Add(postSecretNote);
-            actions.Add(postSecretToken);
-//            actions.Add(restoreChallenger);
-//            actions.Add(createXChallengerGuid);
 
             return actions;
         }
@@ -301,26 +231,11 @@ namespace AlanRichardsonAPIsHairball
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
             bool running = vState[0].Contains("True") ? true : false;
-            uint numTodos = uint.Parse(vState[1].Split(".")[1]);
-            bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
-//            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
+            uint numActiveTodos = uint.Parse(vState[1].Split(".")[1]);
+            uint numResolvedTodos = uint.Parse(vState[2].Split(".")[1]);
 
             switch (action)
             {
-                case invalidGetTodo404:
-                case invalidGetTodos404:
-                case invalidPostTodos400:
-                case invalidGetTodos406:
-                case invalidPostTodos415:
-                case invalidDeleteHeartbeat405:
-                case serverErrorPatchHeartbeat500:
-                case serverErrorTraceHeartbeat501:
-                case invalidAuthGetSecretToken401:
-                case invalidNotAuthorizedGetSecretNote403:
-                case invalidAuthHeaderMissingGetSecretNote401:
-                case invalidNotAuthorizedPostSecretNote403:
-                case invalidAuthHeaderMissingPostSecretNote401:
-                    break;
                 case startup:
                     running = true;
                     break;
@@ -329,9 +244,8 @@ namespace AlanRichardsonAPIsHairball
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
                     running = false;
-//                    xChallengerGuidExists = svXChallengerGuidExists;
-                    xAuthTokenExists = svXAuthTokenExists;
-                    numTodos = todosCount;
+                    numActiveTodos = 10;
+                    numResolvedTodos = 0;
                     break;
 
                 case getTodos:
@@ -341,44 +255,49 @@ namespace AlanRichardsonAPIsHairball
                 case postTodoId:
                 case putTodoId:
                     break;
-                case postTodos:
-                    if (numTodos < maxTodos)
+                case addActiveTodo:
+                    if (numActiveTodos + numResolvedTodos < maxTodos)
                     {
-                        numTodos++;
+                        numActiveTodos++;
                     }
                     break;
-                case deleteTodoId:
-                    if (numTodos > 0)
+                case deleteActiveTodo:
+                    if (numActiveTodos > 0)
                     {
-                        numTodos--;
+                        numActiveTodos--;
                     }
                     break;
-                case showDocs:
+                case addResolvedTodo:
+                    if (numActiveTodos + numResolvedTodos < maxTodos)
+                    {
+                        numResolvedTodos++;
+                    }
                     break;
-                //case createXChallengerGuid:
-                //    xChallengerGuidExists = true;
-                //    break;
-                //case restoreChallenger:
-                //    break;
-                case getChallenges:
-                case optionsChallenges:
-                case headChallenges:
+                case deleteResolvedTodo:
+                    if (numResolvedTodos > 0)
+                    {
+                        numResolvedTodos--;
+                    }
                     break;
-                case getHeartbeat:
-                case optionsHeartbeat:
-                case headHeartbeat:
+                case activateResolvedTodo:
+                    if (numResolvedTodos > 0)
+                    {
+                        numResolvedTodos--;
+                        numActiveTodos++;
+                    }
                     break;
-                case postSecretToken:
-                    xAuthTokenExists = true;
-                    break;
-                case getSecretNote:
-                case postSecretNote:
+                case resolveActiveTodo:
+                    if (numActiveTodos > 0)
+                    {
+                        numActiveTodos--;
+                        numResolvedTodos++;
+                    }
                     break;
                 default:
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, numTodos, xAuthTokenExists);
+            return StringifyStateVector(running, numActiveTodos, numResolvedTodos);
         }
     }
 }

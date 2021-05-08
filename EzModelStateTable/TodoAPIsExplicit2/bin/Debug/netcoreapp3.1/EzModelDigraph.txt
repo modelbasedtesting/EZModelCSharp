@@ -1,0 +1,42 @@
+digraph state_machine {
+size = "13,7.5";
+node [shape = ellipse];
+rankdir=LR;
+"Running.False, ActiveTodos.0, ResolvedTodos.0"	[label="Running.False\nActiveTodos.0\nResolvedTodos.0" fillcolor="#f7f5eb", style=filled]
+"Running.True, ActiveTodos.0, ResolvedTodos.0"	[label="Running.True\nActiveTodos.0\nResolvedTodos.0" fillcolor="#f7f5eb", style=filled]
+"Running.True, ActiveTodos.1, ResolvedTodos.0"	[label="Running.True\nActiveTodos.1\nResolvedTodos.0" fillcolor="#f7f5eb", style=filled]
+"Running.True, ActiveTodos.0, ResolvedTodos.1"	[label="Running.True\nActiveTodos.0\nResolvedTodos.1" fillcolor="#f7f5eb", style=filled]
+"Running.True, ActiveTodos.2, ResolvedTodos.0"	[label="Running.True\nActiveTodos.2\nResolvedTodos.0" fillcolor="#f7f5eb", style=filled]
+"Running.True, ActiveTodos.1, ResolvedTodos.1"	[label="Running.True\nActiveTodos.1\nResolvedTodos.1" fillcolor="#f7f5eb", style=filled]
+"Running.True, ActiveTodos.0, ResolvedTodos.2"	[label="Running.True\nActiveTodos.0\nResolvedTodos.2" fillcolor="#f7f5eb", style=filled]
+"Running.True, ActiveTodos.0, ResolvedTodos.2" -> "Running.True, ActiveTodos.1, ResolvedTodos.1" [ label="ActivateResolvedToodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.2" -> "Running.True, ActiveTodos.0, ResolvedTodos.1" [ label="DeleteResolvedTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.1" -> "Running.True, ActiveTodos.0, ResolvedTodos.2" [ label="ResolveActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.1" -> "Running.True, ActiveTodos.2, ResolvedTodos.0" [ label="ActivateResolvedToodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.1" -> "Running.True, ActiveTodos.1, ResolvedTodos.0" [ label="DeleteResolvedTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.1" -> "Running.True, ActiveTodos.0, ResolvedTodos.1" [ label="DeleteActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.2, ResolvedTodos.0" -> "Running.True, ActiveTodos.1, ResolvedTodos.1" [ label="ResolveActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.2, ResolvedTodos.0" -> "Running.True, ActiveTodos.1, ResolvedTodos.0" [ label="DeleteActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.1" -> "Running.True, ActiveTodos.1, ResolvedTodos.0" [ label="ActivateResolvedToodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.1" -> "Running.True, ActiveTodos.0, ResolvedTodos.0" [ label="DeleteResolvedTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.1" -> "Running.True, ActiveTodos.0, ResolvedTodos.2" [ label="AddResolvedTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.1" -> "Running.True, ActiveTodos.1, ResolvedTodos.1" [ label="AddActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.0" -> "Running.True, ActiveTodos.0, ResolvedTodos.1" [ label="ResolveActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.0" -> "Running.True, ActiveTodos.0, ResolvedTodos.0" [ label="DeleteActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.0" -> "Running.True, ActiveTodos.1, ResolvedTodos.1" [ label="AddResolvedTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.0" -> "Running.True, ActiveTodos.2, ResolvedTodos.0" [ label="AddActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.0" -> "Running.True, ActiveTodos.0, ResolvedTodos.1" [ label="AddResolvedTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.0" -> "Running.True, ActiveTodos.1, ResolvedTodos.0" [ label="AddActiveTodo (0)",color=black, penwidth=1 ];
+"Running.False, ActiveTodos.0, ResolvedTodos.0" -> "Running.True, ActiveTodos.0, ResolvedTodos.0" [ label="java -jar apichallenges.jar (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.1" -> "Running.True, ActiveTodos.0, ResolvedTodos.1" [ label="DeleteActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.2, ResolvedTodos.0" -> "Running.True, ActiveTodos.2, ResolvedTodos.0" [ label="DeleteResolvedTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.0" -> "Running.True, ActiveTodos.1, ResolvedTodos.0" [ label="ActivateResolvedToodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.2" -> "Running.True, ActiveTodos.0, ResolvedTodos.2" [ label="ResolveActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.2, ResolvedTodos.0" -> "Running.True, ActiveTodos.2, ResolvedTodos.0" [ label="GetTodosList (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.0" -> "Running.True, ActiveTodos.0, ResolvedTodos.0" [ label="GetTodoFromId (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.1" -> "Running.True, ActiveTodos.1, ResolvedTodos.1" [ label="GetHeadersOfTodoFromId (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.0" -> "Running.True, ActiveTodos.1, ResolvedTodos.0" [ label="AmendTodoByIdPostMethod (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.0, ResolvedTodos.0" -> "Running.True, ActiveTodos.0, ResolvedTodos.0" [ label="AmendTodoByIdPutMethod (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.1" -> "Running.True, ActiveTodos.1, ResolvedTodos.1" [ label="AddActiveTodo (0)",color=black, penwidth=1 ];
+"Running.True, ActiveTodos.1, ResolvedTodos.1" -> "Running.True, ActiveTodos.1, ResolvedTodos.1" [ label="AddResolvedTodo (0)",color=black, penwidth=1 ];
+}

@@ -1,0 +1,21 @@
+digraph state_machine {
+size = "13,7.5";
+node [shape = ellipse];
+rankdir=LR;
+"Running.False, Todos.0"	[label="Running.False\nTodos.0" fillcolor="#f7f5eb", style=filled]
+"Running.True, Todos.0"	[label="Running.True\nTodos.0" fillcolor="#f7f5eb", style=filled]
+"Running.True, Todos.1"	[label="Running.True\nTodos.1" fillcolor="#f7f5eb", style=filled]
+"Running.True, Todos.2"	[label="Running.True\nTodos.2" fillcolor="#f7f5eb", style=filled]
+"Running.True, Todos.2" -> "Running.True, Todos.1" [ label="DeleteTodoById (0)",color=black, penwidth=1 ];
+"Running.True, Todos.1" -> "Running.True, Todos.0" [ label="DeleteTodoById (0)",color=black, penwidth=1 ];
+"Running.True, Todos.1" -> "Running.True, Todos.2" [ label="AddTodoWithoutId (0)",color=black, penwidth=1 ];
+"Running.True, Todos.0" -> "Running.True, Todos.1" [ label="AddTodoWithoutId (0)",color=black, penwidth=1 ];
+"Running.False, Todos.0" -> "Running.True, Todos.0" [ label="java -jar apichallenges.jar (0)",color=black, penwidth=1 ];
+"Running.True, Todos.0" -> "Running.True, Todos.0" [ label="DeleteTodoById (0)",color=black, penwidth=1 ];
+"Running.True, Todos.1" -> "Running.True, Todos.1" [ label="GetTodosList (0)",color=black, penwidth=1 ];
+"Running.True, Todos.0" -> "Running.True, Todos.0" [ label="GetTodoFromId (0)",color=black, penwidth=1 ];
+"Running.True, Todos.1" -> "Running.True, Todos.1" [ label="GetHeadersOfTodoFromId (0)",color=black, penwidth=1 ];
+"Running.True, Todos.2" -> "Running.True, Todos.2" [ label="AmendTodoByIdPostMethod (0)",color=black, penwidth=1 ];
+"Running.True, Todos.0" -> "Running.True, Todos.0" [ label="AmendTodoByIdPutMethod (0)",color=black, penwidth=1 ];
+"Running.True, Todos.2" -> "Running.True, Todos.2" [ label="AddTodoWithoutId (0)",color=black, penwidth=1 ];
+}

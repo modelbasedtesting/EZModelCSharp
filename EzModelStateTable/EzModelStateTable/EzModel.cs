@@ -118,6 +118,18 @@ namespace SeriousQualityEzModel
             return result;
         }
 
+        public string EnabledFlagsToString()
+        {
+            string flags = "[";
+
+            for (uint i=0; i < transitionCount; i++)
+            {
+                flags += (transitions[i].enabled ? "true" : "false") + (i == transitionCount-1 ? "" : ",");
+            }
+            flags += "]";
+            return flags;
+        }
+
         public bool Add(string startState, string endState, string action)
         {
             if (transitionCount < transitions.Length)
@@ -1130,6 +1142,8 @@ var step = -1; // Because step is an index into an array.
                     w.WriteLine(" ");
                     w.WriteLine("const transitionActions = [{0}];", transitions.ActionIndicesToString());
                     w.WriteLine(" ");
+                    w.WriteLine("const transitionEnabledFlags = {0};", transitions.EnabledFlagsToString());
+                    w.WriteLine(" ");
                     w.WriteLine("const transitionHitCounts = new Array({0}).fill(0);", transitions.Count());
                     w.WriteLine(" ");
                     w.WriteLine("const nodeCount = {0};", totalNodes.Count());
@@ -1697,7 +1711,7 @@ function assessCoverageFloor()
 	var floor = 2000000000;
 	for (var i=0; i < transitionHitCounts.length; i++)
 	{
-		if (transitionHitCounts[i] < floor)
+		if (transitionEnabledFlags[i] && transitionHitCounts[i] < floor)
 		{
 			floor = transitionHitCounts[i];
 		}
@@ -1706,7 +1720,6 @@ function assessCoverageFloor()
 	{
 		coverageFloor = floor;
 		setTransitionFloorText();
-
 	}
 }
 

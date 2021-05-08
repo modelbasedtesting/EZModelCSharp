@@ -1,0 +1,15 @@
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/obj/Debug/netcoreapp3.1/TodoAPIsExplicit2.csprojAssemblyReference.cache
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/obj/Debug/netcoreapp3.1/TodoAPIsExplicit2.AssemblyInfoInputs.cache
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/obj/Debug/netcoreapp3.1/TodoAPIsExplicit2.AssemblyInfo.cs
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/obj/Debug/netcoreapp3.1/TodoAPIsExplicit2.csproj.CoreCompileInputs.cache
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/bin/Debug/netcoreapp3.1/TodoAPIsExplicit2.deps.json
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/bin/Debug/netcoreapp3.1/TodoAPIsExplicit2.runtimeconfig.json
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/bin/Debug/netcoreapp3.1/TodoAPIsExplicit2.runtimeconfig.dev.json
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/bin/Debug/netcoreapp3.1/TodoAPIsExplicit2.dll
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/bin/Debug/netcoreapp3.1/TodoAPIsExplicit2.pdb
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/bin/Debug/netcoreapp3.1/EzModelStateTable.dll
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/bin/Debug/netcoreapp3.1/EzModelStateTable.pdb
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/obj/Debug/netcoreapp3.1/TodoAPIsExplicit2.csproj.CopyComplete
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/obj/Debug/netcoreapp3.1/TodoAPIsExplicit2.dll
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/obj/Debug/netcoreapp3.1/TodoAPIsExplicit2.pdb
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsExplicit2/obj/Debug/netcoreapp3.1/TodoAPIsExplicit2.genruntimeconfig.cache
