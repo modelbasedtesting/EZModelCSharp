@@ -112,23 +112,20 @@ namespace TodoAPIsExplicit3
 
         // A helper variable to limit the size of the state-transition table, and
         // thus also limit the size of the model graph.
-        const uint maxTodos = 11;
+        const uint maxTodos = 12;
 
         // Actions handled by APIs
-        const string startup = "java -jar apichallenges.jar";
+        const string startup = "Startup";
         const string shutdown = "Shutdown";
-        const string getTodos = "GetTodosList";
-        const string headTodos = "GetTodosHeaders";
-        const string addActiveTodo = "AddActiveTodo";
-        const string addResolvedTodo = "AddResolvedTodo";
-        const string resolveActiveTodo = "ResolveActiveTodo";
-        const string activateResolvedTodo = "ActivateResolvedToodo";
-        const string getTodoId = "GetTodoFromId";
-        const string headTodoId = "GetHeadersOfTodoFromId";
-        const string postTodoId = "AmendTodoByIdPostMethod";
-        const string putTodoId = "AmendTodoByIdPutMethod";
-        const string deleteActiveTodo = "DeleteActiveTodo";
-        const string deleteResolvedTodo = "DeleteResolvedTodo";
+        const string getTodos = "Get Todos List";
+        const string addActiveTodo = "Add an Active Todo";
+        const string addResolvedTodo = "Add a Resolved Todo";
+        const string resolveActiveTodo = "Resolve an Active Todo";
+        const string activateResolvedTodo = "Activate a Resolved Toodo";
+        const string getTodo = "Get a Todo";
+        const string editTodo = "Edit a Todo";
+        const string deleteActiveTodo = "Delete an Active Todo";
+        const string deleteResolvedTodo = "Delete a Resolved Todo";
 
         string StringifyStateVector(bool running, uint numActiveTodos, uint numResolvedTodos)
         {
@@ -211,16 +208,14 @@ namespace TodoAPIsExplicit3
             actions.Add(activateResolvedTodo);
             actions.Add(resolveActiveTodo);
             actions.Add(getTodos);
-//            actions.Add(shutdown);
+            actions.Add(getTodo);
+            actions.Add(editTodo);
 
             if (includeSelfLinkNoise)
             {
             }
 
-            actions.Add(getTodoId);
-            actions.Add(headTodoId);
-            actions.Add(postTodoId);
-            actions.Add(putTodoId);
+            //            actions.Add(shutdown);
 
             return actions;
         }
@@ -249,11 +244,8 @@ namespace TodoAPIsExplicit3
                     break;
 
                 case getTodos:
-                case headTodos:
-                case getTodoId:
-                case headTodoId:
-                case postTodoId:
-                case putTodoId:
+                case getTodo:
+                case editTodo:
                     break;
                 case addActiveTodo:
                     if (numActiveTodos + numResolvedTodos < maxTodos)

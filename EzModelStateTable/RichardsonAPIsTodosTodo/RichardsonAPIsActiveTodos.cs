@@ -10,7 +10,7 @@ namespace RichardsonAPIsActiveTodos
         {
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
-            client.IncludeSelfLinkNoise = false;
+            client.IncludeSelfLinkNoise = true;
 
             // We learned after generating the graph that it has 62 edges,
             // 13 nodes, and uses 25 actions.  Those specific numbers are

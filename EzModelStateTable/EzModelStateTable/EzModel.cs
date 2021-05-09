@@ -214,7 +214,7 @@ namespace SeriousQualityEzModel
             return String.Empty;
         }
 
-        public int GetAnyLowHitTransitionIndex()
+        public int GetAnyLowHitTransitionIndex(bool ignoreDisabledTransitions = false)
         {
             // Select a low hitcount transition randomly, without preference
             // for the proximity of the target transition to the current state.
@@ -228,7 +228,7 @@ namespace SeriousQualityEzModel
             List<int> lowHitList = new List<int>();
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].enabled && transitions[i].hitCount == lowHit)
+                if ((transitions[i].enabled || ignoreDisabledTransitions) && transitions[i].hitCount == lowHit)
                 {
                     lowHitList.Add(i);
                 }
@@ -253,7 +253,7 @@ namespace SeriousQualityEzModel
             return floor;
         }
 
-        public int GetLowHitTransitionIndexAvoidOutlinks(string state)
+        public int GetLowHitTransitionIndexAvoidOutlinks(string state, bool ignoreDisabledTransitions = false)
         {
             // Avoid an outlink transition to drive coverage away from
             // the current node.  If only outlinks have low hitcount,
@@ -269,7 +269,7 @@ namespace SeriousQualityEzModel
 
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].enabled && transitions[i].hitCount == lowHit)
+                if ((transitions[i].enabled || ignoreDisabledTransitions) && transitions[i].hitCount == lowHit)
                 {
                     if (transitions[i].startState != state)
                     {
@@ -296,7 +296,7 @@ namespace SeriousQualityEzModel
             return low;
         }
 
-        public int GetLowHitTransitionIndexPreferOutlink(string state)
+        public int GetLowHitTransitionIndexPreferOutlink(string state, bool ignoreDisabledTransitions = false)
         {
             // Prefer an outlink transition with a low hit count, so that
             // the traversal doesn't make big jumps around the graph when
@@ -316,7 +316,7 @@ namespace SeriousQualityEzModel
 
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].enabled && transitions[i].hitCount == lowHit)
+                if ((transitions[i].enabled || ignoreDisabledTransitions) && transitions[i].hitCount == lowHit)
                 {
                     if (transitions[i].startState == state)
                     {
@@ -343,7 +343,7 @@ namespace SeriousQualityEzModel
             return low;
         }
 
-        public List<uint> GetStateTransitionIndices(string state)
+        public List<uint> GetStateTransitionIndices(string state, bool ignoreDisabledTransitions = false)
         {
             // return all transitions involving the state, i.e.,
             // outlinks, inlinks, and self-links.
@@ -352,7 +352,7 @@ namespace SeriousQualityEzModel
 
             for (uint i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].enabled && transitions[i].startState == state || transitions[i].endState == state)
+                if ((transitions[i].enabled || ignoreDisabledTransitions) && transitions[i].startState == state || transitions[i].endState == state)
                 {
                     indices.Add(i);
                 }
@@ -361,13 +361,13 @@ namespace SeriousQualityEzModel
             return indices;
         }
 
-        public List<uint> GetOutlinkTransitionIndices(string state)
+        public List<uint> GetOutlinkTransitionIndices(string state, bool ignoreDisabledTransitions = false)
         {
             List<uint> indices = new List<uint>();
 
             for (uint i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].enabled && transitions[i].startState == state)
+                if ((transitions[i].enabled || ignoreDisabledTransitions) && transitions[i].startState == state)
                 {
                     indices.Add(i);
                 }
@@ -376,7 +376,7 @@ namespace SeriousQualityEzModel
             return indices;
         }
 
-        public int GetTransitionIndexByStartAndEndStates(string startState, string endState)
+        public int GetTransitionIndexByStartAndEndStates(string startState, string endState, bool ignoreDisabledTransitions = false)
         {
             int lowHit = int.MaxValue;
             int lowHitIndex = -1;
@@ -387,7 +387,7 @@ namespace SeriousQualityEzModel
                 // Track the index of the transition with the lowest hitCount.
                 // Return the tracked index to the caller, so that coverage is
                 // increased.
-                if (transitions[i].enabled && transitions[i].startState == startState && transitions[i].endState == endState)
+                if ((transitions[i].enabled || ignoreDisabledTransitions) && transitions[i].startState == startState && transitions[i].endState == endState)
                 {
                     if (transitions[i].hitCount <= lowHit)
                     {
@@ -441,11 +441,11 @@ namespace SeriousQualityEzModel
             return String.Empty;
         }
 
-        public int TransitionIndexOfEndState(string endState)
+        public int TransitionIndexOfEndState(string endState, bool ignoreDisabledTransitions = false)
         {
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].enabled && transitions[i].endState == endState)
+                if ((transitions[i].enabled || ignoreDisabledTransitions) && transitions[i].endState == endState)
                 {
                     return i;
                 }
@@ -455,11 +455,11 @@ namespace SeriousQualityEzModel
             return -1;
         }
 
-        public int TransitionIndexOfStartState(string startState)
+        public int TransitionIndexOfStartState(string startState, bool ignoreDisabledTransitions = false)
         {
             for (int i = 0; i < transitionCount; i++)
             {
-                if (transitions[i].enabled && transitions[i].startState == startState)
+                if ((transitions[i].enabled || ignoreDisabledTransitions) && transitions[i].startState == startState)
                 {
                     return i;
                 }
@@ -1167,7 +1167,7 @@ var step = -1; // Because step is an index into an array.
                         string nodeState = totalNodes.GetStateByIndex((uint)i);
 
                         // Get the outlinks and inlinks of the node
-                        List<uint> inOutSelf = transitions.GetStateTransitionIndices(nodeState);
+                        List<uint> inOutSelf = transitions.GetStateTransitionIndices(nodeState, true);
 
                         List<int> nodeIds = new List<int>();
                         nodeIds.Add(i); // The node IDs in GraphViz are 1-based.
@@ -1480,7 +1480,7 @@ function rescaleViewBox(scale) {
     width *= scale;
     height *= scale;
 
-    if (width < 20 || height < 20 || width > 5000 || height > 5000)
+    if (width < 5 || height < 5 || width > 10000 || height > 10000)
     {
         return viewBox;
     }

@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 
-namespace TodoAPIsExplicit1
+namespace TodoAPIsExplicit1x
 {
-    class TodoAPIsExplicit1Program
+    class TodoAPIsExplicit1xProgram
     {
         static int Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
             client.IncludeSelfLinkNoise = true;
 
             // If you increase maxTodos (around line 86, below), then alter
@@ -34,7 +34,7 @@ namespace TodoAPIsExplicit1
                 {
                     Console.WriteLine(S);
                 }
-              //  return -2;
+                //  return -2;
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
@@ -108,7 +108,7 @@ namespace TodoAPIsExplicit1
 
         // A helper variable to limit the size of the state-transition table, and
         // thus also limit the size of the model graph.
-        const uint maxTodos = 1;
+        const uint maxTodos = 2;
 
         // Actions handled by APIs
         const string startup = "Startup";
@@ -195,7 +195,7 @@ namespace TodoAPIsExplicit1
             actions.Add(addTodo);
             actions.Add(deleteTodo);
             actions.Add(getTodos);
-//            actions.Add(shutdown);
+            //            actions.Add(shutdown);
 
             if (includeSelfLinkNoise)
             {

@@ -115,20 +115,17 @@ namespace TodoAPIsExplicit2
         const uint maxTodos = 2;
 
         // Actions handled by APIs
-        const string startup = "java -jar apichallenges.jar";
+        const string startup = "Startup";
         const string shutdown = "Shutdown";
-        const string getTodos = "GetTodosList";
-        const string headTodos = "GetTodosHeaders";
-        const string addActiveTodo = "AddActiveTodo";
-        const string addResolvedTodo = "AddResolvedTodo";
-        const string resolveActiveTodo = "ResolveActiveTodo";
-        const string activateResolvedTodo = "ActivateResolvedToodo";
-        const string getTodoId = "GetTodoFromId";
-        const string headTodoId = "GetHeadersOfTodoFromId";
-        const string postTodoId = "AmendTodoByIdPostMethod";
-        const string putTodoId = "AmendTodoByIdPutMethod";
-        const string deleteActiveTodo = "DeleteActiveTodo";
-        const string deleteResolvedTodo = "DeleteResolvedTodo";
+        const string getTodos = "Get Todos List";
+        const string addActiveTodo = "Add an Active Todo";
+        const string addResolvedTodo = "Add a Resolved Todo";
+        const string resolveActiveTodo = "Resolve an Active Todo";
+        const string activateResolvedTodo = "Activate a Resolved Todo";
+        const string getTodo = "Get a Todo";
+        const string editTodo = "Edit a Todo";
+        const string deleteActiveTodo = "Delete an Active Todo";
+        const string deleteResolvedTodo = "Delete a Resolved Todo";
 
         string StringifyStateVector(bool running, uint numActiveTodos, uint numResolvedTodos)
         {
@@ -184,7 +181,6 @@ namespace TodoAPIsExplicit2
             // state vector to the caller.
 
             return observed;
-
         }
 
         // IEzModelClient Interface method
@@ -217,10 +213,8 @@ namespace TodoAPIsExplicit2
             {
             }
 
-            actions.Add(getTodoId);
-            actions.Add(headTodoId);
-            actions.Add(postTodoId);
-            actions.Add(putTodoId);
+            actions.Add(getTodo);
+            actions.Add(editTodo);
 
             return actions;
         }
@@ -249,11 +243,8 @@ namespace TodoAPIsExplicit2
                     break;
 
                 case getTodos:
-                case headTodos:
-                case getTodoId:
-                case headTodoId:
-                case postTodoId:
-                case putTodoId:
+                case getTodo:
+                case editTodo:
                     break;
                 case addActiveTodo:
                     if (numActiveTodos + numResolvedTodos < maxTodos)
