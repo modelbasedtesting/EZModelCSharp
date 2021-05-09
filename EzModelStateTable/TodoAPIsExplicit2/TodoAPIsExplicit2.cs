@@ -59,7 +59,7 @@ namespace TodoAPIsExplicit2
             // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("Hairball", 4);
+            graph.RandomDestinationCoverage("TodoAPIsExplicit2", 3);
             return 0;
         }
     }

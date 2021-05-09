@@ -985,8 +985,8 @@ TH {
 }
 </style>
 	</head>
-	<body>
-	<table border=""0"" width=""100%"" height=""100%"">
+	<body onresize=""updateWindowDimensions()"">
+    <table border=""0"" width=""100%"" height=""100%"">
 		<tr>
 			<th colspan=""2"" id=""selectedSvgElementInfo"" style=""height:20px; color:#e00000""></th> 
 		</tr>
@@ -996,25 +996,25 @@ TH {
 					<tr><td style=""text-align:right"">18</td><td style=""width:50%; background-color:#FF7F7F""></td></tr> 
 					<tr><td style=""text-align:right"">17</td><td style=""width:50%; background-color:#97FF2F""></td></tr>
 					<tr><td style=""text-align:right"">16</td><td style=""width:50%; background-color:#771FAF""></td></tr>
-					<tr><td style=""text-align:right"">15</td><td style=""width:50%; background-color:#4F7FEF""></td></tr>
-					<tr><td style=""text-align:right"">14</td><td style=""width:50%; background-color:#8FCF27""></td></tr>
-					<tr><td style=""text-align:right"">13</td><td style=""width:50%; background-color:#A71770""></td></tr>
-					<tr><td style=""text-align:right"">12</td><td style=""width:50%; background-color:#77EF77""></td></tr>
-					<tr><td style=""text-align:right"">11</td><td style=""width:50%; background-color:#CF77CF""></td></tr>
+					<tr><td style=""text-align:right"">15</td><td style=""width:50%; background-color:#8FCF27""></td></tr>
+					<tr><td style=""text-align:right"">14</td><td style=""width:50%; background-color:#4F7FEF""></td></tr>
+					<tr><td style=""text-align:right"">13</td><td style=""width:50%; background-color:#3FAF3F""></td></tr>
+					<tr><td style=""text-align:right"">12</td><td style=""width:50%; background-color:#A71770""></td></tr>
+					<tr><td style=""text-align:right"">11</td><td style=""width:50%; background-color:#008F00""></td></tr>
 					<tr><td style=""text-align:right"">10</td><td style=""width:50%; background-color:#BF4F4F""></td></tr>
 					<tr><td style=""text-align:right"">9</td><td style=""width:50%; background-color:#3737AF""></td></tr>
-					<tr><td style=""text-align:right"">8</td><td style=""width:50%; background-color:#008F00""></td></tr>
-					<tr><td style=""text-align:right"">7</td><td style=""width:50%; background-color:#EFD700""></td></tr>
-					<tr><td style=""text-align:right"">6</td><td style=""width:50%; background-color:#8F008F""></td></tr>
+					<tr><td style=""text-align:right"">8</td><td style=""width:50%; background-color:#77EF77""></td></tr>
+					<tr><td style=""text-align:right"">7</td><td style=""width:50%; background-color:#8F008F""></td></tr>
+					<tr><td style=""text-align:right"">6</td><td style=""width:50%; background-color:#EFD700""></td></tr>
 					<tr><td style=""text-align:right"">5</td><td style=""width:50%; background-color:#0000DF""></td></tr>
-					<tr><td style=""text-align:right"">4</td><td style=""width:50%; background-color:#FFAF00""></td></tr>
-					<tr><td style=""text-align:right"">3</td><td style=""width:50%; background-color:#DF00DF""></td></tr>
-					<tr><td style=""text-align:right"">2</td><td style=""width:50%; background-color:#00DF00""></td></tr>
-					<tr><td style=""text-align:right"">1</td><td style=""width:50%; background-color:#00AFFF""></td></tr>
+					<tr><td style=""text-align:right"">4</td><td style=""width:50%; background-color:#00DF00""></td></tr>
+					<tr><td style=""text-align:right"">3</td><td style=""width:50%; background-color:#FFAF00""></td></tr>
+					<tr><td style=""text-align:right"">2</td><td style=""width:50%; background-color:#00AFFF""></td></tr>
+					<tr><td style=""text-align:right"">1</td><td style=""width:50%; background-color:#DF00DF""></td></tr>
 					<tr><td style=""text-align:right"">0</td><td style=""width:50%; background-color:#000000""></td></tr>
 				</table>
 			</td>
-			<td>
+			<td id=""mainBox"">
 				<table border=""1"" rules=""none"" width=""100%"" height=""100%"">
 					<tr>
 						<td>
@@ -1088,7 +1088,7 @@ TH {
 	<td>
 		<table>
 			<tr>
-			    <td>
+			    <td height=""150px"">
 			    	<table border=""1"" rules=""none"">
 			    		<tr>
 			    			<td style=""text-align:center; padding-top:2px; padding-left:2px; padding-right:2px"" colspan=""3"">Transition</td>
@@ -1136,6 +1136,7 @@ TH {
 </tr>
 </table>
 <script type=""text/ecmascript"">
+
 var step = -1; // Because step is an index into an array.
 ");
                     w.WriteLine("const actionNames = [{0}];", transitions.ActionsToString());
@@ -1147,6 +1148,8 @@ var step = -1; // Because step is an index into an array.
                     w.WriteLine("const transitionHitCounts = new Array({0}).fill(0);", transitions.Count());
                     w.WriteLine(" ");
                     w.WriteLine("const nodeCount = {0};", totalNodes.Count());
+                    w.WriteLine(" ");
+                    w.WriteLine("const highestCoverageFloor = {0};", transitions.GetHitcountFloor());
                     w.WriteLine(" ");
                     w.WriteLine("const traversedEdge = [{0}];", String.Join(",", traversedEdge));
                     w.WriteLine(" ");
@@ -1234,6 +1237,7 @@ function changeSpeed(e) {
 }
 
 function fitGraph() {
+    newBits = originalBits;
     document.getElementById(""svgOuter"").setAttribute(""viewBox"", initialBox);
 }
 
@@ -1241,14 +1245,91 @@ var previousSubgraph = undefined;
 var previousFill = undefined;
 var currentSubgraph = undefined;
 
+function edgeOpacityAndEvents(edgeId, opacity) {
+	var edge = document.getElementById(edgeId);
+	edge.setAttribute(""opacity"", opacity);
+	var text = edge.getElementsByTagName(""text"");
+	var path = edge.getElementsByTagName(""path"");
+	var poly = edge.getElementsByTagName(""polygon"");
+	if (opacity == ""1.0"")
+	{
+	    edge.setAttribute(""opacity"", ""1.0"");
+	    if (text.length > 0)
+	    {
+	    	text[0].addEventListener(""click"", attr);
+	    }
+	    if (poly.length > 0)
+	    {
+	    	poly[0].addEventListener(""click"", attr);
+	    }
+	    if (path.length > 0)
+	    {
+	    	path[0].addEventListener(""click"", attr);
+	    }
+	}
+	else
+	{
+	    edge.setAttribute(""opacity"", opacity);
+	    if (text.length > 0)
+	    {
+	    	text[0].removeEventListener(""click"", attr);
+	    }
+	    if (poly.length > 0)
+	    {
+	    	poly[0].removeEventListener(""click"", attr);
+	    }
+	    if (path.length > 0)
+	    {
+	    	path[0].removeEventListener(""click"", attr);
+	    }
+	}
+}
+
+function nodeOpacityAndEvents(nodeId, opacity) {
+	var node = document.getElementById(nodeId);
+	node.setAttribute(""opacity"", opacity);
+    var text = node.getElementsByTagName(""text"");
+    var ellipse = node.getElementsByTagName(""ellipse"");
+    if (opacity == ""1.0"")
+    {
+        node.setAttribute(""opacity"", ""1.0"");
+        if (text.length > 0)
+        {
+            for (var i=0; i < text.length; i++)
+            {
+            	text[i].addEventListener(""click"", attr);
+            }
+        }
+        if (ellipse.length > 0)
+        {
+        	ellipse[0].addEventListener(""click"", attr);
+        }
+    }
+    else
+    {
+        node.setAttribute(""opacity"", opacity);
+        if (text.length > 0)
+        {
+            for (var i=0; i < text.length; i++)
+            {
+            	text[i].removeEventListener(""click"", attr);
+            }
+        }
+        if (ellipse.length > 0)
+        {
+        	ellipse[0].removeEventListener(""click"", attr);
+        }
+    }
+}
+
 function allComponentsToFullOpacity() {
     for (var i=0; i < transitionHitCounts.length; i++)
     {
-        document.getElementById(""edge"" + i).setAttribute(""opacity"", ""1.0"");
+        edgeOpacityAndEvents(""edge"" + i, ""1.0"");
     }
     for (var i=0; i < nodeCount; i++)
     {
-        document.getElementById(""node"" + i).setAttribute(""opacity"", ""1.0"");
+        nodeOpacityAndEvents(""node"" + i, ""1.0"");
     }
 }
 
@@ -1262,16 +1343,19 @@ function updateDisplayAttributes() {
 		}
 		allComponentsToFullOpacity();
     }
+
     if (document.getElementById(""isolateSubgraph"").checked && currentSubgraph != undefined)
     {
-    	opacityValue = document.getElementById(""subgraphOpacity"").value / 100.0;
+    	var opacityValue = document.getElementById(""subgraphOpacity"").value / 100.0;
+    	var opacityString = opacityValue.toString();
+
         for (var i=0; i < transitionHitCounts.length; i++)
         {
-            document.getElementById(""edge"" + i).setAttribute(""opacity"", subgraphEdges[currentSubgraph].includes(i) ? ""1.0"" : opacityValue.toString());
+    		edgeOpacityAndEvents(""edge"" + i, subgraphEdges[currentSubgraph].includes(i) ? ""1.0"" : opacityString);
         }
         for (var i=0; i < nodeCount; i++)
         {
-            document.getElementById(""node"" + i).setAttribute(""opacity"", subgraphNodes[currentSubgraph].includes(i) ? ""1.0"" : opacityValue.toString());
+        	nodeOpacityAndEvents(""node"" + i, subgraphNodes[currentSubgraph].includes(i) ? ""1.0"" : opacityString);
         }
 
         if (previousSubgraph != undefined)
@@ -1487,14 +1571,51 @@ function rescaleViewBox(scale) {
 
     newBits = [xMin, yMin, width, height];
     translateScale = newBits[2] / originalBits[2];
-    xString = xMin.toFixed(2).toString();
-    yString = yMin.toFixed(2).toString();
-    wString = width.toFixed(2).toString();
-    hString = height.toFixed(2).toString();
-    var newViewBox = xString + "" "" + yString + "" "" + wString + "" "" + hString;
-    svgOuter.setAttribute(""viewBox"", newViewBox);
+    var newViewBox = updateViewBox(xMin, yMin, width, height);
     return newViewBox;
 }
+
+function updateViewBox(xMin, yMin, width, height) {
+    var xString = xMin.toFixed(2).toString();
+    var yString = yMin.toFixed(2).toString();
+    var wString = width.toFixed(2).toString();
+    var hString = height.toFixed(2).toString();
+    var newViewBox = xString + "" "" + yString + "" "" + wString + "" "" + hString;
+    svgOuter.setAttribute(""viewBox"", newViewBox);
+	return newViewBox;	
+}
+
+function updateWindowDimensions() {
+	var w = window.innerWidth;
+	var h = window.innerHeight;
+
+	var mainBox = document.getElementById(""mainBox"");
+
+    var width = w - 54;
+    var height = h - 172;
+    mainBox.setAttribute(""width"", width.toString() + ""px"");
+    mainBox.setAttribute(""height"", height.toString() + ""px"");
+    var aspect = width/height;
+    var originalAspect = originalBits[2]/originalBits[3];
+    var newScale = aspect/originalAspect;
+
+    if (aspect > originalAspect)
+    {
+    	var newWidth = newScale*newBits[2];
+    	var delta = newWidth - newBits[2];
+    	var newXmin = newBits[0] - 0.5*delta;
+    	updateViewBox(newXmin, newBits[1], newWidth, newBits[3]);
+    }
+    else
+    {
+    	var newHeight = newBits[3]/newScale;
+    	var delta = newHeight - newBits[3];
+    	var newYmin = newBits[1] - 0.5*delta;
+    	updateViewBox(newBits[0], newYmin, newBits[2], newHeight);
+    }
+}
+
+updateWindowDimensions();
 
 function translateViewBox(dx, dy) {
     var svgOuter = document.getElementById(""svgOuter"");
@@ -1510,7 +1631,7 @@ function translateViewBox(dx, dy) {
 }
 
 function setTransitionFloorText() {
-	document.getElementById(""transitionFloor"").innerHTML = ""Hitcount floor: "" + coverageFloor;
+	document.getElementById(""transitionFloor"").innerHTML = ""Hitcount floor: "" + coverageFloor + ""/"" + highestCoverageFloor;
 }
 
 function timedTraversal() {
@@ -1556,9 +1677,6 @@ function setStepText() {
 }
 
 function refreshGraphics(refreshColor) {
-    // Set all path and polygon strokes and stroke-width values to 2,
-    // and stroke color to black.  Set the fill to none on all graph nodes.
-
 	// Walk backwards from the current step and set a 
 	// rendered flag on each transition as it is encountered.
 	// Do not render a transition that has rendered==true.
@@ -1567,6 +1685,8 @@ function refreshGraphics(refreshColor) {
 
     // Before we walk backwards, clear each edge of the lookahead path
     // that is beyond the present edge.
+    var strokeWidth = Math.ceil(Math.log10(newBits[2]+newBits[3])*3.0);
+
     if (step > -1 && step < traversedEdge.length)
     {
         for (var i=1; i < pathEdges[step].length; i++)
@@ -1581,13 +1701,13 @@ function refreshGraphics(refreshColor) {
             var path = edge.getElementsByTagName(""path"");
             if (path.length > 0)
             {
-                path[0].setAttribute(""stroke-width"", ""3"");
+                path[0].setAttribute(""stroke-width"", strokeWidth.toString());
                 path[0].setAttribute(""stroke"", hitColor);
             }
             var poly = edge.getElementsByTagName(""polygon"");
             if (poly.length > 0)
             {
-                poly[0].setAttribute(""stroke-width"", ""3"");
+                poly[0].setAttribute(""stroke-width"", strokeWidth.toString());
                 poly[0].setAttribute(""fill"", hitColor);
                 poly[0].setAttribute(""stroke"", hitColor);
             }
@@ -1615,13 +1735,13 @@ function refreshGraphics(refreshColor) {
         var path = edge.getElementsByTagName(""path"");
         if (path.length > 0)
         {   // for hitCount 0 set the stroke width to 1.
-            path[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? ""3"" : ""1"");
+            path[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? strokeWidth.toString() : ""1"");
             path[0].setAttribute(""stroke"", refreshColor == null ? hitColor : refreshColor);
         }
         var poly = edge.getElementsByTagName(""polygon"");
         if (poly.length > 0)
         {   // for hitCount 0 set the stroke width to 1.
-            poly[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? ""3"" : ""1"");
+            poly[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? strokeWidth.toString() : ""1"");
             poly[0].setAttribute(""fill"", refreshColor == null ? hitColor : refreshColor);
             poly[0].setAttribute(""stroke"", refreshColor == null ? hitColor : refreshColor);
         }
@@ -1733,6 +1853,8 @@ function traversalStepCommon() {
 
     document.getElementById(""selectedSvgElementInfo"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
 
+    var strokeWidth = Math.ceil(Math.log10(newBits[2]+newBits[3])*15.0);
+
     // Now paint the current path and nodes in light grey
     for (var i = 0; i < pathEdges[step].length; i++)
     {
@@ -1741,13 +1863,13 @@ function traversalStepCommon() {
         var path = edge.getElementsByTagName(""path"");
         if (path.length > 0)
         {
-            path[0].setAttribute(""stroke-width"", ""15"");
+            path[0].setAttribute(""stroke-width"", strokeWidth.toString());
             path[0].setAttribute(""stroke"", ""lightgrey"");
         }
         var poly = edge.getElementsByTagName(""polygon"");
         if (poly.length > 0)
         {
-            poly[0].setAttribute(""stroke-width"", ""15"");
+            poly[0].setAttribute(""stroke-width"", strokeWidth.toString());
             poly[0].setAttribute(""fill"", ""lightgrey"");
             poly[0].setAttribute(""stroke"", ""lightgrey"");
         }
@@ -1769,13 +1891,13 @@ function traversalStepCommon() {
     var path = edge.getElementsByTagName(""path"");
     if (path.length > 0)
     {
-        path[0].setAttribute(""stroke-width"", ""15"");
+        path[0].setAttribute(""stroke-width"", strokeWidth.toString());
         path[0].setAttribute(""stroke"", ""url(#greenBlueGradient)"");
     }
     var poly = edge.getElementsByTagName(""polygon"");
     if (poly.length > 0)
     {
-        poly[0].setAttribute(""stroke-width"", ""15"");
+        poly[0].setAttribute(""stroke-width"", strokeWidth.toString());
         poly[0].setAttribute(""fill"", ""url(#greenBlueGradient)"");
         poly[0].setAttribute(""stroke"", ""url(#greenBlueGradient)"");
     }
@@ -1836,35 +1958,35 @@ function getHitColor(hitCount) {
             }
             return ""#000000"";
         case 1:
-            return ""#00AFFF"";
-        case 2:
-            return ""#00DF00"";
-        case 3:
             return ""#DF00DF"";
-        case 4:
+        case 2:
+            return ""#00AFFF"";
+        case 3:
             return ""#FFAF00"";
+        case 4:
+            return ""#00DF00"";
         case 5:
             return ""#0000DF"";
         case 6:
-            return ""#8F008F"";
-        case 7:
             return ""#EFD700"";
+        case 7:
+            return ""#8F008F"";
         case 8:
-            return ""#008F00"";
+            return ""#77EF77"";
         case 9:
             return ""#3737AF"";
         case 10:
             return ""#BF4F4F"";
         case 11:
-            return ""#77EF77"";
+            return ""#008F00"";
         case 12:
-            return ""#3FAF3F"";
-        case 13:
             return ""#A71770"";
+        case 13:
+            return ""#3FAF3F"";
         case 14:
-            return ""#8FCF27"";
-        case 15:
             return ""#4F7FEF"";
+        case 15:
+            return ""#8FCF27"";
         case 16:
             return ""#771FAF"";
         case 17:

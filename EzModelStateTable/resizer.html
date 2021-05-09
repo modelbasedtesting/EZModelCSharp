@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+	</style>
+</head>
+<body onresize="updateWindowDimensions()">
+<table border="0" rules="none" width="100%" height="100%">
+	<tr>
+		<td colspan="2" style="text-align:center" height="20px"> title </td>
+	</tr>
+	<tr>
+		<td width="50">legend</td>
+		<td id="mainBox" width="100" height="50">
+			<table border="1" rules="none" width="100%" height="100%">
+				<tr>
+					<td id="demo" style="text-align:center; vertical-align:center"></td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td width="50px"></td>
+		<td height="150px">
+			<table border="1" rules="none" width="100%" height="100%">
+				<tr>
+					<td id="dimensions" style="text-align: center; vertical-align: center">stuff</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+
+<script>
+function updateWindowDimensions() {
+	var w = window.innerWidth;
+	var h = window.innerHeight;
+
+	var mainBox = document.getElementById("mainBox");
+	var width = w-54;
+	var height = h-192;
+	mainBox.setAttribute("width", width);
+	mainBox.setAttribute("height", height);
+	document.getElementById("demo").innerHTML = "innerWidth: " + w + "<br>innerHeight: " + h;
+}
+
+updateWindowDimensions();
+</script>
+</body>
+</html>
