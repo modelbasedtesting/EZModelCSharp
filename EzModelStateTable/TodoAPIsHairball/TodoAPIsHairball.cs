@@ -100,7 +100,7 @@ namespace TodoAPIsHairball
 
         // Initially the system is not running, and this affects a lot of
         // state.
-        bool svRunning = false;
+        bool svInSession = false;
 
         // Reduce state explosion on todos by classifing the quantity of todos
         // into either zero or more than zero.
@@ -127,55 +127,55 @@ namespace TodoAPIsHairball
         const uint maxTodos = 14;
 
         // Actions handled by APIs
-        const string startup = "java -jar apichallenges.jar";
+        const string startSession = "Start Session";
         const string shutdown = "Shutdown";
-        const string getTodos = "GetTodosList";
-        const string headTodos = "GetTodosHeaders";
-        const string postTodos = "AddTodoWithoutId";
-        const string getTodoId = "GetTodoFromId";
-        const string headTodoId = "GetHeadersOfTodoFromId";
-        const string postTodoId = "AmendTodoByIdPostMethod";
-        const string putTodoId = "AmendTodoByIdPutMethod";
-        const string deleteTodoId = "DeleteTodoById";
-        const string showDocs = "GetDocumentation";
+        const string getTodos = "Get Todos List";
+        const string headTodos = "Get Todos Headers";
+        const string postTodos = "Add a Todo";
+        const string getTodoId = "Get a Todo";
+        const string headTodoId = "Get Headers of a Todo";
+        const string postTodoId = "Edit a Todo by Post";
+        const string putTodoId = "Edit a Todo by Put";
+        const string deleteTodoId = "Delete a Todo";
+        const string showDocs = "Get Documentation";
         //        const string createXChallengerGuid = "GetXChallengerGuid";
         //        const string restoreChallenger = "RestoreSavedXChallengerGuid";
-        const string getChallenges = "GetChallenges";
-        const string optionsChallenges = "GetOptionsChallenges";
-        const string headChallenges = "GetHeadersChallenges";
-        const string getHeartbeat = "GetHeartbeatIsServerRunning";
-        const string optionsHeartbeat = "GetOptionsForHeartbeat";
-        const string headHeartbeat = "GetHeadersForHeartbeat";
+        const string getChallenges = "Get Challenges";
+        const string optionsChallenges = "Get Options Challenges";
+        const string headChallenges = "Get Headers Challenges";
+        const string getHeartbeat = "Get Service Heartbeat";
+        const string optionsHeartbeat = "Get Options for Heartbeat";
+        const string headHeartbeat = "Get Headers for Heartbeat";
 
-        const string postSecretToken = "GetSecretToken";
-        const string getSecretNote = "GetSecretNoteByToken";
-        const string postSecretNote = "SetSecretNoteByToken";
+        const string postSecretToken = "Get Secret Token";
+        const string getSecretNote = "Get Secret Note";
+        const string postSecretNote = "Set Secret Note";
 
         // Actions outside of the APIs that cover legitimate REST methods
-        const string invalidGetTodo404 = "InvalidEndpointGetTodo";
-        const string invalidGetTodos404 = "InvalidIdGetTodos";
-        const string invalidPostTodos400 = "InvalidContentPostTodos";
-        const string invalidGetTodos406 = "InvalidAcceptGetTodos";
-        const string invalidPostTodos415 = "InvalidContentTypePostTodos";
-        const string invalidDeleteHeartbeat405 = "MethodNotAllowedDeleteHeartbeat";
-        const string serverErrorPatchHeartbeat500 = "InternalServerErrorPatchHeartbeat";
-        const string serverErrorTraceHeartbeat501 = "ServerNotImplementedTraceHeartbeat";
-        const string invalidAuthGetSecretToken401 = "InvalidAuthGetSecretToken";
-        const string invalidNotAuthorizedGetSecretNote403 = "XAuthTokenNotValidGetSecretNote";
-        const string invalidAuthHeaderMissingGetSecretNote401 = "XAuthTokenMissingGetSecretNote";
-        const string invalidNotAuthorizedPostSecretNote403 = "XAuthTokenNotValidPostSecretNote";
-        const string invalidAuthHeaderMissingPostSecretNote401 = "XAuthTokenMissingPostSecretNote";
+        const string invalidGetTodo404 = "Invalid Endpoint Get Todo";
+        const string invalidGetTodos404 = "Invalid Id Get Todos";
+        const string invalidPostTodos400 = "Invalid Content Post Todos";
+        const string invalidGetTodos406 = "Invalid Accept Get Todos";
+        const string invalidPostTodos415 = "Invalid Content Type Post Todos";
+        const string invalidDeleteHeartbeat405 = "Method Not Allowed Delete Heartbeat";
+        const string serverErrorPatchHeartbeat500 = "Internal Server Error Patch Heartbeat";
+        const string serverErrorTraceHeartbeat501 = "Server Not Implemented Trace Heartbeat";
+        const string invalidAuthGetSecretToken401 = "Invalid Auth Get Secret Token";
+        const string invalidNotAuthorizedGetSecretNote403 = "XAuth Token Not Valid Get Secret Note";
+        const string invalidAuthHeaderMissingGetSecretNote401 = "XAuth Token Missing Get Secret Note";
+        const string invalidNotAuthorizedPostSecretNote403 = "XAuth Token Not Valid Set Secret Note";
+        const string invalidAuthHeaderMissingPostSecretNote401 = "XAuth Token Missing Set Secret Note";
 
-        string StringifyStateVector(bool running, uint numTodos, bool xAuthTokenExists)
+        string StringifyStateVector(bool inSession, uint numTodos, bool xAuthTokenExists)
         {
-            string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}", running, numTodos, xAuthTokenExists);
+            string s = String.Format("InSession.{0}, Todos.{1}, XAuth.{2}", inSession, numTodos, xAuthTokenExists);
             return s;
         }
 
         // IEzModelClient Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, todosCount, svXAuthTokenExists);
+            return StringifyStateVector(svInSession, todosCount, svXAuthTokenExists);
         }
 
         // IEzModelClient Interface method
@@ -230,14 +230,14 @@ namespace TodoAPIsHairball
 
             // Parse the startState.
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             uint numTodos = uint.Parse(vState[1].Split(".")[1]);
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
-            if (!running)
+            if (!inSession)
             {
-                actions.Add(startup);
+                actions.Add(startSession);
                 return actions;
             }
 
@@ -300,7 +300,7 @@ namespace TodoAPIsHairball
         {
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             uint numTodos = uint.Parse(vState[1].Split(".")[1]);
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             //            bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
@@ -321,14 +321,14 @@ namespace TodoAPIsHairball
                 case invalidNotAuthorizedPostSecretNote403:
                 case invalidAuthHeaderMissingPostSecretNote401:
                     break;
-                case startup:
-                    running = true;
+                case startSession:
+                    inSession = true;
                     break;
                 case shutdown:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
-                    running = false;
+                    inSession = false;
                     //                    xChallengerGuidExists = svXChallengerGuidExists;
                     xAuthTokenExists = svXAuthTokenExists;
                     numTodos = todosCount;
@@ -378,7 +378,7 @@ namespace TodoAPIsHairball
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, numTodos, xAuthTokenExists);
+            return StringifyStateVector(inSession, numTodos, xAuthTokenExists);
         }
     }
 }

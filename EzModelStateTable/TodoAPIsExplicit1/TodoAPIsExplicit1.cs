@@ -100,7 +100,7 @@ namespace TodoAPIsExplicit1
 
         // Initially the system is not running, and this affects a lot of
         // state.
-        bool svRunning = false;
+        bool svInSession = false;
 
         // A counter of items in the todos list.
         // The real system under test initializes the list with 10 items.
@@ -111,7 +111,7 @@ namespace TodoAPIsExplicit1
         const uint maxTodos = 1;
 
         // Actions handled by APIs
-        const string startup = "Startup";
+        const string startSession = "Start Session";
         const string shutdown = "Shutdown";
         const string getTodos = "Get Todos List";
         const string addTodo = "Add a Todo";
@@ -119,16 +119,16 @@ namespace TodoAPIsExplicit1
         const string editTodo = "Edit a Todo";
         const string deleteTodo = "Delete a Todo";
 
-        string StringifyStateVector(bool running, uint numTodos)
+        string StringifyStateVector(bool inSession, uint numTodos)
         {
-            string s = String.Format("Running.{0}, Todos.{1}", running, numTodos);
+            string s = String.Format("Running.{0}, Todos.{1}", inSession, numTodos);
             return s;
         }
 
         // IEzModelClient Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, todosCount);
+            return StringifyStateVector(svInSession, todosCount);
         }
 
         // IEzModelClient Interface method
@@ -183,12 +183,12 @@ namespace TodoAPIsExplicit1
 
             // Parse the startState.
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             uint numTodos = uint.Parse(vState[1].Split(".")[1]);
 
-            if (!running)
+            if (!inSession)
             {
-                actions.Add(startup);
+                actions.Add(startSession);
                 return actions;
             }
 
@@ -212,19 +212,19 @@ namespace TodoAPIsExplicit1
         {
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             uint numTodos = uint.Parse(vState[1].Split(".")[1]);
 
             switch (action)
             {
-                case startup:
-                    running = true;
+                case startSession:
+                    inSession = true;
                     break;
                 case shutdown:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
-                    running = false;
+                    inSession = false;
                     numTodos = 0;
                     break;
 
@@ -248,7 +248,7 @@ namespace TodoAPIsExplicit1
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, numTodos);
+            return StringifyStateVector(inSession, numTodos);
         }
     }
 }

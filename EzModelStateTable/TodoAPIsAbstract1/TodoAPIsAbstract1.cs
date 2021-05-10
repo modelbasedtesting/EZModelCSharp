@@ -98,7 +98,7 @@ namespace TodoAPIsAbstract1
 
         // Initially the system is not running, and this affects a lot of
         // state.
-        bool svRunning = false;
+        bool svInSession = false;
 
         // Reduce state explosion on todos by classifing the quantity of todos
         // into either zero or more than zero.
@@ -109,7 +109,7 @@ namespace TodoAPIsAbstract1
         ActiveTodos svActiveTodos = ActiveTodos.Some;
 
         // Actions handled by APIs
-        const string startup = "Startup";
+        const string startSession = "Start Session";
         const string shutdown = "Shutdown";
         const string addSomeActiveTodos = "Add some Active Todos";
         const string addSomeResolvedTodos = "Add some Resolved Todos";
@@ -126,16 +126,16 @@ namespace TodoAPIsAbstract1
         const string activateSomeResolvedTodos = "Activate some Resolved Todos";
         const string activateAllResolvedTodos = "Activate all Resolved Todos";
 
-        string StringifyStateVector(bool running, ResolvedTodos resolvedTodos, ActiveTodos activeTodos)
+        string StringifyStateVector(bool inSession, ResolvedTodos resolvedTodos, ActiveTodos activeTodos)
         {
-            string s = String.Format("Running.{0}, ResolvedTodos.{1}, ActiveTodos.{2}", running, resolvedTodos.ToString(), activeTodos.ToString());
+            string s = String.Format("InSession.{0}, ResolvedTodos.{1}, ActiveTodos.{2}", inSession, resolvedTodos.ToString(), activeTodos.ToString());
             return s;
         }
 
         // Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, svResolvedTodos, svActiveTodos);
+            return StringifyStateVector(svInSession, svResolvedTodos, svActiveTodos);
         }
 
         // Interface method
@@ -179,15 +179,15 @@ namespace TodoAPIsAbstract1
             // a variety of start states and we keep track of only
             // one state in this object.
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string arg = vState[1].Split(".")[1];
             ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
             arg = vState[2].Split(".")[1];
             ActiveTodos activeTodos = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
 
-            if (!running)
+            if (!inSession)
             {
-                actions.Add(startup);
+                actions.Add(startSession);
                 return actions;
             }
 
@@ -262,7 +262,7 @@ namespace TodoAPIsAbstract1
         {
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string arg = vState[1].Split(".")[1];
             ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
             arg = vState[2].Split(".")[1];
@@ -270,14 +270,14 @@ namespace TodoAPIsAbstract1
 
             switch (action)
             {
-                case startup:
-                    running = true;
+                case startSession:
+                    inSession = true;
                     break;
                 case shutdown:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
-                    running = false;
+                    inSession = false;
                     resolvedTodos = svResolvedTodos;
                     activeTodos = svActiveTodos;
                     break;
@@ -349,7 +349,7 @@ namespace TodoAPIsAbstract1
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, resolvedTodos, activeTodos);
+            return StringifyStateVector(inSession, resolvedTodos, activeTodos);
         }
     }
 }

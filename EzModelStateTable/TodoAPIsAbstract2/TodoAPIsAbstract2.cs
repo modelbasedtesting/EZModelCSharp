@@ -98,7 +98,7 @@ namespace TodoAPIsAbstract2
 
         // Initially the system is not running, and this affects a lot of
         // state.
-        bool svSessionExists = false;
+        bool svInSession = false;
 
         // Reduce state explosion on todos by classifing the quantity of todos
         // into either zero or more than zero.
@@ -134,16 +134,16 @@ namespace TodoAPIsAbstract2
         const string getSecretNote = "Get Secret Note By Token";
         const string setSecretNote = "Set Secret Note By Token";
 
-        string StringifyStateVector(bool running, ResolvedTodos resolvedTodos, ActiveTodos activeTodos, bool authTokenExists, bool secretNoteExists)
+        string StringifyStateVector(bool inSession, ResolvedTodos resolvedTodos, ActiveTodos activeTodos, bool authTokenExists, bool secretNoteExists)
         {
-            string s = String.Format("Running.{0}, ResolvedTodos.{1}, ActiveTodos.{2}, AuthToken.{3}, SecretNote.{4}", running, resolvedTodos.ToString(), activeTodos.ToString(), authTokenExists.ToString(), secretNoteExists.ToString());
+            string s = String.Format("InSession.{0}, ResolvedTodos.{1}, ActiveTodos.{2}, AuthToken.{3}, SecretNote.{4}", inSession, resolvedTodos.ToString(), activeTodos.ToString(), authTokenExists.ToString(), secretNoteExists.ToString());
             return s;
         }
 
         // Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svSessionExists, svResolvedTodos, svActiveTodos, svAuthTokenExists, svSecretNoteExists);
+            return StringifyStateVector(svInSession, svResolvedTodos, svActiveTodos, svAuthTokenExists, svSecretNoteExists);
         }
 
         // Interface method
@@ -187,7 +187,7 @@ namespace TodoAPIsAbstract2
             // a variety of start states and we keep track of only
             // one state in this object.
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string arg = vState[1].Split(".")[1];
             ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
             arg = vState[2].Split(".")[1];
@@ -195,7 +195,7 @@ namespace TodoAPIsAbstract2
             bool authTokenExists = vState[3].Contains("True") ? true : false;
             bool secretNoteExists = vState[4].Contains("True") ? true : false;
 
-            if (!running)
+            if (!inSession)
             {
                 actions.Add(startSession);
                 return actions;
@@ -282,7 +282,7 @@ namespace TodoAPIsAbstract2
         {
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
-            bool session = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string arg = vState[1].Split(".")[1];
             ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
             arg = vState[2].Split(".")[1];
@@ -293,13 +293,13 @@ namespace TodoAPIsAbstract2
             switch (action)
             {
                 case startSession:
-                    session = true;
+                    inSession = true;
                     break;
                 case shutdown:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
-                    session = false;
+                    inSession = false;
                     resolvedTodos = svResolvedTodos;
                     activeTodos = svActiveTodos;
                     break;
@@ -379,7 +379,7 @@ namespace TodoAPIsAbstract2
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(session, resolvedTodos, activeTodos, authTokenExists, secretNoteExists);
+            return StringifyStateVector(inSession, resolvedTodos, activeTodos, authTokenExists, secretNoteExists);
         }
     }
 }

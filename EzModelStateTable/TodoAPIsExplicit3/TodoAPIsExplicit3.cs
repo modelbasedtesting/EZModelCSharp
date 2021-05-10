@@ -100,7 +100,7 @@ namespace TodoAPIsExplicit3
 
         // Initially the system is not running, and this affects a lot of
         // state.
-        bool svRunning = false;
+        bool svInSession = false;
 
         // DATA VARIABLES.  Not state variables....
         // Not done todos count can be imputed from todosCount - doneTodosCount
@@ -115,28 +115,28 @@ namespace TodoAPIsExplicit3
         const uint maxTodos = 12;
 
         // Actions handled by APIs
-        const string startup = "Startup";
+        const string startSession = "Start Session";
         const string shutdown = "Shutdown";
         const string getTodos = "Get Todos List";
         const string addActiveTodo = "Add an Active Todo";
         const string addResolvedTodo = "Add a Resolved Todo";
         const string resolveActiveTodo = "Resolve an Active Todo";
-        const string activateResolvedTodo = "Activate a Resolved Toodo";
+        const string activateResolvedTodo = "Activate a Resolved Todo";
         const string getTodo = "Get a Todo";
         const string editTodo = "Edit a Todo";
         const string deleteActiveTodo = "Delete an Active Todo";
         const string deleteResolvedTodo = "Delete a Resolved Todo";
 
-        string StringifyStateVector(bool running, uint numActiveTodos, uint numResolvedTodos)
+        string StringifyStateVector(bool inSession, uint numActiveTodos, uint numResolvedTodos)
         {
-            string s = String.Format("Running.{0}, ActiveTodos.{1}, ResolvedTodos.{2}", running, numActiveTodos, numResolvedTodos);
+            string s = String.Format("InSession.{0}, ActiveTodos.{1}, ResolvedTodos.{2}", inSession, numActiveTodos, numResolvedTodos);
             return s;
         }
 
         // IEzModelClient Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, activeTodosCount, resolvedTodosCount);
+            return StringifyStateVector(svInSession, activeTodosCount, resolvedTodosCount);
         }
 
         // IEzModelClient Interface method
@@ -197,7 +197,7 @@ namespace TodoAPIsExplicit3
 
             if (!running)
             {
-                actions.Add(startup);
+                actions.Add(startSession);
                 return actions;
             }
 
@@ -225,20 +225,20 @@ namespace TodoAPIsExplicit3
         {
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             uint numActiveTodos = uint.Parse(vState[1].Split(".")[1]);
             uint numResolvedTodos = uint.Parse(vState[2].Split(".")[1]);
 
             switch (action)
             {
-                case startup:
-                    running = true;
+                case startSession:
+                    inSession = true;
                     break;
                 case shutdown:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
-                    running = false;
+                    inSession = false;
                     numActiveTodos = 10;
                     numResolvedTodos = 0;
                     break;
@@ -289,7 +289,7 @@ namespace TodoAPIsExplicit3
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, numActiveTodos, numResolvedTodos);
+            return StringifyStateVector(inSession, numActiveTodos, numResolvedTodos);
         }
     }
 }

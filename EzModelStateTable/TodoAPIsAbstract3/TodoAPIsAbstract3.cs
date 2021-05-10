@@ -98,7 +98,7 @@ namespace TodoAPIsAbstract3
 
         // Initially the system is not running, and this affects a lot of
         // state.
-        bool svRunning = false;
+        bool svInSession = false;
 
         // Reduce state explosion on todos by classifing the quantity of todos
         // into either zero or more than zero.
@@ -113,7 +113,7 @@ namespace TodoAPIsAbstract3
         bool svSecretNoteExists = false;
 
         // Actions handled by APIs
-        const string startup = "Startup";
+        const string startSession = "Start Session";
         const string shutdown = "Shutdown";
         const string addSomeActiveTodos = "Add some Active Todos";
         const string addSomeResolvedTodos = "Add some Resolved Todos";
@@ -137,16 +137,16 @@ namespace TodoAPIsAbstract3
         const string releaseAuthToken = "Release Auth Token";
         const string clearSecretNote = "Clear Secret Note";
 
-        string StringifyStateVector(bool running, ResolvedTodos resolvedTodos, ActiveTodos activeTodos, bool authTokenExists, bool secretNoteExists)
+        string StringifyStateVector(bool inSession, ResolvedTodos resolvedTodos, ActiveTodos activeTodos, bool authTokenExists, bool secretNoteExists)
         {
-            string s = String.Format("Running.{0}, ResolvedTodos.{1}, ActiveTodos.{2}, AuthToken.{3}, SecretNote.{4}", running, resolvedTodos.ToString(), activeTodos.ToString(), authTokenExists.ToString(), secretNoteExists.ToString());
+            string s = String.Format("InSession.{0}, ResolvedTodos.{1}, ActiveTodos.{2}, AuthToken.{3}, SecretNote.{4}", inSession, resolvedTodos.ToString(), activeTodos.ToString(), authTokenExists.ToString(), secretNoteExists.ToString());
             return s;
         }
 
         // Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, svResolvedTodos, svActiveTodos, svAuthTokenExists, svSecretNoteExists);
+            return StringifyStateVector(svInSession, svResolvedTodos, svActiveTodos, svAuthTokenExists, svSecretNoteExists);
         }
 
         // Interface method
@@ -190,7 +190,7 @@ namespace TodoAPIsAbstract3
             // a variety of start states and we keep track of only
             // one state in this object.
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string arg = vState[1].Split(".")[1];
             ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
             arg = vState[2].Split(".")[1];
@@ -198,9 +198,9 @@ namespace TodoAPIsAbstract3
             bool authTokenExists = vState[3].Contains("True") ? true : false;
             bool secretNoteExists = vState[4].Contains("True") ? true : false;
 
-            if (!running)
+            if (!inSession)
             {
-                actions.Add(startup);
+                actions.Add(startSession);
                 return actions;
             }
 
@@ -290,7 +290,7 @@ namespace TodoAPIsAbstract3
         {
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string arg = vState[1].Split(".")[1];
             ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
             arg = vState[2].Split(".")[1];
@@ -300,14 +300,14 @@ namespace TodoAPIsAbstract3
 
             switch (action)
             {
-                case startup:
-                    running = true;
+                case startSession:
+                    inSession = true;
                     break;
                 case shutdown:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
-                    running = false;
+                    inSession = false;
                     resolvedTodos = svResolvedTodos;
                     activeTodos = svActiveTodos;
                     break;
@@ -393,7 +393,7 @@ namespace TodoAPIsAbstract3
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, resolvedTodos, activeTodos, authTokenExists, secretNoteExists);
+            return StringifyStateVector(inSession, resolvedTodos, activeTodos, authTokenExists, secretNoteExists);
         }
     }
 }

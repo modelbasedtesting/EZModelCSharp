@@ -1099,26 +1099,27 @@ TH {
 	<td colspan=""2"" height=""63px"">
 		<table width=""100%"">
 			<tr>
-			    <td>
+				<td></td>
+			    <td id=""transitionBox"" style=""width: 140px"">
 			    	<table border=""1"" rules=""none"">
 			    		<tr>
 			    			<td style=""text-align: center; padding-top: 5px; height: 19px"" colspan=""3"">Transition</td>
 			    		</tr>
 			    		<tr>
 			    			<td style=""padding-bottom: 7px; padding-left: 3px""><button onclick=""traversalStepBack()"">&lt;</button></td>
-							<td id=""stepTD"" style=""padding-bottom: 8px; text-align:center; width:100""><label id=""step""></label></td>
+							<td id=""stepTD"" style=""padding-bottom: 8px; text-align:center""><label id=""step""></label></td>
 						    <td style=""padding-bottom: 7px; padding-right: 3px; text-align: right""><button onclick=""traversalStepForward()"">&gt;</button></td>
 						</tr>
 					</table>
 				</td>
-				<td style=""width:15px""></td>
-				<td>
+				<td></td>
+				<td style=""width: 264px"">
 					<table border=""1"" rules=""none"">
 						<tr>
-                            <td style=""padding-top: 11px; padding-left: 7px; text-align: left; width: 15%; height: 19px"">1</td>
-							<td style=""padding-top: 5px; text-align: center; width: 50%; height: 19px""><label id=""speedLabel"">Speed: 1</label></td>
-                            <td style=""padding-top: 5px; text-align: center; width: 20%; height: 19px""><button id=""playPause"" onclick=""startTraversal()"">&#9654;</button></td>
-                            <td style=""padding-top: 11px; padding-right: 5px; text-align: right; width: *; height: 19px"">60</td>
+                            <td style=""padding-top: 11px; padding-left: 7px; text-align: left; height: 19px"">1</td>
+							<td style=""padding-top: 5px; text-align: center; height: 19px""><label id=""speedLabel"">Speed: 1</label></td>
+                            <td style=""padding-top: 5px; text-align: center; height: 19px""><button id=""playPause"" onclick=""startTraversal()"">&#9654;</button></td>
+                            <td style=""padding-top: 11px; padding-right: 5px; text-align: right; height: 19px"">60</td>
 						    <!--td style=""text-align:right; padding-top:5px; padding-right:20px""><button onclick=""stopTraversal()"">&#9209;</button></td -->
 						</tr>
 			    		<tr>
@@ -1126,8 +1127,8 @@ TH {
 						</tr>
 					</table>
 				</td>
-				<td style=""width:15px""></td>
-				<td>
+				<td></td>
+				<td style=""width: 264px"">
 					<table border=""1"" rules=""none"">
 						<tr>
                             <td style=""padding-top: 7px; text-align: center""><input type=""checkbox"" onclick=""updateDisplayAttributes()"" id=""isolateSubgraph""><label for=""isolateSubgraph""> Isolate subgraph</label></td>
@@ -1137,6 +1138,7 @@ TH {
 						</tr>
 					</table>
 				</td>
+				<td></td>
 		    </tr>
 		</table>
 	</td>
@@ -1249,12 +1251,31 @@ for (var i=0; i < transitionHitCounts.length; i++)
     mbrB = B > mbrB ? B : mbrB; 
 }
 
-var initialBox = svgOuter.getAttribute(""viewBox"");
+var mbrW = mbrR - mbrL;
+var mbrH = mbrT - mbrB;
+// add a margin to the MBR
+var mbrMargin = 0.01*mbrW;
+mbrL -= mbrMargin;
+mbrR += mbrMargin;
+mbrMargin = 0.01*mbrH;
+mbrT -= mbrMargin;
+mbrB += mbrMargin;
+mbrW = mbrR - mbrL;
+mbrH = mbrT - mbrB;
+mbrL = mbrL.toFixed(2);
+mbrR = mbrR.toFixed(2);
+mbrT = mbrT.toFixed(2);
+mbrB = mbrB.toFixed(2);
+mbrW = mbrW.toFixed(2);
+mbrH = mbrH.toFixed(2);
+
+var initialBox = mbrL.toString() + "" "" + mbrT.toString() + "" "" + mbrW.toString() + "" "" + mbrH.toString(); // svgOuter.getAttribute(""viewBox"");
 var initialBits = initialBox.split("" "");
 
 const stepElemSize = 18*Math.floor(Math.log10(traversedEdge.length)) + 27;
 var stepElem = document.getElementById(""stepTD"");
-stepElem.setAttribute(""style"", ""text-align:center; width:"" + stepElemSize.toString() + ""px"");
+stepElem.setAttribute(""style"", ""text-align:center; width: "" + stepElemSize.toString() + ""px"");
+document.getElementById(""transitionBox"").setAttribute(""style"", ""width: "" + (stepElemSize + 60) + ""px"");
 setStepText();
 assessCoverageFloor();
 
@@ -1608,7 +1629,7 @@ function rescaleViewBox(scale) {
     width *= scale;
     height *= scale;
 
-    if (width < 5 || height < 5 || width > 10000 || height > 10000)
+    if (width < 60 || height < 40 || width > mbrW || Math.abs(height) > Math.abs(mbrH))
     {
         return viewBox;
     }
@@ -1629,17 +1650,21 @@ function updateViewBox(xMin, yMin, width, height) {
 	return newViewBox;	
 }
 
+var bOuterWidth = false;
+
 // https://stackoverflow.com/questions/10385768/how-do-you-resize-a-browser-window-so-that-the-inner-width-is-a-specific-value
 var resizeViewPort = function(width, height) {
     var tmp = document.documentElement.style.overflow;
     document.documentElement.style.overflow = ""scroll"";
 
     if (window.outerWidth) {
+    	bOuterWidth = true;
         window.resizeTo(
             width + (window.outerWidth - document.documentElement.clientWidth),
             height + (window.outerHeight - document.documentElement.clientHeight)
         );
     } else {
+    	bOuterWidth = false;
         window.resizeTo(500, 500);
         window.resizeTo(
             width + (500 - document.documentElement.clientWidth),
@@ -1658,9 +1683,9 @@ function updateWindowDimensions() {
     document.documentElement.style.overflow = tmp;
 
 // Do not shrink window below minimum size, else the GUI gets mangled 
-    if ( w < 640 || h < 570 )
+    if ( w < 650 || h < 570 )
     {
-        resizeViewPort(w < 640 ? 640 : w, h < 570 ? 570 : h);
+        resizeViewPort(w < 650 ? 650 : w, h < 570 ? 570 : h);
         tmp = document.documentElement.style.overflow;
         document.documentElement.style.overflow = ""scroll"";
         w = window.innerWidth;
@@ -1671,7 +1696,7 @@ function updateWindowDimensions() {
 	var mainBox = document.getElementById(""mainBox"");
 
     var width = w - 54;
-    var height = h - 210;
+    var height = h - 190;
     mainBox.setAttribute(""width"", width.toString() + ""px"");
     mainBox.setAttribute(""height"", height.toString() + ""px"");
     var aspect = width/height;
@@ -1692,7 +1717,7 @@ function updateWindowDimensions() {
     	var newYmin = newBits[1] - 0.5*delta;
     	updateViewBox(newBits[0], newYmin, newBits[2], newHeight);
     }
-    document.getElementById(""debugInfo"").innerHTML = ""window "" + w + "","" + h + "" box "" + width + "","" + height + "" viewBox "" + document.getElementById(""svgOuter"").getAttribute(""viewBox"");
+    document.getElementById(""debugInfo"").innerHTML = ""window "" + w + "","" + h + "" box "" + width + "","" + height + "" viewBox "" + document.getElementById(""svgOuter"").getAttribute(""viewBox"") + "" MBR "" + mbrL + "","" + mbrT + "": "" + mbrR + "","" + mbrB + "": "" + mbrW + "","" + mbrH + "" outerWidth? "" + (bOuterWidth ? ""Yes"" : ""No"");
 }
 
 updateWindowDimensions();
@@ -1775,18 +1800,25 @@ function refreshGraphics(refreshColor) {
 	// rendered flag on each transition as it is encountered.
 	// Do not render a transition that has rendered==true.
 	var rendered = new Array(transitionHitCounts.length).fill(false);
-    var edgesToRender = traversedEdge.length;
+//	for (var i=0; i < transitionHitCounts.length; i++)
+//	{
+//		rendered[i] = transitionHitCounts[i] == 0;
+//	}
+
+    var edgesToRender = transitionHitCounts.length;
 
     // Before we walk backwards, clear each edge of the lookahead path
     // that is beyond the present edge.
-    var strokeWidth = Math.ceil(Math.log10(newBits[2]+newBits[3])*3.0);
+    var strokeString = Math.ceil(Math.log10(newBits[2]+newBits[3])*3.0).toString();
 
     if (step > -1 && step < traversedEdge.length)
     {
         for (var i=1; i < pathEdges[step].length; i++)
         {
             var index = pathEdges[step][i];
-            var hitColor = getHitColor(transitionHitCounts[index]);
+            var hitCount = transitionHitCounts[index];
+	        var hitColor = getHitColor(hitCount);
+	        var action = actionNames[index];
 
             rendered[index] = true;
             edgesToRender--;
@@ -1795,16 +1827,25 @@ function refreshGraphics(refreshColor) {
             var path = edge.getElementsByTagName(""path"");
             if (path.length > 0)
             {
-                path[0].setAttribute(""stroke-width"", strokeWidth.toString());
+                path[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : strokeString);
                 path[0].setAttribute(""stroke"", hitColor);
             }
             var poly = edge.getElementsByTagName(""polygon"");
             if (poly.length > 0)
             {
-                poly[0].setAttribute(""stroke-width"", strokeWidth.toString());
+                poly[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : strokeString);
                 poly[0].setAttribute(""fill"", hitColor);
                 poly[0].setAttribute(""stroke"", hitColor);
             }
+	        var text = edge.getElementsByTagName(""text"");
+	        if (text.length > 0)
+	        {
+	            if (hitCount > 0)
+	            {
+	                action += "" ("" + hitCount.toString() + "")"";
+	            }
+	            text[0].innerHTML = action;
+	        }
         }
     }
 
@@ -1829,13 +1870,13 @@ function refreshGraphics(refreshColor) {
         var path = edge.getElementsByTagName(""path"");
         if (path.length > 0)
         {   // for hitCount 0 set the stroke width to 1.
-            path[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? strokeWidth.toString() : ""1"");
+            path[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? strokeString : ""1"");
             path[0].setAttribute(""stroke"", refreshColor == null ? hitColor : refreshColor);
         }
         var poly = edge.getElementsByTagName(""polygon"");
         if (poly.length > 0)
         {   // for hitCount 0 set the stroke width to 1.
-            poly[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? strokeWidth.toString() : ""1"");
+            poly[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? strokeString : ""1"");
             poly[0].setAttribute(""fill"", refreshColor == null ? hitColor : refreshColor);
             poly[0].setAttribute(""stroke"", refreshColor == null ? hitColor : refreshColor);
         }
@@ -1872,7 +1913,7 @@ function traversalStepBack() {
     if (step > -1)
     {
         transitionHitCounts[traversedEdge[step]]--;
-        if (transitionHitCounts[traversedEdge[step]] < coverageFloor)
+        if (transitionEnabledFlags[traversedEdge[step]] && transitionHitCounts[traversedEdge[step]] < coverageFloor)
         {
         	coverageFloor = transitionHitCounts[traversedEdge[step]];
         	setTransitionFloorText();
