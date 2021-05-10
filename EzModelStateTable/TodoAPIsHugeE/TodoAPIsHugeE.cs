@@ -191,31 +191,42 @@ namespace TodoAPIsHugeE
 
             // Parse the startState.
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             uint numActiveTodos = uint.Parse(vState[1].Split(".")[1]);
             uint numResolvedTodos = uint.Parse(vState[2].Split(".")[1]);
 
-            if (!running)
+            if (!inSession)
             {
                 actions.Add(startSession);
                 return actions;
             }
 
-            actions.Add(addActiveTodo);
-            actions.Add(addResolvedTodo);
-            actions.Add(deleteActiveTodo);
-            actions.Add(deleteResolvedTodo);
-            actions.Add(activateResolvedTodo);
-            actions.Add(resolveActiveTodo);
-            actions.Add(getTodos);
-            actions.Add(getTodo);
-            actions.Add(editTodo);
+            if (numActiveTodos > 0)
+            {
+                actions.Add(deleteActiveTodo);
+                actions.Add(resolveActiveTodo);
+            }
+
+            if (numResolvedTodos > 0)
+            {
+                actions.Add(deleteResolvedTodo);
+                actions.Add(activateResolvedTodo);
+            }
+
+//            actions.Add(endSession);
+
+            if (numResolvedTodos + numActiveTodos < maxTodos)
+            {
+                actions.Add(addActiveTodo);
+                actions.Add(addResolvedTodo);
+                actions.Add(getTodo);
+                actions.Add(editTodo);
+            }
 
             if (includeSelfLinkNoise)
             {
+                actions.Add(getTodos);
             }
-
-            //            actions.Add(shutdown);
 
             return actions;
         }
