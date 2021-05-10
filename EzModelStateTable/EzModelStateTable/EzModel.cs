@@ -1592,7 +1592,7 @@ function updateWindowDimensions() {
 	var mainBox = document.getElementById(""mainBox"");
 
     var width = w - 54;
-    var height = h - 172;
+    var height = h - 210;
     mainBox.setAttribute(""width"", width.toString() + ""px"");
     mainBox.setAttribute(""height"", height.toString() + ""px"");
     var aspect = width/height;
