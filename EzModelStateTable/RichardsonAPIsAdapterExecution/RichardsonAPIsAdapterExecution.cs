@@ -114,16 +114,16 @@ namespace RichardsonAPIsAdapterExecution
 
         // Initially the system is not running, and this affects a lot of
         // state.
-        bool svRunning = false;
+        bool svInSession = false;
 
         // Reduce state explosion by bracketing the number of todos in the
         // todos list into three partitions.  Each partition has distinct
         // outlinks.
         const string zeroTodos = "Zero";
-        const string betweenZeroAndMaximumTodos = "BetweenZeroAndMaximum";
+        const string someTodos = "Some";
         const string maximumTodos = "Maximum";
 
-        string svTodosClassString = betweenZeroAndMaximumTodos;
+        string svTodosClassString = someTodos;
 
         // Once the X-AUTH-TOKEN exists, there isn't a way to get rid of it
         // except for stopping the system under test.
@@ -140,47 +140,47 @@ namespace RichardsonAPIsAdapterExecution
         Random random = new Random(DateTime.Now.Millisecond);
 
         // Actions handled by APIs
-        const string startup = "java -jar apichallenges.jar";
+        const string startSession = "Start Session";
         const string shutdown = "Shutdown";
-        const string getTodos = "GetTodosList";
-        const string headTodos = "GetTodosHeaders";
+        const string getTodos = "Get Todos List";
+        const string headTodos = "Get Todos Headers";
         // postNetTodos is modeled as a single transition but is implemented
         // in the adapter as multiple transitions of post todo without ID and
         // delete todo by ID, with a weighting toward post.  The transitions
         // iterate until the goal net posts are achieved.
-        const string postNetTodos = "AddSeveralTodosWithoutId";
-        const string getTodoId = "GetTodoFromId";
-        const string headTodoId = "GetHeadersOfTodoFromId";
-        const string postAmendTodoId = "AmendTodoByIdPostMethod";
-        const string putTodoId = "AmendTodoByIdPutMethod";
+        const string postNetTodos = "Add Some Todos";
+        const string getTodoId = "Get a Todo";
+        const string headTodoId = "Get Headers of a Todo";
+        const string postAmendTodoId = "Edit a Todo by Post";
+        const string putTodoId = "Edit a Todo by Put";
         // deleteNetTodos is modeled as a single transition but is implemented
         // in the adapter as multiple transitions of delete todo by ID and
         // post todo without ID, with a weighting toward delete.  The transitions
         // iterate until the goal net deletions are achieved.
-        const string deleteNetTodos = "DeleteSeveralTodosById";
-        const string showDocs = "GetDocumentation";
+        const string deleteNetTodos = "Delete Some Todos";
+        const string showDocs = "Get Documentation";
         //const string createXChallengerGuid = "GetXChallengerGuid";
         //const string restoreChallenger = "RestoreSavedXChallengerGuid";
-        const string getChallenges = "GetChallenges";
-        const string optionsChallenges = "GetOptionsChallenges";
-        const string headChallenges = "GetHeadersChallenges";
-        const string getHeartbeat = "GetHeartbeatIsServerRunning";
-        const string optionsHeartbeat = "GetOptionsForHeartbeat";
-        const string headHeartbeat = "GetHeadersForHeartbeat";
-        const string postSecretToken = "GetSecretToken";
-        const string getSecretNote = "GetSecretNoteByToken";
-        const string postSecretNote = "SetSecretNoteByToken";
+        const string getChallenges = "Get Challenges";
+        const string optionsChallenges = "Get Options Challenges";
+        const string headChallenges = "Get Headers Challenges";
+        const string getHeartbeat = "Get Server Heartbeat";
+        const string optionsHeartbeat = "Get Options for Heartbeat";
+        const string headHeartbeat = "Get Headers for Heartbeat";
+        const string postSecretToken = "Get Secret Token";
+        const string getSecretNote = "Get Secret Note";
+        const string postSecretNote = "Set Secret Note";
 
         // Special actions to reduce state explosion related to number of todos
-        const string postMaximumTodo = "AddMaximumTodoWithoutId";
-        const string deleteFinalTodoId = "DeleteFinalTodoById";
+        const string postMaximumTodo = "Add all Todos";
+        const string deleteFinalTodoId = "Delete all Todos";
 
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
-        string StringifyStateVector(bool running, string todosClass, bool xAuthTokenExists)
+        string StringifyStateVector(bool inSession, string todosClass, bool xAuthTokenExists)
         {
-            string s = String.Format("Running.{0}, Todos.{1}, XAuth.{2}", running, todosClass, xAuthTokenExists);
+            string s = String.Format("InSession.{0}, Todos.{1}, XAuth.{2}", inSession, todosClass, xAuthTokenExists);
             return s;
         }
 
@@ -189,7 +189,7 @@ namespace RichardsonAPIsAdapterExecution
         {
             // NOTE: EzModel will call SetStateOfSystemUnderTest if notifyAdapter
             // is true, so don't call SetStateOfSystemUnderTest in this function.
-            string state = StringifyStateVector(svRunning, svTodosClassString, svXAuthTokenExists);
+            string state = StringifyStateVector(svInSession, svTodosClassString, svXAuthTokenExists);
 
             return state;
         }
@@ -202,12 +202,12 @@ namespace RichardsonAPIsAdapterExecution
             // TODO: this method should report true or false to indicate whether it
             // succeeded in driving the state of the system under test.
             string[] vState = state.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
-            if (!running)
+            if (!inSession)
             {
                 // shut down the APIs server.  Done..
                 return;
@@ -239,7 +239,7 @@ namespace RichardsonAPIsAdapterExecution
                     // If the class of the system under test is already zeroTodos, do nothing.
                     // Else, drain the todos list.
                     break;
-                case betweenZeroAndMaximumTodos:
+                case someTodos:
                     // If the class of the SUT is zeroTodos, add a todo.
                     // If the class of the SUT is maximumTodos, delete a todo.
                     // Else do nothing.
@@ -295,7 +295,7 @@ namespace RichardsonAPIsAdapterExecution
 
             //  - set / confirm the start state
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
@@ -306,7 +306,7 @@ namespace RichardsonAPIsAdapterExecution
 
             // IN CASE THE ADAPTER FINDS A DISCREPANCY BETWEEN THE SUT STATE
             // AND THE STARTSTATE ARGUMENT, OUTPUT A NOTICE.  CONTINUE RUNNING.
-            if (running)
+            if (inSession)
             {
                 // confirm the service is running
                 // for Java, look for the pid or process status.
@@ -322,7 +322,7 @@ namespace RichardsonAPIsAdapterExecution
                 case zeroTodos:
                     // confirm the service has zero Todos
                     break;
-                case betweenZeroAndMaximumTodos:
+                case someTodos:
                     // confirm the service has between zero and max todos
                     break;
                 case maximumTodos:
@@ -375,7 +375,7 @@ namespace RichardsonAPIsAdapterExecution
                         // Issue the selected request to the APIs service.
                         break;
 
-                    case startup:
+                    case startSession:
                         // launch the java app
                         // The app dumps a lot of information to the
                         // standard output on startup: port it is running
@@ -643,14 +643,14 @@ namespace RichardsonAPIsAdapterExecution
             // a variety of start states and we keep track of only
             // one state in this object.
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
 
-            if (!running)
+            if (!inSession)
             {
-                actions.Add(startup);
+                actions.Add(startSession);
                 return actions;
             }
 
@@ -666,7 +666,7 @@ namespace RichardsonAPIsAdapterExecution
                     actions.Add(deleteNetTodos);
                     actions.Add(postNetTodos);
                     break;
-                case betweenZeroAndMaximumTodos:
+                case someTodos:
                     actions.Add(postMaximumTodo);
                     actions.Add(postNetTodos);
                     actions.Add(deleteFinalTodoId);
@@ -710,7 +710,7 @@ namespace RichardsonAPIsAdapterExecution
         {
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
             string todosClass = vState[1].Split(".")[1];
             bool xAuthTokenExists = vState[2].Contains("True") ? true : false;
             //bool xChallengerGuidExists = vState[3].Contains("True") ? true : false;
@@ -719,14 +719,14 @@ namespace RichardsonAPIsAdapterExecution
             {
                 case invalidRequest:
                     break;
-                case startup:
-                    running = true;
+                case startSession:
+                    inSession = true;
                     break;
                 case shutdown:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
-                    running = false;
+                    inSession = false;
                     todosClass = svTodosClassString;
                     //xChallengerGuidExists = svXChallengerGuidExists;
                     xAuthTokenExists = svXAuthTokenExists;
@@ -741,23 +741,23 @@ namespace RichardsonAPIsAdapterExecution
                 case postNetTodos:
                     if (todosClass == zeroTodos)
                     {
-                        todosClass = betweenZeroAndMaximumTodos;
+                        todosClass = someTodos;
                     }
                     break;
                 case deleteNetTodos:
                     if (todosClass == maximumTodos)
                     {
-                        todosClass = betweenZeroAndMaximumTodos;
+                        todosClass = someTodos;
                     }
                     break;
                 case deleteFinalTodoId:
-                    if (todosClass == betweenZeroAndMaximumTodos)
+                    if (todosClass == someTodos)
                     {
                         todosClass = zeroTodos;
                     }
                     break;
                 case postMaximumTodo:
-                    if (todosClass == betweenZeroAndMaximumTodos)
+                    if (todosClass == someTodos)
                     {
                         todosClass = maximumTodos;
                     }
@@ -787,7 +787,7 @@ namespace RichardsonAPIsAdapterExecution
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, todosClass, xAuthTokenExists);
+            return StringifyStateVector(inSession, todosClass, xAuthTokenExists);
         }
     }
 }

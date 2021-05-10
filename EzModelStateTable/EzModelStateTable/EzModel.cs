@@ -988,7 +988,7 @@ TH {
 	<body onresize=""updateWindowDimensions()"">
     <table border=""0"" width=""100%"" height=""100%"">
 		<tr>
-			<th colspan=""2"" id=""selectedSvgElementInfo"" style=""height:20px; color:#e00000""></th> 
+			<th colspan=""2"" id=""selectedSvgElementInfo"" style=""height:20px; color:#e00000"">INITIAL STATE</th> 
 		</tr>
 		<tr>
 			<td width=""50"">
@@ -1294,6 +1294,8 @@ for (var j=0; j < transitionActions.length; j++)
 function changeSpeed(e) {
 	document.getElementById(""speedLabel"").innerHTML = ""Speed: "" + document.getElementById(""traversalSpeed"").value.toString();
 }
+
+changeSpeed();
 
 function fitGraph() {
     newBits = originalBits;
@@ -1779,7 +1781,7 @@ function reset() {
 	timer_is_on = 0;
 	clearTimeout(t);
 
-    document.getElementById(""selectedSvgElementInfo"").innerHTML = "" "";
+    document.getElementById(""selectedSvgElementInfo"").innerHTML = ""INITIAL STATE"";
     for (var i = 0; i < transitionHitCounts.length; i++)
     {
         transitionHitCounts[i] = 0;
@@ -1985,6 +1987,7 @@ function traversalStepCommon() {
 
     if (step == -1)
     {
+	    document.getElementById(""selectedSvgElementInfo"").innerHTML = ""INITIAL STATE"";
         return; // no work to do because we are at the initial state.
     }
 

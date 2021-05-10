@@ -91,11 +91,11 @@ namespace AlanRichardsonAPIs
 
         // Initially the system is not running, and this affects a lot of
         // state.
-        bool svRunning = false;
+        bool svInSession = false;
 
         // Reduce state explosion on todos by classifing the quantity of todos
         // into either zero or more than zero.
-        bool svHasTodos = true;
+        bool svHasResolvedTodos = true;
 
         // Reduce state explosion on todos that remain todo by classifying the
         // quantity of todos todo into either zero or more than zero.
@@ -111,57 +111,58 @@ namespace AlanRichardsonAPIs
         bool svXChallengerGuidExists = false;
 
         // Actions handled by APIs
-        const string startup = "java -jar apichallenges.jar";
+        const string startSession = "Start Session";
         const string shutdown = "Shutdown";
-        const string getTodos = "GetTodosList";
-        const string getActiveTodos = "GetActiveTodosList";
-        const string headTodos = "GetTodosHeaders";
+        const string getTodos = "Get Todos List";
+        const string getActiveTodos = "Get Active Todos List";
+        const string headTodos = "Get Todos Headers";
         // postActiveTodo is modeled as a single transition but is implemented
         // in the adapter as multiple transitions of post todo without ID and
         // delete todo by ID, with a weighting toward post.  The transitions
         // iterate until the goal net posts are achieved.
-        const string postActiveTodo = "AddActiveTodo";
-        const string postResolvedTodo = "AddResolvedTodo";
-        const string showDocs = "GetDocumentation";
-        const string getChallenges = "GetChallenges";
-        const string optionsChallenges = "GetOptionsChallenges";
-        const string headChallenges = "GetHeadersChallenges";
-        const string getHeartbeat = "GetHeartbeatIsServerRunning";
-        const string optionsHeartbeat = "GetOptionsForHeartbeat";
-        const string headHeartbeat = "GetHeadersForHeartbeat";
-        const string getTodoId = "GetTodoFromId";
-        const string headTodoId = "GetHeadersOfTodoFromId";
-        const string postTodoId = "AmendTodoByIdPostMethod";
-        const string putTodoId = "AmendTodoByIdPutMethod";
+        const string postActiveTodo = "Add an Active Todo";
+        const string postResolvedTodo = "Add a Resolved Todo";
+        const string showDocs = "Get Documentation";
+        const string getChallenges = "Get Challenges";
+        const string optionsChallenges = "Get Options Challenges";
+        const string headChallenges = "Get Headers Challenges";
+        const string getHeartbeat = "Get Service Heartbeat";
+        const string optionsHeartbeat = "Get Options for Heartbeat";
+        const string headHeartbeat = "Get Headers for Heartbeat";
+        const string getTodoId = "Get a Todo";
+        const string headTodoId = "Get Headers of a Todo";
+        const string postTodoId = "Edit a Todo by Post";
+        const string putTodoId = "Edit a Toodo by Put";
         // deleteLessThanAllTodos is modeled as a single transition but is implemented
         // in the adapter as multiple transitions of delete todo by ID and
         // post todo without ID, with a weighting toward delete.  The transitions
         // iterate until the goal net deletions are achieved.
-        const string deleteLessThanAllTodos = "DeleteLessThanAllTodos";
-        const string deleteAllTodos = "DeleteAllTodos";
-        const string resolveLessThanAllActiveTodos = "ResolveLessThanAllActiveTodos";
-        const string resolveAllActiveTodos = "ResolveAllActiveTodos";
-        const string activateAnyResolvedTodos = "ActivateAnyResolvedTodos";
+        const string deleteSomeTodos = "Delete some Todos";
+        const string deleteAllTodos = "Delete all Todos";
+        const string resolveSomeActiveTodos = "Resolve some Active Todos";
+        const string resolveAllActiveTodos = "Resolve all Active Todos";
+        const string activateSomeResolvedTodos = "Activate some Resolved Todos";
+        const string activateAllResolvedTodos = "Activate all Resolved Todos";
 
-        const string createXChallengerGuid = "GetXChallengerGuid";
-        const string restoreChallenger = "RestoreSavedXChallengerGuid";
-        const string postSecretToken = "GetSecretToken";
-        const string getSecretNote = "GetSecretNoteByToken";
-        const string postSecretNote = "SetSecretNoteByToken";
+        const string createXChallengerGuid = "Get XChallenger Guid";
+        const string restoreChallenger = "Restore Saved XChallenger Guid";
+        const string postSecretToken = "Get Secret Token";
+        const string getSecretNote = "Get Secret Note";
+        const string postSecretNote = "Set Secret Note";
 
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
-        string StringifyStateVector(bool running, bool hasTodos, bool hasActiveTodos, bool xAuthTokenExists, bool xChallengerGuidExists)
+        string StringifyStateVector(bool inSession, bool hasResolvedTodos, bool hasActiveTodos, bool xAuthTokenExists, bool xChallengerGuidExists)
         {
-            string s = String.Format("Running.{0}, HasTodos.{1}, HasTodosTodo{2}, XAuth.{3}, XChallenger.{4}", running, hasTodos, hasActiveTodos, xAuthTokenExists, xChallengerGuidExists);
+            string s = String.Format("InSession.{0}, HasResolvedTodos.{1}, HasActiveTodos{2}, XAuth.{3}, XChallenger.{4}", inSession, hasResolvedTodos, hasActiveTodos, xAuthTokenExists, xChallengerGuidExists);
             return s;
         }
 
         // Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svRunning, svHasTodos, svHasActiveTodos, svXAuthTokenExists, svXChallengerGuidExists);
+            return StringifyStateVector(svInSession, svHasResolvedTodos, svHasActiveTodos, svXAuthTokenExists, svXChallengerGuidExists);
         }
 
         // Interface method
@@ -205,15 +206,15 @@ namespace AlanRichardsonAPIs
             // a variety of start states and we keep track of only
             // one state in this object.
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
-            bool hasTodos = vState[1].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
+            bool hasResolvedTodos = vState[1].Contains("True") ? true : false;
             bool hasActiveTodos = vState[2].Contains("True") ? true : false;
             bool xAuthTokenExists = vState[3].Contains("True") ? true : false;
             bool xChallengerGuidExists = vState[4].Contains("True") ? true : false;
 
-            if (!running)
+            if (!inSession)
             {
-                actions.Add(startup);
+                actions.Add(startSession);
                 return actions;
             }
 
@@ -243,16 +244,16 @@ namespace AlanRichardsonAPIs
             actions.Add(postActiveTodo);
             actions.Add(postResolvedTodo);
 
-            if (hasTodos)
+            if (hasResolvedTodos)
             {
-                actions.Add(deleteLessThanAllTodos);
+                actions.Add(deleteSomeTodos);
                 actions.Add(deleteAllTodos);
-                actions.Add(activateAnyResolvedTodos);
+                actions.Add(activateSomeResolvedTodos);
             }
 
             if (hasActiveTodos)
             {
-                actions.Add(resolveLessThanAllActiveTodos);
+                actions.Add(resolveSomeActiveTodos);
                 actions.Add(resolveAllActiveTodos);
             }
 
@@ -270,8 +271,8 @@ namespace AlanRichardsonAPIs
         {
             // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
-            bool running = vState[0].Contains("True") ? true : false;
-            bool hasTodos = vState[1].Contains("True") ? true : false;
+            bool inSession = vState[0].Contains("True") ? true : false;
+            bool hasResolvedTodos = vState[1].Contains("True") ? true : false;
             bool hasActiveTodos = vState[2].Contains("True") ? true : false;
             bool xAuthTokenExists = vState[3].Contains("True") ? true : false;
             bool xChallengerGuidExists = vState[4].Contains("True") ? true : false;
@@ -280,15 +281,15 @@ namespace AlanRichardsonAPIs
             {
                 case invalidRequest:
                     break;
-                case startup:
-                    running = true;
+                case startSession:
+                    inSession = true;
                     break;
                 case shutdown:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
-                    running = false;
-                    hasTodos = svHasTodos;
+                    inSession = false;
+                    hasResolvedTodos = svHasResolvedTodos;
                     hasActiveTodos = svHasActiveTodos;
                     xChallengerGuidExists = svXChallengerGuidExists;
                     xAuthTokenExists = svXAuthTokenExists;
@@ -301,27 +302,27 @@ namespace AlanRichardsonAPIs
                 case putTodoId:
                     break;
                 case postActiveTodo:
-                    hasTodos = true;
+                    hasResolvedTodos = true;
                     hasActiveTodos = true;
                     break;
                 case postResolvedTodo:
-                    hasTodos = true;
+                    hasResolvedTodos = true;
                     break;
-                case activateAnyResolvedTodos:
+                case activateSomeResolvedTodos:
                     hasActiveTodos = true;
                     break;
-                case deleteLessThanAllTodos:
+                case deleteSomeTodos:
                     // do not set hasTodos true here.  The reason is, as a REST
                     // method deleteLessThanAllTodos can be called when the
                     // todos count is zero, meaning hasTodos is false.  Thus
                     // hasTodos would continue to be false after deleteLessThanAllTodos.
                     break;
                 case deleteAllTodos:
-                    hasTodos = false;
+                    hasResolvedTodos = false;
                     // We cannot have todos todo if we do not have todos.
                     hasActiveTodos = false;
                     break;
-                case resolveLessThanAllActiveTodos:
+                case resolveSomeActiveTodos:
                     // hasTodosTodo will still be true, so leave it alone.
                     // This could alter the hasActiveTodos, but we won't alter it here.
                     break;
@@ -353,7 +354,7 @@ namespace AlanRichardsonAPIs
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(running, hasTodos, hasActiveTodos, xAuthTokenExists, xChallengerGuidExists);
+            return StringifyStateVector(inSession, hasResolvedTodos, hasActiveTodos, xAuthTokenExists, xChallengerGuidExists);
         }
     }
 }

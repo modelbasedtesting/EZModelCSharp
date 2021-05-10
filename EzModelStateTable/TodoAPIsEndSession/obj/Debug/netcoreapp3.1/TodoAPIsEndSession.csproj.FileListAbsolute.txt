@@ -1,0 +1,15 @@
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/bin/Debug/netcoreapp3.1/TodoAPIsEndSession.deps.json
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/bin/Debug/netcoreapp3.1/TodoAPIsEndSession.runtimeconfig.json
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/bin/Debug/netcoreapp3.1/TodoAPIsEndSession.runtimeconfig.dev.json
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/bin/Debug/netcoreapp3.1/TodoAPIsEndSession.dll
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/bin/Debug/netcoreapp3.1/TodoAPIsEndSession.pdb
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/bin/Debug/netcoreapp3.1/EzModelStateTable.dll
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/bin/Debug/netcoreapp3.1/EzModelStateTable.pdb
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/obj/Debug/netcoreapp3.1/TodoAPIsEndSession.csprojAssemblyReference.cache
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/obj/Debug/netcoreapp3.1/TodoAPIsEndSession.AssemblyInfoInputs.cache
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/obj/Debug/netcoreapp3.1/TodoAPIsEndSession.AssemblyInfo.cs
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/obj/Debug/netcoreapp3.1/TodoAPIsEndSession.csproj.CoreCompileInputs.cache
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/obj/Debug/netcoreapp3.1/TodoAPIsEndSession.csproj.CopyComplete
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/obj/Debug/netcoreapp3.1/TodoAPIsEndSession.dll
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/obj/Debug/netcoreapp3.1/TodoAPIsEndSession.pdb
+/Users/dougs/Projects/EZModelCSharp/EzModelStateTable/TodoAPIsEndSession/obj/Debug/netcoreapp3.1/TodoAPIsEndSession.genruntimeconfig.cache
