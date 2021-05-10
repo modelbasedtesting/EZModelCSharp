@@ -1276,6 +1276,8 @@ function changeSpeed(e) {
 
 function fitGraph() {
     newBits = originalBits;
+    svgRescale = 1.0;
+    translateScale = newBits[2] / originalBits[2];
     document.getElementById(""svgOuter"").setAttribute(""viewBox"", initialBox);
 }
 
