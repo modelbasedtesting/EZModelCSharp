@@ -973,7 +973,7 @@ namespace SeriousQualityEzModel
 	<head>
 		<style>
 input[type=""range""] {
-	width:300px;
+	width:240px;
 }
 TD { 
 	font-family: Arial; 
@@ -1084,55 +1084,66 @@ TH {
 </td>
 </tr>
 <tr>
-	<td></td>
-	<td>
-		<table>
+    <td colspan=""2"" height=""23px"">
+        <table width=""100%"">
+            <tr>
+                <td style=""text-align:center; width: 25%""><label id=""transitionFloor""></label></td>
+                <td style=""text-align:center; width: 18%""><button onclick=""fitGraph()"">FIT GRAPH</button></td>
+                <td style=""text-align:center; width: 25%""><button id=""btnReset"" onclick=""reset()"">RESET TRAVERSAL</button></td>
+                <td style=""text-align:center; width: 32%""><input type=""checkbox"" id=""recycleCbox"" name=""recycleCBox"" value=""recycleColors""><label for=""recycleCbox""> Recycle hitcount colors</label></td>
+            </tr>
+        </table>
+    </td>
+</tr>
+<tr>
+	<td colspan=""2"" height=""63px"">
+		<table width=""100%"">
 			<tr>
-			    <td height=""150px"">
+			    <td>
 			    	<table border=""1"" rules=""none"">
 			    		<tr>
-			    			<td style=""text-align:center; padding-top:2px; padding-left:2px; padding-right:2px"" colspan=""3"">Transition</td>
+			    			<td style=""text-align: center; padding-top: 5px; height: 19px"" colspan=""3"">Transition</td>
 			    		</tr>
 			    		<tr>
-			    			<td style=""padding-left:2px""><button onclick=""traversalStepBack()"">&lt;</button></td>
-							<td id=""stepTD"" style=""text-align:center; width:100""><label id=""step""></label></td>
-						    <td style=""padding-right:2px""><button onclick=""traversalStepForward()"">&gt;</button></td>
-						</tr>
-						<tr>
-							<td style=""text-align:center; padding-bottom:2px; padding-left:2px; padding-right:2px"" colspan=""3""><label id=""transitionFloor""></label></td>
+			    			<td style=""padding-bottom: 7px; padding-left: 3px""><button onclick=""traversalStepBack()"">&lt;</button></td>
+							<td id=""stepTD"" style=""padding-bottom: 8px; text-align:center; width:100""><label id=""step""></label></td>
+						    <td style=""padding-bottom: 7px; padding-right: 3px; text-align: right""><button onclick=""traversalStepForward()"">&gt;</button></td>
 						</tr>
 					</table>
 				</td>
-				<td style=""width:30px""></td>
+				<td style=""width:15px""></td>
 				<td>
 					<table border=""1"" rules=""none"">
 						<tr>
-						    <td style=""padding-top:5px; padding-left:20px;""><button onclick=""startTraversal()"">&#9654;</button></td>
-							<td style=""text-align:center; padding-top:5px""><label id=""speedLabel"">Speed: 1</label></td>
-						    <td style=""text-align:right; padding-top:5px; padding-right:20px""><button onclick=""stopTraversal()"">&#9209;</button></td>
+                            <td style=""padding-top: 11px; padding-left: 7px; text-align: left; width: 15%; height: 19px"">1</td>
+							<td style=""padding-top: 5px; text-align: center; width: 50%; height: 19px""><label id=""speedLabel"">Speed: 1</label></td>
+                            <td style=""padding-top: 5px; text-align: center; width: 20%; height: 19px""><button id=""playPause"" onclick=""startTraversal()"">&#9654;</button></td>
+                            <td style=""padding-top: 11px; padding-right: 5px; text-align: right; width: *; height: 19px"">60</td>
+						    <!--td style=""text-align:right; padding-top:5px; padding-right:20px""><button onclick=""stopTraversal()"">&#9209;</button></td -->
 						</tr>
 			    		<tr>
-							<td style=""padding-bottom:5px; padding-left:2px; padding-right:2px"" colspan=""3"">1<input type=""range"" min=""1"" max=""60"" oninput=""changeSpeed()"" value=""1"" id=""traversalSpeed"">60</td>
+							<td style=""padding-bottom: 3px; padding-top: 0px; padding-left: 2px; padding-right: 2px"" colspan=""4""><input type=""range"" min=""1"" max=""60"" oninput=""changeSpeed()"" value=""60"" id=""traversalSpeed""></td>
 						</tr>
 					</table>
 				</td>
-				<td style=""width:30px""></td>
+				<td style=""width:15px""></td>
 				<td>
-					<table>
+					<table border=""1"" rules=""none"">
 						<tr>
-							<td><button onclick=""fitGraph()"">FIT GRAPH</button></td>
-							<td><input type=""checkbox"" id=""recycleCbox"" name=""recycleCBox"" value=""recycleColors""><label for=""recycleCbox""> Recycle hitcount colors</label></td>
-							<td><button id=""btnReset"" onclick=""reset()"">RESET TRAVERSAL</button></td>
+                            <td style=""padding-top: 7px; text-align: center""><input type=""checkbox"" onclick=""updateDisplayAttributes()"" id=""isolateSubgraph""><label for=""isolateSubgraph""> Isolate subgraph</label></td>
 						</tr>
 						<tr>
-							<td colspan=""2""><input type=""range"" min=""0"" max=""75"" oninput=""updateDisplayAttributes()"" value=""35"" id=""subgraphOpacity""></td>
-							<td><input type=""checkbox"" onclick=""updateDisplayAttributes()"" id=""isolateSubgraph""><label for=""isolateSubgraph""> Isolate subgraph</label></td>
+							<td style=""padding-bottom: 7px""><input type=""range"" min=""0"" max=""60"" oninput=""updateDisplayAttributes()"" value=""20"" id=""subgraphOpacity""></td>
 						</tr>
 					</table>
 				</td>
 		    </tr>
 		</table>
 	</td>
+</tr>
+<tr>
+    <td id=""debugInfo"" colspan=""2"">
+    </td>
 </tr>
 </table>
 <script type=""text/ecmascript"">
@@ -1210,6 +1221,33 @@ var t;
 var timer_is_on = 0;
 
 var coverageFloor;
+
+var mbrL = 1000000000.0;
+var mbrT = 1000000000.0;
+var mbrR = -100000000.0;
+var mbrB = -100000000.0;
+
+for (var i=0; i < nodeCount; i++)
+{
+    var bbox = document.getElementById(""node"" + i).getBBox();
+    mbrL = bbox.x < mbrL ? bbox.x : mbrL;
+    mbrT = bbox.y < mbrT ? bbox.y : mbrT;
+    var R = bbox.x + bbox.width;
+    mbrR = R > mbrR ? R : mbrR;
+    var B = bbox.y + bbox.height;
+    mbrB = B > mbrB ? B : mbrB; 
+}
+
+for (var i=0; i < transitionHitCounts.length; i++)
+{
+    var bbox = document.getElementById(""edge"" + i).getBBox();
+    mbrL = bbox.x < mbrL ? bbox.x : mbrL;
+    mbrT = bbox.y < mbrT ? bbox.y : mbrT;
+    var R = bbox.x + bbox.width;
+    mbrR = R > mbrR ? R : mbrR;
+    var B = bbox.y + bbox.height;
+    mbrB = B > mbrB ? B : mbrB; 
+}
 
 var initialBox = svgOuter.getAttribute(""viewBox"");
 var initialBits = initialBox.split("" "");
@@ -1482,8 +1520,8 @@ function svgMouseMove(event) {
     }
     else
     {
-        var dx = translateScale * 0.5 * (mouseMovePreviousX - x);
-        var dy = translateScale * 0.5 * (mouseMovePreviousY - y);
+        var dx = translateScale * 0.9 * (mouseMovePreviousX - x);
+        var dy = translateScale * 0.9 * (mouseMovePreviousY - y);
         mouseMovePreviousX = x;
         mouseMovePreviousY = y;
         translateViewBox(dx, dy);
@@ -1491,13 +1529,17 @@ function svgMouseMove(event) {
 }
 
 var svgRescale = 1.0;
-var previousDeltaYWasPositive = true;
+var previousDeltaWasPositive = true;
 
 function svgMouseWheel(event) {
     didTranslate = true;
-    if (event.deltaY > 0)
+    zoomGraph(event.deltaY);
+}
+
+function zoomGraph(delta) {
+    if (delta > 0)
     {
-    	if (previousDeltaYWasPositive)
+    	if (previousDeltaWasPositive)
     	{
 	    	svgRescale *= 1.01;
 	    }
@@ -1505,11 +1547,11 @@ function svgMouseWheel(event) {
 	    {
 	    	svgRescale = 1.01;
 	    }
-	    previousDeltaYWasPositive = true;
+	    previousDeltaWasPositive = true;
     }
     else
     {
-    	if (previousDeltaYWasPositive)
+    	if (previousDeltaWasPositive)
     	{
     		svgRescale = 0.99;
     	}
@@ -1517,7 +1559,7 @@ function svgMouseWheel(event) {
     	{
     		svgRescale *= 0.99;
     	}
-    	previousDeltaYWasPositive = false;
+    	previousDeltaWasPositive = false;
     }
 
     newBox = rescaleViewBox( svgRescale );
@@ -1585,9 +1627,44 @@ function updateViewBox(xMin, yMin, width, height) {
 	return newViewBox;	
 }
 
+// https://stackoverflow.com/questions/10385768/how-do-you-resize-a-browser-window-so-that-the-inner-width-is-a-specific-value
+var resizeViewPort = function(width, height) {
+    var tmp = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = ""scroll"";
+
+    if (window.outerWidth) {
+        window.resizeTo(
+            width + (window.outerWidth - document.documentElement.clientWidth),
+            height + (window.outerHeight - document.documentElement.clientHeight)
+        );
+    } else {
+        window.resizeTo(500, 500);
+        window.resizeTo(
+            width + (500 - document.documentElement.clientWidth),
+            height + (500 - document.documentElement.clientHeight)
+        );
+    }
+
+    document.documentElement.style.overflow = tmp;
+};
+
 function updateWindowDimensions() {
+    var tmp = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = ""scroll"";
 	var w = window.innerWidth;
 	var h = window.innerHeight;
+    document.documentElement.style.overflow = tmp;
+
+// Do not shrink window below minimum size, else the GUI gets mangled 
+    if ( w < 640 || h < 570 )
+    {
+        resizeViewPort(w < 640 ? 640 : w, h < 570 ? 570 : h);
+        tmp = document.documentElement.style.overflow;
+        document.documentElement.style.overflow = ""scroll"";
+        w = window.innerWidth;
+        h = window.innerHeight;
+        document.documentElement.style.overflow = tmp;
+    }
 
 	var mainBox = document.getElementById(""mainBox"");
 
@@ -1613,9 +1690,11 @@ function updateWindowDimensions() {
     	var newYmin = newBits[1] - 0.5*delta;
     	updateViewBox(newBits[0], newYmin, newBits[2], newHeight);
     }
+    document.getElementById(""debugInfo"").innerHTML = ""window "" + w + "","" + h + "" box "" + width + "","" + height + "" viewBox "" + document.getElementById(""svgOuter"").getAttribute(""viewBox"");
 }
 
 updateWindowDimensions();
+initialBox = document.getElementById(""svgOuter"").getAttribute(""viewBox"");
 
 function translateViewBox(dx, dy) {
     var svgOuter = document.getElementById(""svgOuter"");
@@ -1639,12 +1718,21 @@ function timedTraversal() {
 	traversalStepForward();
 	if (timer_is_on)
 	{
-		var dt = 1000.0 / parseFloat(document.getElementById(""traversalSpeed"").value);
-		t = setTimeout(timedTraversal, Math.round(dt));
+		var dt = Math.round(1000.0 / parseFloat(document.getElementById(""traversalSpeed"").value));
+        // If dt can handle it, reduce delay between steps by an estimated rendering time of 14 ms
+        if (dt > 14)
+        {
+            dt -= 14;
+        }
+		t = setTimeout(timedTraversal, dt);
 	}
 }
 
 function startTraversal() {
+  var playPause = document.getElementById(""playPause"");
+  playPause.removeEventListener(""click"", startTraversal);
+  playPause.addEventListener(""click"", stopTraversal);
+  playPause.innerHTML = ""&#9208"";
   if (!timer_is_on) {
     timer_is_on = 1;
     timedTraversal();
@@ -1652,6 +1740,10 @@ function startTraversal() {
 }
 
 function stopTraversal() {
+  var playPause = document.getElementById(""playPause"");
+  playPause.removeEventListener(""click"", stopTraversal);
+  playPause.addEventListener(""click"", startTraversal);
+  playPause.innerHTML = ""&#9654"";
   clearTimeout(t);
   timer_is_on = 0;
 }
@@ -1811,18 +1903,20 @@ window.addEventListener( 'keydown', (e) => {
 
 
     switch(key) {
-        case 37: // left arrow                
-          stopTraversal();
-          traversalStepBack();
-          break;
-        case 38: // up arrow          
-          break;
+        case 37: // left arrow
+            stopTraversal();
+            traversalStepBack();
+            break;
+        case 38: // up arrow
+            zoomGraph(1.0);
+            break;
         case 39: // right arrow
-        	stopTraversal();
-        	traversalStepForward();                     
-          break;
-        case 40: // down arrow 
-          break;
+            stopTraversal();
+            traversalStepForward();                     
+            break;
+        case 40: // down arrow
+            zoomGraph(-1.0);
+            break;
     }     
 });
 
