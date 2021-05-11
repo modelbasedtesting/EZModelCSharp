@@ -34,7 +34,7 @@ namespace TodoAPIs3NodesE
                 {
                     Console.WriteLine(S);
                 }
-              //  return -2;
+                return -2;
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
@@ -112,7 +112,7 @@ namespace TodoAPIs3NodesE
 
         // Actions handled by APIs
         const string startSession = "Start Session";
-        const string shutdown = "Shutdown";
+        const string endSession = "End Session";
         const string getTodos = "Get Todos List";
         const string addTodo = "Add a Todo";
         const string getTodo = "Get a Todo";
@@ -195,7 +195,7 @@ namespace TodoAPIs3NodesE
             actions.Add(addTodo);
             actions.Add(deleteTodo);
             actions.Add(getTodos);
-//            actions.Add(shutdown);
+            actions.Add(endSession);
 
             if (includeSelfLinkNoise)
             {
@@ -220,10 +220,7 @@ namespace TodoAPIs3NodesE
                 case startSession:
                     inSession = true;
                     break;
-                case shutdown:
-                    // Set all state variables back to initial state on shutdown,
-                    // because if the APIs server starts up again, it will take
-                    // on those initial state values.
+                case endSession:
                     inSession = false;
                     numTodos = 0;
                     break;

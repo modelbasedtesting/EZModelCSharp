@@ -18,9 +18,9 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+// using System.Text.Json.Serialization;
 using System.Diagnostics;
-using System.Globalization;
+// using System.Globalization;
 
 namespace SeriousQualityEzModel
 {
@@ -686,6 +686,7 @@ namespace SeriousQualityEzModel
         uint problemCount = 0;
         uint traversalCount = 0;
         double wallStartTime; // Initialize at the top of a traversal.
+        LayoutRankDirection layoutRankDirection = LayoutRankDirection.LeftRight;
 
         IEzModelClient client;
 
@@ -714,13 +715,20 @@ namespace SeriousQualityEzModel
             }
         };
 
-        public EzModelGraph(IEzModelClient theEzModelClient, uint maxTransitions = 1000, uint maxNodes = 20, uint maxActions = 20)
+        public EzModelGraph(IEzModelClient theEzModelClient, uint maxTransitions = 1000, uint maxNodes = 20, uint maxActions = 20, LayoutRankDirection layoutRankDirection = LayoutRankDirection.LeftRight)
         {
             client = theEzModelClient;
 
             transitions = new StateTransitions(maxTransitions, maxActions);
 
             totalNodes = new Nodes(maxNodes);
+
+            this.layoutRankDirection = layoutRankDirection;
+        }
+
+        public enum LayoutRankDirection
+        {
+            TopDown, LeftRight
         }
 
         public bool GenerateGraph()
@@ -993,25 +1001,25 @@ TH {
 		<tr>
 			<td width=""50"">
 				<table border=""0"">
-					<tr><td style=""text-align:right"">18</td><td style=""width:50%; background-color:#FF7F7F""></td></tr> 
-					<tr><td style=""text-align:right"">17</td><td style=""width:50%; background-color:#97FF2F""></td></tr>
-					<tr><td style=""text-align:right"">16</td><td style=""width:50%; background-color:#771FAF""></td></tr>
-					<tr><td style=""text-align:right"">15</td><td style=""width:50%; background-color:#8FCF27""></td></tr>
-					<tr><td style=""text-align:right"">14</td><td style=""width:50%; background-color:#4F7FEF""></td></tr>
-					<tr><td style=""text-align:right"">13</td><td style=""width:50%; background-color:#3FAF3F""></td></tr>
-					<tr><td style=""text-align:right"">12</td><td style=""width:50%; background-color:#A71770""></td></tr>
-					<tr><td style=""text-align:right"">11</td><td style=""width:50%; background-color:#008F00""></td></tr>
-					<tr><td style=""text-align:right"">10</td><td style=""width:50%; background-color:#BF4F4F""></td></tr>
-					<tr><td style=""text-align:right"">9</td><td style=""width:50%; background-color:#3737AF""></td></tr>
-					<tr><td style=""text-align:right"">8</td><td style=""width:50%; background-color:#77EF77""></td></tr>
-					<tr><td style=""text-align:right"">7</td><td style=""width:50%; background-color:#8F008F""></td></tr>
-					<tr><td style=""text-align:right"">6</td><td style=""width:50%; background-color:#EFD700""></td></tr>
-					<tr><td style=""text-align:right"">5</td><td style=""width:50%; background-color:#0000DF""></td></tr>
-					<tr><td style=""text-align:right"">4</td><td style=""width:50%; background-color:#00DF00""></td></tr>
-					<tr><td style=""text-align:right"">3</td><td style=""width:50%; background-color:#FFAF00""></td></tr>
-					<tr><td style=""text-align:right"">2</td><td style=""width:50%; background-color:#00AFFF""></td></tr>
-					<tr><td style=""text-align:right"">1</td><td style=""width:50%; background-color:#DF00DF""></td></tr>
-					<tr><td style=""text-align:right"">0</td><td style=""width:50%; background-color:#000000""></td></tr>
+<!--					<tr><td style=""text-align:right"">18</td><td style=""width:15px; background-color:#FF7F7F""></td></tr> 
+					<tr><td style=""text-align:right"">17</td><td style=""width:15px; background-color:#97FF2F""></td></tr>
+					<tr><td style=""text-align:right"">16</td><td style=""width:15px; background-color:#771FAF""></td></tr>
+					<tr><td style=""text-align:right"">15</td><td style=""width:15px; background-color:#8FCF27""></td></tr>
+					<tr><td style=""text-align:right"">14</td><td style=""width:15px; background-color:#4F7FEF""></td></tr>
+					<tr><td style=""text-align:right"">13</td><td style=""width:15px; background-color:#3FAF3F""></td></tr>
+					<tr><td style=""text-align:right"">12</td><td style=""width:15px; background-color:#A71770""></td></tr>
+					<tr><td style=""text-align:right"">11</td><td style=""width:15px; background-color:#008F00""></td></tr>
+					<tr><td style=""text-align:right"">10</td><td style=""width:15px; background-color:#BF4F4F""></td></tr>
+					<tr><td style=""text-align:right"">9</td><td style=""width:15px; background-color:#3737AF""></td></tr>
+					<tr><td style=""text-align:right"">8</td><td style=""width:15px; background-color:#77EF77""></td></tr>
+					<tr><td style=""text-align:right"">7</td><td style=""width:15px; background-color:#8F008F""></td></tr>
+					<tr><td style=""text-align:right"">6</td><td style=""width:15px; background-color:#EFD700""></td></tr> -->
+					<tr><td style=""text-align:right; width: 50%"">5</td><td style=""width:15px; background-color:#0000DF""></td></tr>
+					<tr><td style=""text-align:right; width: 50%"">4</td><td style=""width:15px; background-color:#00DF00""></td></tr>
+					<tr><td style=""text-align:right; width: 50%"">3</td><td style=""width:15px; background-color:#990099""></td></tr>
+					<tr><td style=""text-align:right; width: 50%"">2</td><td style=""width:15px; background-color:#00AFFF""></td></tr>
+					<tr><td style=""text-align:right; width: 50%"">1</td><td style=""width:15px; background-color:#DF00DF""></td></tr>
+					<tr><td style=""text-align:right; width: 50%"">0</td><td style=""width:15px; background-color:#000000""></td></tr>
 				</table>
 			</td>
 			<td id=""mainBox"">
@@ -1049,18 +1057,6 @@ TH {
                                 int newId = nodeId - 1;
                                 ezModelGraph[i] = ezModelGraph[i].Replace("\"node" + nodeId.ToString(), "\"node" + newId.ToString());
                             }
-                            if (ezModelGraph[i].StartsWith("<ellipse "))
-                            {
-                                ezModelGraph[i] = ezModelGraph[i].Replace(" stroke=", " onclick=\"attr(evt)\" stroke=");
-                            }
-                            if (ezModelGraph[i].StartsWith("<polygon "))
-                            {
-                                ezModelGraph[i] = ezModelGraph[i].Replace(" stroke=", " onclick=\"attr(evt)\" stroke=");
-                            }
-                            if (ezModelGraph[i].StartsWith("<text "))
-                            {
-                                ezModelGraph[i] = ezModelGraph[i].Replace(" text-anchor=\"middle\" ", " text-anchor=\"middle\" onclick=\"attr(evt)\" ");
-                            }
                             w.WriteLine(ezModelGraph[i]);
                             if (addGradientDefs == true)
                             {
@@ -1090,7 +1086,7 @@ TH {
                 <td style=""text-align:center; width: 25%""><label id=""transitionFloor""></label></td>
                 <td style=""text-align:center; width: 18%""><button onclick=""fitGraph()"">FIT GRAPH</button></td>
                 <td style=""text-align:center; width: 25%""><button id=""btnReset"" onclick=""reset()"">RESET TRAVERSAL</button></td>
-                <td style=""text-align:center; width: 32%""><input type=""checkbox"" id=""recycleCbox"" name=""recycleCBox"" value=""recycleColors""><label for=""recycleCbox""> Recycle hitcount colors</label></td>
+                <td hidden style=""text-align:center; width: 32%""><input type=""checkbox"" id=""recycleCbox"" name=""recycleCBox"" value=""recycleColors""><label for=""recycleCbox""> Recycle hitcount colors</label></td>
             </tr>
         </table>
     </td>
@@ -1128,7 +1124,7 @@ TH {
 					</table>
 				</td>
 				<td></td>
-				<td style=""width: 264px"">
+				<td hidden style=""width: 264px"">
 					<table border=""1"" rules=""none"">
 						<tr>
                             <td style=""padding-top: 7px; text-align: center""><input type=""checkbox"" onclick=""updateDisplayAttributes()"" id=""isolateSubgraph""><label for=""isolateSubgraph""> Isolate subgraph</label></td>
@@ -1138,16 +1134,21 @@ TH {
 						</tr>
 					</table>
 				</td>
-				<td></td>
+				<td hidden></td>
 		    </tr>
 		</table>
 	</td>
 </tr>
-<tr>
-    <td id=""debugInfo"" colspan=""2"">
+<tr hidden>
+	<td>
+		<button onclick=""clearClones()"">X</button>
+	</td>
+    <td id=""debugInfo"">
     </td>
 </tr>
 </table>
+<br />
+<textarea hidden id=""svgSourceValue"" style='font-size:81%;font-family:lucida console;width:90%;height:100px'></textarea>
 <script type=""text/ecmascript"">
 
 var step = -1; // Because step is an index into an array.
@@ -1224,62 +1225,70 @@ var timer_is_on = 0;
 
 var coverageFloor;
 
-var mbrL = 1000000000.0;
-var mbrT = 1000000000.0;
-var mbrR = -100000000.0;
-var mbrB = -100000000.0;
-
-for (var i=0; i < nodeCount; i++)
-{
-    var bbox = document.getElementById(""node"" + i).getBBox();
-    mbrL = bbox.x < mbrL ? bbox.x : mbrL;
-    mbrT = bbox.y < mbrT ? bbox.y : mbrT;
-    var R = bbox.x + bbox.width;
-    mbrR = R > mbrR ? R : mbrR;
-    var B = bbox.y + bbox.height;
-    mbrB = B > mbrB ? B : mbrB; 
-}
-
-for (var i=0; i < transitionHitCounts.length; i++)
-{
-    var bbox = document.getElementById(""edge"" + i).getBBox();
-    mbrL = bbox.x < mbrL ? bbox.x : mbrL;
-    mbrT = bbox.y < mbrT ? bbox.y : mbrT;
-    var R = bbox.x + bbox.width;
-    mbrR = R > mbrR ? R : mbrR;
-    var B = bbox.y + bbox.height;
-    mbrB = B > mbrB ? B : mbrB; 
-}
-
-var mbrW = mbrR - mbrL;
-var mbrH = mbrT - mbrB;
-// add a margin to the MBR
-var mbrMargin = 0.01*mbrW;
-mbrL -= mbrMargin;
-mbrR += mbrMargin;
-mbrMargin = 0.01*mbrH;
-mbrT -= mbrMargin;
-mbrB += mbrMargin;
-mbrW = mbrR - mbrL;
-mbrH = mbrT - mbrB;
-mbrL = mbrL.toFixed(2);
-mbrR = mbrR.toFixed(2);
-mbrT = mbrT.toFixed(2);
-mbrB = mbrB.toFixed(2);
-mbrW = mbrW.toFixed(2);
-mbrH = mbrH.toFixed(2);
-
-var initialBox = mbrL.toString() + "" "" + mbrT.toString() + "" "" + mbrW.toString() + "" "" + mbrH.toString(); // svgOuter.getAttribute(""viewBox"");
-var initialBits = initialBox.split("" "");
-
+const vMargin = 190; // increase to 250 when debugInfo is not hidden.
+const hMargin = 64;
 const stepElemSize = 18*Math.floor(Math.log10(traversedEdge.length)) + 27;
 var stepElem = document.getElementById(""stepTD"");
 stepElem.setAttribute(""style"", ""text-align:center; width: "" + stepElemSize.toString() + ""px"");
 document.getElementById(""transitionBox"").setAttribute(""style"", ""width: "" + (stepElemSize + 60) + ""px"");
-setStepText();
-assessCoverageFloor();
-
 var selectedSvgElement = undefined;
+var previousBoxWidth = undefined;
+var previousBoxHeight = undefined;
+var mbrBox = ""Svg scale box"";
+var mbrBits = [0.0,0.0,0.0,0.0];
+var newBits = [1.0,2.0,3.0,4.0];
+var translateScale = 1.0;
+var previousSubgraph = undefined;
+var previousFill = undefined;
+var currentSubgraph = undefined;
+var mouseMovePreviousX = undefined;
+var mouseMovePreviousY = undefined;
+var didTranslate = false;
+var svgRescale = 1.0;
+var previousDeltaWasPositive = true;
+var bOuterWidth = false;
+var strokeScale = 0.0;
+
+document.addEventListener(""load"", init(), false);
+
+function init() {
+	setStepText();
+	assessCoverageFloor();
+	mbrBox = document.getElementById(""svgOuter"").getAttribute(""viewBox"");
+//	console.log(""viewBox = "" + mbrBox);
+	var viewBoxBits = mbrBox.split("" "");
+	mbrBits = [parseFloat(viewBoxBits[0]), parseFloat(viewBoxBits[1]),
+    parseFloat(viewBoxBits[2]), parseFloat(viewBoxBits[3])];
+//    console.log(""mbrBits = "" + mbrBits.join("",""));
+    /// Do not assign an array to a variable, such as var x = someArray.
+    /// The reason is, x gets a reference to someArray, not a value copy.
+    /// Consequently, any changes to someArray change x.
+	newBits = [mbrBits[0], mbrBits[1], mbrBits[2], mbrBits[3]];
+	previousBoxWidth = window.innerWidth - hMargin;
+	previousBoxHeight = window.innerHeight - vMargin;
+	var boxAspect = previousBoxWidth / previousBoxHeight;
+	var viewAspect = newBits[2]/newBits[3];
+//	console.log(""initial boxAspect, viewAspect = "" + boxAspect.toFixed(3) + "", "" + viewAspect.toFixed(3));
+	if (boxAspect > viewAspect)
+	{
+		var delta = boxAspect*newBits[2]/viewAspect;
+		newBits[0] -= 0.5*delta;
+		newBits[2] += delta;
+	}
+	if (viewAspect > boxAspect)
+	{
+		var delta = viewAspect*newBits[3]/boxAspect;
+		newBits[1] -= 0.5*delta;
+		newBits[3] += delta;
+	}
+//	console.log(""new bits = "" + newBits.join("",""));
+	strokeScale = Math.log10(newBits[2]) - 1.0;
+	updateViewBox(newBits[0], newBits[1], newBits[2], newBits[3]);
+	updateWindowDimensions();
+	changeSpeed();
+	translateScale = newBits[2] / (window.innerWidth - hMargin); // get the translateScale in good shape.
+	updateDebugInfo();
+}
 
 for (var j=0; j < transitionActions.length; j++)
 {
@@ -1295,18 +1304,48 @@ function changeSpeed(e) {
 	document.getElementById(""speedLabel"").innerHTML = ""Speed: "" + document.getElementById(""traversalSpeed"").value.toString();
 }
 
-changeSpeed();
-
 function fitGraph() {
-    newBits = originalBits;
-    svgRescale = 1.0;
-    translateScale = newBits[2] / originalBits[2];
-    document.getElementById(""svgOuter"").setAttribute(""viewBox"", initialBox);
-}
+	var widthHeight = updateMainBoxDimensions();
 
-var previousSubgraph = undefined;
-var previousFill = undefined;
-var currentSubgraph = undefined;
+	var boxAspect = widthHeight[0] / widthHeight[1];
+
+//	console.log(""fitGraph mbrBits = "" + mbrBits.join("",""));
+	var mbrAspect = mbrBits[2]/mbrBits[3];
+
+//	console.log(""fitGraph boxAspect, mbrAspect = "" + boxAspect.toFixed(3) + "", "" + mbrAspect.toFixed(3));
+
+	var fitX = mbrBits[0];
+	var fitY = mbrBits[1];
+	var fitW = mbrBits[2];
+	var fitH = mbrBits[3];
+
+	if (boxAspect > mbrAspect)
+	{
+		var delta = boxAspect*mbrBits[2]/mbrAspect;
+//		console.log(""deltaW = "" + delta.toFixed(3));
+		fitX -= 0.5*delta;
+		fitW += delta;
+	}
+	if (mbrAspect > boxAspect)
+	{
+		var delta = mbrAspect*mbrBits[3]/boxAspect;
+//		console.log(""deltaH= "" + delta.toFixed(3));
+		fitY -= 0.5*delta;
+		fitH += delta;
+	}
+	newBits[0] = fitX;
+	newBits[1] = fitY;
+	newBits[2] = fitW;
+	newBits[3] = fitH;
+
+//	console.log(""mbrBits "" + mbrBits.join("",""));
+//	console.log(""newBits "" + newBits.join("",""));
+    svgRescale = 1.0;
+    translateScale = newBits[2]/widthHeight[0];
+	updateViewBox(fitX, fitY, fitW, fitH);
+
+    updateDebugInfo();
+}
 
 function edgeOpacityAndEvents(edgeId, opacity) {
 	var edge = document.getElementById(edgeId);
@@ -1317,34 +1356,12 @@ function edgeOpacityAndEvents(edgeId, opacity) {
 	if (opacity == ""1.0"")
 	{
 	    edge.setAttribute(""opacity"", ""1.0"");
-	    if (text.length > 0)
-	    {
-	    	text[0].addEventListener(""click"", attr);
-	    }
-	    if (poly.length > 0)
-	    {
-	    	poly[0].addEventListener(""click"", attr);
-	    }
-	    if (path.length > 0)
-	    {
-	    	path[0].addEventListener(""click"", attr);
-	    }
+	    edge.addEventListener(""click"", attr);
 	}
 	else
 	{
 	    edge.setAttribute(""opacity"", opacity);
-	    if (text.length > 0)
-	    {
-	    	text[0].removeEventListener(""click"", attr);
-	    }
-	    if (poly.length > 0)
-	    {
-	    	poly[0].removeEventListener(""click"", attr);
-	    }
-	    if (path.length > 0)
-	    {
-	    	path[0].removeEventListener(""click"", attr);
-	    }
+	    edge.removeEventListener(""click"", attr);
 	}
 }
 
@@ -1466,6 +1483,7 @@ function attr(event) {
     switch (id.substring(0,4))
     {
         case ""node"":
+        	event.stopPropagation();
         	var nodenum = id.substring(4);
         	if (currentSubgraph != undefined)
         	{
@@ -1491,6 +1509,7 @@ function attr(event) {
             }
             break;
         case ""edge"":
+        	event.stopPropagation();
             var text = p.getElementsByTagName(""text"");
             if (text && text.length > 0)
             {
@@ -1505,11 +1524,14 @@ function attr(event) {
     document.getElementById(""selectedSvgElementInfo"").innerHTML = msg;
 }
 
-var viewBoxBits = document.getElementById(""svgOuter"").getAttribute(""viewBox"").split("" "");
-var originalBits = [parseFloat(viewBoxBits[0]), parseFloat(viewBoxBits[1]),
-    parseFloat(viewBoxBits[2]), parseFloat(viewBoxBits[3])];
-var newBits = originalBits;
-var translateScale = newBits[2] / originalBits[2];
+var temp = svgOuter.getElementsByTagName(""g"");
+if (temp.length > 0)
+{
+	for (var i=0; i < temp.length; i++)
+	{
+		temp[i].addEventListener(""click"", attr);
+	}
+}
 
 function svgMouseDown(event) {
     var t = event.target;
@@ -1529,10 +1551,6 @@ function svgMouseDown(event) {
     // https://www.javascripttutorial.net/javascript-dom/javascript-mouse-events/
 }
 
-var mouseMovePreviousX = undefined;
-var mouseMovePreviousY = undefined;
-var didTranslate = false;
-
 function svgMouseMove(event) {
     didTranslate = true;
     var t = event.target;
@@ -1545,16 +1563,13 @@ function svgMouseMove(event) {
     }
     else
     {
-        var dx = translateScale * 0.9 * (mouseMovePreviousX - x);
-        var dy = translateScale * 0.9 * (mouseMovePreviousY - y);
+        var dx = translateScale * (mouseMovePreviousX - x);
+        var dy = translateScale * (mouseMovePreviousY - y);
         mouseMovePreviousX = x;
         mouseMovePreviousY = y;
         translateViewBox(dx, dy);
     }
 }
-
-var svgRescale = 1.0;
-var previousDeltaWasPositive = true;
 
 function svgMouseWheel(event) {
     didTranslate = true;
@@ -1631,53 +1646,55 @@ function rescaleViewBox(scale) {
     width *= scale;
     height *= scale;
 
-    if (width < 60 || height < 40 || width > mbrW || Math.abs(height) > Math.abs(mbrH))
+    var condition1 = mbrBits[2] > mbrBits[3] ? (scale > 1 && width > 3*mbrBits[2]) : (scale > 1 && height > 3*mbrBits[3]);
+    var condition2 = scale <= 1 && (width < 120 || height < 80);
+    if (condition1 || condition2)
     {
         return viewBox;
     }
 
     newBits = [xMin, yMin, width, height];
-    translateScale = newBits[2] / originalBits[2];
+    translateScale = newBits[2] / (window.innerWidth - hMargin);
+    strokeScale = Math.log10(newBits[2]) - 1.0;
     var newViewBox = updateViewBox(xMin, yMin, width, height);
     return newViewBox;
 }
 
 function updateViewBox(xMin, yMin, width, height) {
-    var xString = xMin.toFixed(2).toString();
-    var yString = yMin.toFixed(2).toString();
-    var wString = width.toFixed(2).toString();
-    var hString = height.toFixed(2).toString();
+    var xString = xMin.toString();
+    var yString = yMin.toString();
+    var wString = width.toString();
+    var hString = height.toString();
     var newViewBox = xString + "" "" + yString + "" "" + wString + "" "" + hString;
     svgOuter.setAttribute(""viewBox"", newViewBox);
+    updateDebugInfo();
 	return newViewBox;	
 }
 
-var bOuterWidth = false;
-
 // https://stackoverflow.com/questions/10385768/how-do-you-resize-a-browser-window-so-that-the-inner-width-is-a-specific-value
-var resizeViewPort = function(width, height) {
+function resizeViewPort(width, height) {
     var tmp = document.documentElement.style.overflow;
     document.documentElement.style.overflow = ""scroll"";
 
     if (window.outerWidth) {
     	bOuterWidth = true;
         window.resizeTo(
-            width + (window.outerWidth - document.documentElement.clientWidth),
-            height + (window.outerHeight - document.documentElement.clientHeight)
+            width + (window.outerWidth - window.innerWidth),
+            height + (window.outerHeight - window.innerHeight)
         );
     } else {
     	bOuterWidth = false;
         window.resizeTo(500, 500);
         window.resizeTo(
-            width + (500 - document.documentElement.clientWidth),
-            height + (500 - document.documentElement.clientHeight)
+            width + (500 - window.innerWidth),
+            height + (500 - window.innerHeight)
         );
     }
 
     document.documentElement.style.overflow = tmp;
-};
+}
 
-function updateWindowDimensions() {
+function updateMainBoxDimensions() {
     var tmp = document.documentElement.style.overflow;
     document.documentElement.style.overflow = ""scroll"";
 	var w = window.innerWidth;
@@ -1687,43 +1704,42 @@ function updateWindowDimensions() {
 // Do not shrink window below minimum size, else the GUI gets mangled 
     if ( w < 650 || h < 570 )
     {
+//    	console.log(""updateMainBoxDimensions w,h ="" + w + "","" + h);
         resizeViewPort(w < 650 ? 650 : w, h < 570 ? 570 : h);
         tmp = document.documentElement.style.overflow;
         document.documentElement.style.overflow = ""scroll"";
         w = window.innerWidth;
         h = window.innerHeight;
+//        console.log(""resized w,h ="" + w + "","" + h);
         document.documentElement.style.overflow = tmp;
     }
 
 	var mainBox = document.getElementById(""mainBox"");
 
-    var width = w - 54;
-    var height = h - 190;
+    var width = w - hMargin;
+    var height = h - vMargin;
+//    console.log(""MainBox w,h ="" + width + "","" + height);
     mainBox.setAttribute(""width"", width.toString() + ""px"");
     mainBox.setAttribute(""height"", height.toString() + ""px"");
-    var aspect = width/height;
-    var originalAspect = originalBits[2]/originalBits[3];
-    var newScale = aspect/originalAspect;
-
-    if (aspect > originalAspect)
-    {
-    	var newWidth = newScale*newBits[2];
-    	var delta = newWidth - newBits[2];
-    	var newXmin = newBits[0] - 0.5*delta;
-    	updateViewBox(newXmin, newBits[1], newWidth, newBits[3]);
-    }
-    else
-    {
-    	var newHeight = newBits[3]/newScale;
-    	var delta = newHeight - newBits[3];
-    	var newYmin = newBits[1] - 0.5*delta;
-    	updateViewBox(newBits[0], newYmin, newBits[2], newHeight);
-    }
-    document.getElementById(""debugInfo"").innerHTML = ""window "" + w + "","" + h + "" box "" + width + "","" + height + "" viewBox "" + document.getElementById(""svgOuter"").getAttribute(""viewBox"") + "" MBR "" + mbrL + "","" + mbrT + "": "" + mbrR + "","" + mbrB + "": "" + mbrW + "","" + mbrH + "" outerWidth? "" + (bOuterWidth ? ""Yes"" : ""No"");
+    return [width, height];
 }
 
-updateWindowDimensions();
-initialBox = document.getElementById(""svgOuter"").getAttribute(""viewBox"");
+function updateWindowDimensions() {
+	var widthHeight = updateMainBoxDimensions();
+
+    var wScale = widthHeight[0] / previousBoxWidth;
+    var hScale = widthHeight[1] / previousBoxHeight;
+    previousBoxWidth = widthHeight[0];
+    previousBoxHeight = widthHeight[1];
+    var dViewW = (wScale - 1.0)*newBits[2];
+    var dViewH = (hScale - 1.0)*newBits[3];
+    newBits[0] -= 0.5*dViewW;
+    newBits[1] -= 0.5*dViewH;
+    newBits[2] += dViewW;
+    newBits[3] += dViewH;
+    updateViewBox(newBits[0], newBits[1], newBits[2], newBits[3]);
+    updateDebugInfo();
+}
 
 function translateViewBox(dx, dy) {
     var svgOuter = document.getElementById(""svgOuter"");
@@ -1735,7 +1751,10 @@ function translateViewBox(dx, dy) {
     yString = yMin.toFixed(2).toString();
 
     var newViewBox = xString + "" "" + yString + "" "" + boxBits[2] + "" "" + boxBits[3];
+    newBits[0] = xMin;
+    newBits[1] = yMin;
     svgOuter.setAttribute(""viewBox"", newViewBox);
+    updateDebugInfo();
 }
 
 function setTransitionFloorText() {
@@ -1787,10 +1806,31 @@ function reset() {
         transitionHitCounts[i] = 0;
     }
     refreshGraphics(""black"");
+    clearClones();
 
+    var gItems = svgOuter.getElementsByTagName(""g"");
+    if (gItems.length > 0)
+    {
+    	var nodeEdge = [""node"", ""edge""];
+    	for (var i=0; i < gItems.length; i++)
+    	{
+    		if (nodeEdge.includes(gItems[i].id.substring(0,4)))
+    		{
+	    		var text = gItems[i].getElementsByTagName(""text"");
+	    		if (text.length > 0)
+	    		{
+	    			for (var j=0; j < text.length; j++)
+	    			{
+	    				text[j].setAttribute(""fill"", ""black"");
+	    			}
+	    		}
+	    	}
+    	}
+    }
     step = -1; // Because step is an index into an array.
     setStepText();
     assessCoverageFloor();
+    updateDebugInfo();
 }
 
 function setStepText() {
@@ -1811,7 +1851,7 @@ function refreshGraphics(refreshColor) {
 
     // Before we walk backwards, clear each edge of the lookahead path
     // that is beyond the present edge.
-    var strokeString = Math.ceil(Math.log10(newBits[2]+newBits[3])*3.0).toString();
+    var strokeString = scaledStrokeWidthString(3); 
 
     if (step > -1 && step < traversedEdge.length)
     {
@@ -1837,7 +1877,6 @@ function refreshGraphics(refreshColor) {
             {
                 poly[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : strokeString);
                 poly[0].setAttribute(""fill"", hitColor);
-                poly[0].setAttribute(""stroke"", hitColor);
             }
 	        var text = edge.getElementsByTagName(""text"");
 	        if (text.length > 0)
@@ -1880,7 +1919,6 @@ function refreshGraphics(refreshColor) {
         {   // for hitCount 0 set the stroke width to 1.
             poly[0].setAttribute(""stroke-width"", hitCount == 0 ? 1 : refreshColor == null ? strokeString : ""1"");
             poly[0].setAttribute(""fill"", refreshColor == null ? hitColor : refreshColor);
-            poly[0].setAttribute(""stroke"", refreshColor == null ? hitColor : refreshColor);
         }
         var text = edge.getElementsByTagName(""text"");
         if (text.length > 0)
@@ -1890,6 +1928,10 @@ function refreshGraphics(refreshColor) {
                 action += "" ("" + hitCount.toString() + "")"";
             }
             text[0].innerHTML = action;
+            if (refreshColor != null)
+            {
+            	text[0].setAttribute(""fill"", refreshColor);
+            }
         }
     }
 
@@ -1982,8 +2024,15 @@ function assessCoverageFloor()
 	}
 }
 
+function scaledStrokeWidthString(baseWidth) {
+	var scaledWidth = strokeScale > 0.1 ? Math.floor(strokeScale * baseWidth) : baseWidth;
+	return scaledWidth.toString();
+}
+
 function traversalStepCommon() {
     setStepText();
+
+    clearClones();
 
     if (step == -1)
     {
@@ -1993,26 +2042,31 @@ function traversalStepCommon() {
 
     document.getElementById(""selectedSvgElementInfo"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
 
-    var strokeWidth = Math.ceil(Math.log10(newBits[2]+newBits[3])*15.0);
+    if (step == traversedEdge.length-1)
+    {
+        return;
+    }
+
+    var e = svgOuter.getElementById(""edge"" + traversedEdge[step]);
+    var p = e.getElementsByTagName(""path"");
+    if (p.length > 0)
+    {
+    	p[0].setAttribute(""stroke-width"", parseFloat(p[0].getAttribute(""stroke-width""))*3);
+    }
+    p = e.getElementsByTagName(""polygon"");
+    if (p.length > 0)
+    {
+    	p[0].setAttribute(""stroke-width"", parseFloat(p[0].getAttribute(""stroke-width""))*3);
+    }
+    
+    return;
+    var strokeString = scaledStrokeWidthString(9);
 
     // Now paint the current path and nodes in light grey
     for (var i = 0; i < pathEdges[step].length; i++)
     {
         var svgEdge = pathEdges[step][i];
-        var edge = document.getElementById(""edge"" + svgEdge.toString());
-        var path = edge.getElementsByTagName(""path"");
-        if (path.length > 0)
-        {
-            path[0].setAttribute(""stroke-width"", strokeWidth.toString());
-            path[0].setAttribute(""stroke"", ""lightgrey"");
-        }
-        var poly = edge.getElementsByTagName(""polygon"");
-        if (poly.length > 0)
-        {
-            poly[0].setAttribute(""stroke-width"", strokeWidth.toString());
-            poly[0].setAttribute(""fill"", ""lightgrey"");
-            poly[0].setAttribute(""stroke"", ""lightgrey"");
-        }
+        fatPaleClone(""edge"" + svgEdge.toString(), ""lightgrey"");
     }
     for (var i = 0; i < pathNodes[step].length; i++)
     {
@@ -2027,20 +2081,7 @@ function traversalStepCommon() {
 
     // Finally, paint the current transition
     svgEdge = traversedEdge[step];
-    edge = document.getElementById(""edge"" + svgEdge.toString());
-    var path = edge.getElementsByTagName(""path"");
-    if (path.length > 0)
-    {
-        path[0].setAttribute(""stroke-width"", strokeWidth.toString());
-        path[0].setAttribute(""stroke"", ""url(#greenBlueGradient)"");
-    }
-    var poly = edge.getElementsByTagName(""polygon"");
-    if (poly.length > 0)
-    {
-        poly[0].setAttribute(""stroke-width"", strokeWidth.toString());
-        poly[0].setAttribute(""fill"", ""url(#greenBlueGradient)"");
-        poly[0].setAttribute(""stroke"", ""url(#greenBlueGradient)"");
-    }
+    fatPaleClone(""edge"" + svgEdge.toString(), ""yellowgreen"");
 
     if (startNode[step] == pathEndNode[step])
     {
@@ -2086,6 +2127,75 @@ function traversalStepCommon() {
     }
 }
 
+function fatPaleClone(elemId, color) {
+	var elem = document.getElementById(elemId);
+	if (elem == undefined)
+	{
+		alert(""fatPaleClone(): "" + elemId + "" is undefined"");
+		return;
+	}
+
+	var fPCid = ""fPC"" + elem.id;
+	var clones = document.getElementsByTagName(fPCid);
+	if (clones.length > 0)
+	{
+		for (var i=clones.length - 1; i > -1; i--)
+		{
+			clones[i].remove();
+		}
+	}
+
+	var fPC = elem.cloneNode(true);
+	fPC.id = fPCid;
+	var widthString = ""15"";
+	fPC.removeEventListener(""click"", attr);
+    var path = fPC.getElementsByTagName(""path"");
+    if (path.length > 0)
+    {
+        path[0].setAttribute(""stroke-width"", widthString);
+        path[0].setAttribute(""fill"", color);
+        path[0].setAttribute(""stroke"", color);
+    }
+    var poly = fPC.getElementsByTagName(""polygon"");
+    if (poly.length > 0)
+    {
+        poly[0].setAttribute(""stroke-width"", widthString);
+        poly[0].setAttribute(""fill"", color);
+        poly[0].setAttribute(""stroke"", color);
+    }
+    var text = fPC.getElementsByTagName(""text"");
+    if (text.length > 0)
+    {
+    	text[0].remove();
+    }
+    var title = fPC.getElementsByTagName(""title"");
+    if (title.length > 0)
+    {
+    	title[0].remove();
+    }
+	fPC.setAttribute(""opacity"", 0.5);
+	svgOuter.appendChild(fPC);
+	svgSourceValue.value=fPC.outerHTML;
+}
+
+function clearClones() {
+	gItems = svgOuter.getElementsByTagName(""g"");
+	if (gItems.length > 0)
+	{
+		for (var i=gItems.length-1; i > -1; i--)
+		{
+			if (gItems[i].id.substring(0,3) == ""fPC"")
+			{
+				gItems[i].remove();
+			}
+		}
+	}
+}
+
+function updateDebugInfo() {
+    document.getElementById(""debugInfo"").innerHTML = ""translateScale:"" + translateScale + "" strokeScale:"" + strokeScale + "" viewBox "" + svgOuter.getAttribute(""viewBox"") + "" new "" + newBits[0] + "","" + newBits[1] + "":"" + newBits[2] + "","" + newBits[3] + "" MBR "" + mbrBits[0] + "","" + mbrBits[1] + "": "" + mbrBits[2] + "","" + mbrBits[3] + "" outerWidth? "" + (bOuterWidth ? ""Yes"" : ""No"");
+}
+
 function getHitColor(hitCount) {
 	var caseNum = document.getElementById(""recycleCbox"").checked ? hitCount%19 : hitCount;
 
@@ -2102,11 +2212,12 @@ function getHitColor(hitCount) {
         case 2:
             return ""#00AFFF"";
         case 3:
-            return ""#FFAF00"";
+            return ""#990099""; // ""#FFAF00"";
         case 4:
             return ""#00DF00"";
-        case 5:
+        default: // case 5:
             return ""#0000DF"";
+/*
         case 6:
             return ""#EFD700"";
         case 7:
@@ -2133,6 +2244,7 @@ function getHitColor(hitCount) {
             return ""#97FF2F"";
         default:
             return ""#FF7F7F"";
+*/
     }
 }
 </script>
@@ -2169,7 +2281,7 @@ function getHitColor(hitCount) {
                 w.WriteLine("digraph state_machine {");
                 w.WriteLine("size = \"13,7.5\";");
                 w.WriteLine("node [shape = ellipse];");
-                w.WriteLine("rankdir=LR;");
+                w.WriteLine("rankdir={0};", layoutRankDirection == LayoutRankDirection.TopDown ? "TD" : "LR");
 
 
                 // add the state nodes to the image

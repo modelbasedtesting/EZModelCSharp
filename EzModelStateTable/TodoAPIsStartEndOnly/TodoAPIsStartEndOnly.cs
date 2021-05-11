@@ -2,22 +2,17 @@
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 
-namespace TodoAPIs4NodesE
+namespace TodoAPIsStartEndOnly
 {
-    class TodoAPIs4NodesEProgram
+    class TodoAPIsStartEndOnlyProgram
     {
         static int Main()
         {
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
-            client.IncludeSelfLinkNoise = false;
+            client.IncludeSelfLinkNoise = true;
 
-            // If you increase maxTodos (around line 86, below), then alter
-            // the EzModelGraph arguments like so:
-            // maxTransitions = 100 + 145 * maxTodos
-            // maxNodes = 5 + 4 * maxTodos
-            // maxActions = 35
-            EzModelGraph graph = new EzModelGraph(client, 2200, 61, 35);
+            EzModelGraph graph = new EzModelGraph(client, 10, 5, 5);
 
             if (!graph.GenerateGraph())
             {
@@ -59,7 +54,7 @@ namespace TodoAPIs4NodesE
             // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("TodoAPIs4NodesE", 5);
+            graph.RandomDestinationCoverage("TodoAPIsStartEndOnly", 5);
             return 0;
         }
     }
@@ -102,33 +97,20 @@ namespace TodoAPIs4NodesE
         // state.
         bool svInSession = false;
 
-        // A counter of items in the todos list.
-        // The real system under test initializes the list with 10 items.
-        uint todosCount = 0;
-
-        // A helper variable to limit the size of the state-transition table, and
-        // thus also limit the size of the model graph.
-        const uint maxTodos = 2;
-
         // Actions handled by APIs
         const string startSession = "Start Session";
         const string endSession = "End Session";
-        const string getTodos = "Get Todos List";
-        const string addTodo = "Add a Todo";
-        const string getTodo = "Get a Todo";
-        const string editTodo = "Edit a Todo";
-        const string deleteTodo = "Delete a Todo";
 
-        string StringifyStateVector(bool inSession, uint numTodos)
+        string StringifyStateVector(bool inSession)
         {
-            string s = String.Format("InSession.{0}, Todos.{1}", inSession, numTodos);
+            string s = String.Format("InSession.{0}", inSession);
             return s;
         }
 
         // IEzModelClient Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svInSession, todosCount);
+            return StringifyStateVector(svInSession);
         }
 
         // IEzModelClient Interface method
@@ -184,30 +166,16 @@ namespace TodoAPIs4NodesE
             // Parse the startState.
             string[] vState = startState.Split(", ");
             bool inSession = vState[0].Contains("True") ? true : false;
-            uint numTodos = uint.Parse(vState[1].Split(".")[1]);
 
             if (!inSession)
             {
                 actions.Add(startSession);
-                return actions;
             }
 
-            if (numTodos < maxTodos)
+            if (inSession)
             {
-                actions.Add(addTodo);
+                actions.Add(endSession);
             }
-
-            if (numTodos > 0)
-            {
-                actions.Add(deleteTodo);
-                if (includeSelfLinkNoise)
-                {
-                    actions.Add(getTodos);
-                    actions.Add(getTodo);
-                    actions.Add(editTodo);
-                }
-            }
-            actions.Add(endSession);
 
             return actions;
         }
@@ -215,41 +183,24 @@ namespace TodoAPIs4NodesE
         // IEzModelClient Interface method
         public string GetEndState(string startState, string action)
         {
-            // We must parse the startState, else we will 
             string[] vState = startState.Split(", ");
             bool inSession = vState[0].Contains("True") ? true : false;
-            uint numTodos = uint.Parse(vState[1].Split(".")[1]);
 
             switch (action)
             {
                 case startSession:
                     inSession = true;
                     break;
+
                 case endSession:
                     inSession = false;
                     break;
 
-                case getTodos:
-                case getTodo:
-                case editTodo:
-                    break;
-                case addTodo:
-                    if (numTodos < maxTodos)
-                    {
-                        numTodos++;
-                    }
-                    break;
-                case deleteTodo:
-                    if (numTodos > 0)
-                    {
-                        numTodos--;
-                    }
-                    break;
                 default:
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(inSession, numTodos);
+            return StringifyStateVector(inSession);
         }
     }
 }

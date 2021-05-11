@@ -18,7 +18,7 @@ namespace TodoAPIsReleaseTokenA
             // created and traversed when exactly enough graph components
             // are allocated.  Try reducing any of the three arguments and
             // observe the consequences.
-            EzModelGraph graph = new EzModelGraph(client, 1200, 50, 25);
+            EzModelGraph graph = new EzModelGraph(client, 1200, 50, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -35,7 +35,7 @@ namespace TodoAPIsReleaseTokenA
                 {
                     Console.WriteLine(S);
                 }
-                //   return -2;
+                return -2;
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
@@ -114,7 +114,7 @@ namespace TodoAPIsReleaseTokenA
 
         // Actions handled by APIs
         const string startSession = "Start Session";
-        const string shutdown = "Shutdown";
+        const string endSession = "End Session";
         const string addSomeActiveTodos = "Add some Active Todos";
         const string addSomeResolvedTodos = "Add some Resolved Todos";
         const string addAllActiveTodos = "Add all Active Todos";
@@ -204,7 +204,7 @@ namespace TodoAPIsReleaseTokenA
                 return actions;
             }
 
-            //           actions.Add(shutdown);
+            actions.Add(endSession);
 
             if (includeSelfLinkNoise)
             {
@@ -303,13 +303,8 @@ namespace TodoAPIsReleaseTokenA
                 case startSession:
                     inSession = true;
                     break;
-                case shutdown:
-                    // Set all state variables back to initial state on shutdown,
-                    // because if the APIs server starts up again, it will take
-                    // on those initial state values.
+                case endSession:
                     inSession = false;
-                    resolvedTodos = svResolvedTodos;
-                    activeTodos = svActiveTodos;
                     break;
                 case editTodos:
                     break;

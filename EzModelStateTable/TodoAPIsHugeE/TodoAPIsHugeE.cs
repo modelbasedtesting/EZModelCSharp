@@ -17,7 +17,7 @@ namespace TodoAPIsHugeE
             // maxTransitions = 100 + 145 * maxTodos
             // maxNodes = 5 + 4 * maxTodos
             // maxActions = 35
-            EzModelGraph graph = new EzModelGraph(client, 1000, 130, 25);
+            EzModelGraph graph = new EzModelGraph(client, 1500, 200, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -34,7 +34,7 @@ namespace TodoAPIsHugeE
                 {
                     Console.WriteLine(S);
                 }
-               //  return -2;
+                return -2;
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
@@ -59,7 +59,7 @@ namespace TodoAPIsHugeE
             // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("TodoAPIsHugeE", 3);
+            graph.RandomDestinationCoverage("TodoAPIsHugeE", 5);
             return 0;
         }
     }
@@ -116,7 +116,7 @@ namespace TodoAPIsHugeE
 
         // Actions handled by APIs
         const string startSession = "Start Session";
-        const string shutdown = "Shutdown";
+        const string endSession = "Shutdown";
         const string getTodos = "Get Todos List";
         const string addActiveTodo = "Add an Active Todo";
         const string addResolvedTodo = "Add a Resolved Todo";
@@ -213,7 +213,7 @@ namespace TodoAPIsHugeE
                 actions.Add(activateResolvedTodo);
             }
 
-//            actions.Add(endSession);
+            actions.Add(endSession);
 
             if (numResolvedTodos + numActiveTodos < maxTodos)
             {
@@ -245,13 +245,13 @@ namespace TodoAPIsHugeE
                 case startSession:
                     inSession = true;
                     break;
-                case shutdown:
+                case endSession:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.
                     inSession = false;
-                    numActiveTodos = 10;
-                    numResolvedTodos = 0;
+//                    numActiveTodos = 10;
+//                    numResolvedTodos = 0;
                     break;
 
                 case getTodos:

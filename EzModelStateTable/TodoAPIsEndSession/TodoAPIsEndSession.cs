@@ -59,7 +59,7 @@ namespace TodoAPIsEndSession
             // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("TodoAPIsEndSession", 3);
+            graph.RandomDestinationCoverage("TodoAPIsEndSession", 5);
             return 0;
         }
     }
@@ -245,12 +245,7 @@ namespace TodoAPIsEndSession
                     inSession = true;
                     break;
                 case endSession:
-                    // Set all state variables back to initial state on shutdown,
-                    // because if the APIs server starts up again, it will take
-                    // on those initial state values.
                     inSession = false;
-//                    numActiveTodos = 0;
-//                    numResolvedTodos = 0;
                     break;
 
                 case getTodos:

@@ -34,7 +34,7 @@ namespace TodoAPIsActiveResolvedE
                 {
                     Console.WriteLine(S);
                 }
-                //  return -2;
+                return -2;
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
@@ -116,7 +116,7 @@ namespace TodoAPIsActiveResolvedE
 
         // Actions handled by APIs
         const string startSession = "Start Session";
-        const string shutdown = "Shutdown";
+        const string endSession = "End Session";
         const string getTodos = "Get Todos List";
         const string addActiveTodo = "Add an Active Todo";
         const string addResolvedTodo = "Add a Resolved Todo";
@@ -212,7 +212,7 @@ namespace TodoAPIsActiveResolvedE
                 actions.Add(activateResolvedTodo);
             }
 
-//            actions.Add(endSession);
+            actions.Add(endSession);
 
             if (numResolvedTodos + numActiveTodos < maxTodos)
             {
@@ -244,13 +244,8 @@ namespace TodoAPIsActiveResolvedE
                 case startSession:
                     inSession = true;
                     break;
-                case shutdown:
-                    // Set all state variables back to initial state on shutdown,
-                    // because if the APIs server starts up again, it will take
-                    // on those initial state values.
+                case endSession:
                     inSession = false;
-                    numActiveTodos = 10;
-                    numResolvedTodos = 0;
                     break;
 
                 case getTodos:
