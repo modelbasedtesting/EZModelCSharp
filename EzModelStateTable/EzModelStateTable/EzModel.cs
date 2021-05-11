@@ -88,6 +88,11 @@ namespace SeriousQualityEzModel
             return String.Empty;
         }
 
+        public uint ActionsCount()
+        {
+            return actionCount;
+        }
+
         public string ActionIndicesToString()
         {
             string result = String.Empty;
@@ -970,7 +975,8 @@ namespace SeriousQualityEzModel
             // One bar for each transition.  Hitcount on the Y axis
             // 
             string[] ezModelGraph = File.ReadAllLines(EzModelFileName + traversalCount + ".svg");
-            using (FileStream fs = new FileStream(fileName + traversalCount + ".html", FileMode.Create))
+            string rankDir = layoutRankDirection == LayoutRankDirection.LeftRight ? "LR" : "TD";
+            using (FileStream fs = new FileStream(fileName + rankDir + traversalCount + ".html", FileMode.Create))
             {
                 using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
                 {
@@ -1095,6 +1101,29 @@ TH {
 	<td colspan=""2"" height=""63px"">
 		<table width=""100%"">
 			<tr>
+				<td></td>
+				<td style=""width:150px"">
+			    	<table border=""1"" rules=""none"">
+			    		<tr>
+			    			<td style=""padding-left: 5px; padding-right: 5px; text-align: center"">Graph Elements</td>
+			    		</tr>
+			    		<tr>
+			    			<td style=""padding-left: 3px"">");
+                    w.WriteLine("{0} nodes</td>", totalNodes.Count());
+                    w.WriteLine(
+@"			    		</tr>
+			    		<tr>
+							<td style=""padding-left: 3px"">");
+                    w.WriteLine("{0} edges</td>", transitions.Count());
+                    w.WriteLine(
+@"						</tr>
+						<tr>
+						    <td style=""padding-left: 3px"">");
+                    w.WriteLine("{0} actions</td>", transitions.ActionsCount());
+                    w.WriteLine(
+@"						</tr>
+					</table>
+				</td>
 				<td></td>
 			    <td id=""transitionBox"" style=""width: 140px"">
 			    	<table border=""1"" rules=""none"">
@@ -1226,7 +1255,7 @@ var timer_is_on = 0;
 var coverageFloor;
 
 const vMargin = 190; // increase to 250 when debugInfo is not hidden.
-const hMargin = 64;
+const hMargin = 54;
 const stepElemSize = 18*Math.floor(Math.log10(traversedEdge.length)) + 27;
 var stepElem = document.getElementById(""stepTD"");
 stepElem.setAttribute(""style"", ""text-align:center; width: "" + stepElemSize.toString() + ""px"");
@@ -1860,7 +1889,7 @@ function refreshGraphics(refreshColor) {
             var index = pathEdges[step][i];
             var hitCount = transitionHitCounts[index];
 	        var hitColor = getHitColor(hitCount);
-	        var action = actionNames[index];
+	        var action = actionNames[transitionActions[index]];
 
             rendered[index] = true;
             edgesToRender--;
@@ -1957,13 +1986,22 @@ function traversalStepBack() {
     if (step > -1)
     {
         transitionHitCounts[traversedEdge[step]]--;
+
         if (transitionEnabledFlags[traversedEdge[step]] && transitionHitCounts[traversedEdge[step]] < coverageFloor)
         {
         	coverageFloor = transitionHitCounts[traversedEdge[step]];
         	setTransitionFloorText();
         }
+
         refreshGraphics();
-    }
+		var e = svgOuter.getElementById(""edge"" + traversedEdge[step]);
+		var p = e.getElementsByTagName(""text"");
+		if (p.length > 0)
+		{
+			p[0].setAttribute(""fill"", ""black"");
+		}
+	}
+
     step--;
     traversalStepCommon();
 }
@@ -1974,6 +2012,17 @@ function traversalStepForward() {
         stopTraversal(); // in case the traversal was running.  Now we can use the back button.
         return;
     }
+
+    if (step > -1)
+    {
+		var e = svgOuter.getElementById(""edge"" + traversedEdge[step]);
+		var p = e.getElementsByTagName(""text"");
+		if (p.length > 0)
+		{
+			p[0].setAttribute(""fill"", ""black"");
+		}
+	}
+
     step++;
     transitionHitCounts[traversedEdge[step]]++;
     refreshGraphics();
@@ -2032,7 +2081,7 @@ function scaledStrokeWidthString(baseWidth) {
 function traversalStepCommon() {
     setStepText();
 
-    clearClones();
+//    clearClones();
 
     if (step == -1)
     {
@@ -2051,14 +2100,19 @@ function traversalStepCommon() {
     var p = e.getElementsByTagName(""path"");
     if (p.length > 0)
     {
-    	p[0].setAttribute(""stroke-width"", parseFloat(p[0].getAttribute(""stroke-width""))*3);
+    	p[0].setAttribute(""stroke-width"", parseFloat(p[0].getAttribute(""stroke-width""))*2.5);
     }
     p = e.getElementsByTagName(""polygon"");
     if (p.length > 0)
     {
-    	p[0].setAttribute(""stroke-width"", parseFloat(p[0].getAttribute(""stroke-width""))*3);
+    	p[0].setAttribute(""stroke-width"", parseFloat(p[0].getAttribute(""stroke-width""))*2.5);
     }
-    
+    p = e.getElementsByTagName(""text"");
+    if (p.length > 0)
+    {
+    	p[0].setAttribute(""fill"", getHitColor(transitionHitCounts[traversedEdge[step]]));
+    }
+
     return;
     var strokeString = scaledStrokeWidthString(9);
 

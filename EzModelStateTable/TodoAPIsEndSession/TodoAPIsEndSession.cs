@@ -17,7 +17,7 @@ namespace TodoAPIsEndSession
             // maxTransitions = 100 + 145 * maxTodos
             // maxNodes = 5 + 4 * maxTodos
             // maxActions = 35
-            EzModelGraph graph = new EzModelGraph(client, 200, 36, 25);
+            EzModelGraph graph = new EzModelGraph(client, 200, 36, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
