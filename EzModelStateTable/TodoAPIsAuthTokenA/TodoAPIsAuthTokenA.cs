@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 
-namespace TodoAPIsAbstract2
+namespace TodoAPIsAuthTokenA
 {
-    class TodoAPIsAbstract2Program
+    class TodoAPIsAuthTokenAProgram
     {
         static int Main()
         {
@@ -56,7 +56,7 @@ namespace TodoAPIsAbstract2
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("TodoAPIsAbstract2", 3);
+            graph.RandomDestinationCoverage("TodoAPIsAuthTokenA", 3);
             return 0;
         }
     }
