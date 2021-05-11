@@ -9,7 +9,7 @@ namespace TodoAPIsActiveResolvedE
         static int Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
             client.IncludeSelfLinkNoise = true;
 
             // If you increase maxTodos (around line 86, below), then alter
@@ -17,7 +17,7 @@ namespace TodoAPIsActiveResolvedE
             // maxTransitions = 100 + 145 * maxTodos
             // maxNodes = 5 + 4 * maxTodos
             // maxActions = 35
-            EzModelGraph graph = new EzModelGraph(client, 100, 30, 25);
+            EzModelGraph graph = new EzModelGraph(client, 100, 30, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -112,7 +112,7 @@ namespace TodoAPIsActiveResolvedE
 
         // A helper variable to limit the size of the state-transition table, and
         // thus also limit the size of the model graph.
-        const uint maxTodos = 2;
+        const uint maxTodos = 3;
 
         // Actions handled by APIs
         const string startSession = "Start Session";
