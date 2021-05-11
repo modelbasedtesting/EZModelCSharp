@@ -9,7 +9,7 @@ namespace TodoAPIsReleaseTokenA
         static int Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
             client.IncludeSelfLinkNoise = true;
 
             // We learned after generating the graph that it has 62 edges,
@@ -18,7 +18,7 @@ namespace TodoAPIsReleaseTokenA
             // created and traversed when exactly enough graph components
             // are allocated.  Try reducing any of the three arguments and
             // observe the consequences.
-            EzModelGraph graph = new EzModelGraph(client, 1200, 50, 25, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 1200, 100, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -56,7 +56,7 @@ namespace TodoAPIsReleaseTokenA
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("TodoAPIsReleaseTokenA", 3);
+            graph.RandomDestinationCoverage("TodoAPIsReleaseTokenA", 7);
             return 0;
         }
     }
@@ -332,6 +332,12 @@ namespace TodoAPIsReleaseTokenA
                     break;
                 case deleteAllActiveTodos:
                     activeTodos = ActiveTodos.Zero;
+                    break;
+                case deleteSomeActiveTodos:
+                    if (activeTodos == ActiveTodos.Max)
+                    {
+                        activeTodos = ActiveTodos.Some;
+                    }
                     break;
                 case deleteAllTodos:
                     resolvedTodos = ResolvedTodos.Zero;
