@@ -685,6 +685,7 @@ namespace SeriousQualityEzModel
         List<string> pathEdges;
         List<string> pathNodes;
         List<int> startnode;
+        List<int> endnode;
         List<int> pathEndNode;
 
         const string EzModelFileName = "EzModelDigraph";
@@ -913,6 +914,7 @@ namespace SeriousQualityEzModel
             pathEdges = new List<string>();
             pathNodes = new List<string>();
             startnode = new List<int>();
+            endnode = new List<int>();
             pathEndNode = new List<int>();
         }
 
@@ -926,6 +928,7 @@ namespace SeriousQualityEzModel
             }
 
             int startStateIndex = totalNodes.GetIndexByState(transitions.StartStateByTransitionIndex((uint)transitionIndex));
+            int endStateIndex = totalNodes.GetIndexByState(transitions.EndStateByTransitionIndex((uint)transitionIndex));
 
             List<int> pathNodeIndices = new List<int>();
 
@@ -965,6 +968,7 @@ namespace SeriousQualityEzModel
             pathEdges.Add(String.Format("[{0}]", String.Join(",", tempPath)));
             pathNodes.Add(String.Format("[{0}]", String.Join(",", pathNodeIndices)));
             startnode.Add(startStateIndex);
+            endnode.Add(endStateIndex);
             pathEndNode.Add(endOfPathNodeIndex);
         }
 
@@ -1036,6 +1040,7 @@ TH {
 ");
                     bool copyToStream = false;
                     bool addGradientDefs = false;
+                    double worldWidth = 0.0;
 
                     for (var i=0; i < ezModelGraph.Length; i++)
                     {
@@ -1047,6 +1052,12 @@ TH {
                             }
                             if (ezModelGraph[i].StartsWith("<polygon fill=\"white\" "))
                             {
+                                string polyString = ezModelGraph[i].Substring(ezModelGraph[i].IndexOf("points=") + 8);
+                                polyString = polyString.Substring(0, polyString.Length - 3);
+                                string[] polyPoints = polyString.Split(" ");
+                                double x0 = double.Parse(polyPoints[0].Split(",")[0]);
+                                double x2 = double.Parse(polyPoints[2].Split(",")[0]);
+                                worldWidth = x2 - x0;
                                 continue;
                             }
                             if (ezModelGraph[i].StartsWith("<g id=\"edge"))
@@ -1202,6 +1213,8 @@ var step = -1; // Because step is an index into an array.
                     w.WriteLine(" ");
                     w.WriteLine("const startNode = [{0}];", String.Join(",", startnode));
                     w.WriteLine(" ");
+                    w.WriteLine("const endNode = [{0}];", String.Join(",", endnode));
+                    w.WriteLine(" ");
                     w.WriteLine("const pathEndNode = [{0}];", String.Join(",", pathEndNode));
                     w.WriteLine(" ");
 
@@ -1277,7 +1290,10 @@ var svgRescale = 1.0;
 var previousDeltaWasPositive = true;
 var bOuterWidth = false;
 var strokeScale = 0.0;
-
+");
+                    w.WriteLine("var worldWidth = {0};", worldWidth);
+                    w.WriteLine(
+@"
 document.addEventListener(""load"", init(), false);
 
 function init() {
@@ -1311,7 +1327,7 @@ function init() {
 		newBits[3] += delta;
 	}
 //	console.log(""new bits = "" + newBits.join("",""));
-	strokeScale = Math.log10(newBits[2]) - 1.0;
+	strokeScale = Math.log10(newBits[2]*worldWidth/mbrBits[2]) - 1.0;
 	updateViewBox(newBits[0], newBits[1], newBits[2], newBits[3]);
 	updateWindowDimensions();
 	changeSpeed();
@@ -1676,8 +1692,13 @@ function rescaleViewBox(scale) {
     width *= scale;
     height *= scale;
 
-    var condition1 = mbrBits[2] > mbrBits[3] ? (scale > 1 && width > 3*mbrBits[2]) : (scale > 1 && height > 3*mbrBits[3]);
-    var condition2 = scale <= 1 && (width < 120 || height < 80);
+    var worldFactor = mbrBits[2] / worldWidth;
+    console.log(""rescaleViewBox worldFactor ="" + worldFactor.toFixed(3) + "", scale ="" + scale.toFixed(3));
+    console.log(""width, mbrBits[2] "" + width + "", "" + mbrBits[2]);
+    console.log(""height, mbrBits[3] "" + height + "", "" + mbrBits[3]);
+    var condition1 = scale > 1 && (width*worldFactor > 2*mbrBits[2] && height*worldFactor > 2*mbrBits[3]);
+    var condition2 = scale <= 1 && (width < 200*worldFactor || height < 100*worldFactor);
+    console.log(""condition 1, 2 = "" + condition1.toString() + "", "" + condition2.toString());
     if (condition1 || condition2)
     {
         return viewBox;
@@ -1685,7 +1706,7 @@ function rescaleViewBox(scale) {
 
     newBits = [xMin, yMin, width, height];
     translateScale = newBits[2] / (window.innerWidth - hMargin);
-    strokeScale = Math.log10(newBits[2]) - 1.0;
+    strokeScale = Math.log10(newBits[2]/worldFactor) - 1.0;
     var newViewBox = updateViewBox(xMin, yMin, width, height);
     return newViewBox;
 }
@@ -2001,6 +2022,18 @@ function traversalStepBack() {
 		{
 			p[0].setAttribute(""fill"", ""black"");
 		}
+        p = e.getElementsByTagName(""path"");
+        if (p.length > 0)
+        {
+            p[0].setAttribute(""opacity"", 1.0);
+        }
+        p = document.getElementById(""node"" + endNode[step].toString());
+        e = p.getElementsByTagName(""ellipse"");
+        if (e.length > 0)
+        {
+            e[0].setAttribute(""fill"", ""#f7f5eb"");
+            e[0].setAttribute(""opacity"", 1.0);
+        }
 	}
 
     step--;
@@ -2022,6 +2055,18 @@ function traversalStepForward() {
 		{
 			p[0].setAttribute(""fill"", ""black"");
 		}
+        p = e.getElementsByTagName(""path"");
+        if (p.length > 0)
+        {
+            p[0].setAttribute(""opacity"", 1.0);
+        }
+        p = document.getElementById(""node"" + endNode[step].toString());
+        e = p.getElementsByTagName(""ellipse"");
+        if (e.length > 0)
+        {
+            e[0].setAttribute(""fill"", ""#f7f5eb"");
+            e[0].setAttribute(""opacity"", 1.0);
+        }
 	}
 
     step++;
@@ -2034,10 +2079,8 @@ function traversalStepForward() {
 window.addEventListener( 'keydown', (e) => { 
     var key = 0;
 
-
     if (e == null) { key = event.keyCode;}  
     else {  key = e.which;} 
-
 
     switch(key) {
         case 37: // left arrow
@@ -2045,14 +2088,16 @@ window.addEventListener( 'keydown', (e) => {
             traversalStepBack();
             break;
         case 38: // up arrow
-            zoomGraph(1.0);
+            e.stopPropagation();
+            zoomGraph(-1.0);
             break;
         case 39: // right arrow
             stopTraversal();
             traversalStepForward();                     
             break;
         case 40: // down arrow
-            zoomGraph(-1.0);
+            e.stopPropagation();
+            zoomGraph(1.0);
             break;
     }     
 });
@@ -2102,6 +2147,7 @@ function traversalStepCommon() {
     if (p.length > 0)
     {
     	p[0].setAttribute(""stroke-width"", parseFloat(p[0].getAttribute(""stroke-width""))*2.5);
+        p[0].setAttribute(""opacity"", 0.4);
     }
     p = e.getElementsByTagName(""polygon"");
     if (p.length > 0)
@@ -2109,9 +2155,19 @@ function traversalStepCommon() {
     	p[0].setAttribute(""stroke-width"", parseFloat(p[0].getAttribute(""stroke-width""))*2.5);
     }
     p = e.getElementsByTagName(""text"");
+    var hc = getHitColor(transitionHitCounts[traversedEdge[step]]);
     if (p.length > 0)
     {
-    	p[0].setAttribute(""fill"", getHitColor(transitionHitCounts[traversedEdge[step]]));
+    	p[0].setAttribute(""fill"", hc);
+    }
+
+    p = document.getElementById(""node"" + endNode[step].toString());
+
+    e = p.getElementsByTagName(""ellipse"");
+    if (e.length > 0)
+    {
+        e[0].setAttribute(""fill"", hc);
+        e[0].setAttribute(""opacity"", 0.4);
     }
 
     return;
