@@ -1074,7 +1074,7 @@ TH {
                         if (ezModelGraph[i].StartsWith("<svg width"))
                         {
                             w.WriteLine(
-@"<svg id=""svgOuter"" onmousedown=""svgMouseDown(evt)"" onmouseup=""svgMouseUp(evt)"" onmouseleave=""svgMouseLeave(evt)"" onwheel=""svgMouseWheel(evt)"" ");
+@"<svg id=""svgOuter"" onmousedown=""svgMouseDown(evt)"" onmouseup=""svgMouseUp(evt)"" onmouseleave=""svgMouseLeave(evt)"" onwheel=""svgMouseWheel(evt)"" style=""border: 1px solid #aaaaaa;"" ");
                             copyToStream = true;
                             addGradientDefs = true;
                         }
@@ -1316,6 +1316,7 @@ function init() {
 	updateWindowDimensions();
 	changeSpeed();
 	translateScale = newBits[2] / (window.innerWidth - hMargin); // get the translateScale in good shape.
+    fitGraph();
 	updateDebugInfo();
 }
 
@@ -1350,14 +1351,14 @@ function fitGraph() {
 
 	if (boxAspect > mbrAspect)
 	{
-		var delta = boxAspect*mbrBits[2]/mbrAspect;
+		var delta = boxAspect*mbrBits[2]/mbrAspect - mbrBits[2];
 //		console.log(""deltaW = "" + delta.toFixed(3));
 		fitX -= 0.5*delta;
 		fitW += delta;
 	}
 	if (mbrAspect > boxAspect)
 	{
-		var delta = mbrAspect*mbrBits[3]/boxAspect;
+		var delta = mbrAspect*mbrBits[3]/boxAspect - mbrBits[3];
 //		console.log(""deltaH= "" + delta.toFixed(3));
 		fitY -= 0.5*delta;
 		fitH += delta;
