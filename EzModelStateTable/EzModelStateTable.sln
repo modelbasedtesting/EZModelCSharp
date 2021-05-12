@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsReleaseTokenA", "To
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsStartEndOnly", "TodoAPIsStartEndOnly\TodoAPIsStartEndOnly.csproj", "{DDE83ADF-6869-4D3D-A7EF-0EE37112D451}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsAdapterExecution", "TodoAPIsAdapterExecution\TodoAPIsAdapterExecution.csproj", "{DA186D66-3E01-4231-B82A-9FE511B94928}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,10 @@ Global
 		{DDE83ADF-6869-4D3D-A7EF-0EE37112D451}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DDE83ADF-6869-4D3D-A7EF-0EE37112D451}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DDE83ADF-6869-4D3D-A7EF-0EE37112D451}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA186D66-3E01-4231-B82A-9FE511B94928}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA186D66-3E01-4231-B82A-9FE511B94928}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA186D66-3E01-4231-B82A-9FE511B94928}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA186D66-3E01-4231-B82A-9FE511B94928}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

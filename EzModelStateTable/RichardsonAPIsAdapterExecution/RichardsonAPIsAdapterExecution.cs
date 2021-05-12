@@ -15,7 +15,7 @@ namespace RichardsonAPIsAdapterExecution
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
             client.IncludeSelfLinkNoise = true;
 
-            EzModelGraph graph = new EzModelGraph(client, 3000, 100, 30);
+            EzModelGraph graph = new EzModelGraph(client, 3000, 100, 30, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -49,7 +49,7 @@ namespace RichardsonAPIsAdapterExecution
 
             graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
 
-            client.NotifyAdapter = true;
+            client.NotifyAdapter = false;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
@@ -141,7 +141,7 @@ namespace RichardsonAPIsAdapterExecution
 
         // Actions handled by APIs
         const string startSession = "Start Session";
-        const string shutdown = "Shutdown";
+        const string endSession = "End Session";
         const string getTodos = "Get Todos List";
         const string headTodos = "Get Todos Headers";
         // postNetTodos is modeled as a single transition but is implemented
@@ -391,7 +391,7 @@ namespace RichardsonAPIsAdapterExecution
                         }
                         break;
 
-                    case shutdown:
+                    case endSession:
                         // Send the shutdown command.
                         // Question for Alan Richardson: is it acceptable
                         // to call the Shutdown API on the Heroku-hosted
@@ -677,7 +677,7 @@ namespace RichardsonAPIsAdapterExecution
                     break;
             }
 
-            actions.Add(shutdown);
+            actions.Add(endSession);
             actions.Add(getTodos);
             actions.Add(headTodos);
             actions.Add(showDocs);
@@ -722,7 +722,7 @@ namespace RichardsonAPIsAdapterExecution
                 case startSession:
                     inSession = true;
                     break;
-                case shutdown:
+                case endSession:
                     // Set all state variables back to initial state on shutdown,
                     // because if the APIs server starts up again, it will take
                     // on those initial state values.

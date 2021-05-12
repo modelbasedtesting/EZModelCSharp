@@ -9,8 +9,8 @@ namespace TodoAPIs4NodesE
         static int Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
-            client.IncludeSelfLinkNoise = false;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
+            client.IncludeSelfLinkNoise = true;
 
             // If you increase maxTodos (around line 86, below), then alter
             // the EzModelGraph arguments like so:

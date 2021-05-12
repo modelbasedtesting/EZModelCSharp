@@ -18,7 +18,7 @@ namespace TodoAPIsReleaseTokenA
             // created and traversed when exactly enough graph components
             // are allocated.  Try reducing any of the three arguments and
             // observe the consequences.
-            EzModelGraph graph = new EzModelGraph(client, 1200, 100, 25, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 2000, 200, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -119,7 +119,7 @@ namespace TodoAPIsReleaseTokenA
         const string addSomeResolvedTodos = "Add some Resolved Todos";
         const string addAllActiveTodos = "Add all Active Todos";
         const string addAllResolvedTodos = "Add all Resolved Todos";
-        const string editTodos = "Edit Todos";
+        const string editSomeTodos = "Edit some Todos";
         const string deleteAllResolvedTodos = "Delete all Resolved Todos";
         const string deleteAllActiveTodos = "Delete all Active Todos";
         const string deleteSomeResolvedTodos = "Delete some Resolved Todos";
@@ -208,7 +208,10 @@ namespace TodoAPIsReleaseTokenA
 
             if (includeSelfLinkNoise)
             {
-                actions.Add(editTodos);
+                if (activeTodos != ActiveTodos.Zero || resolvedTodos != ResolvedTodos.Zero)
+                {
+                    actions.Add(editSomeTodos);
+                }
             }
 
             if (!authTokenExists)
@@ -256,6 +259,7 @@ namespace TodoAPIsReleaseTokenA
             {
                 case ResolvedTodos.Zero:
                     actions.Add(addSomeResolvedTodos);
+                    actions.Add(addAllResolvedTodos);
                     break;
                 case ResolvedTodos.Some:
                     if (!actions.Contains(deleteAllTodos))
@@ -263,6 +267,7 @@ namespace TodoAPIsReleaseTokenA
                         actions.Add(deleteAllTodos);
                     }
                     actions.Add(addSomeResolvedTodos);
+                    actions.Add(addAllResolvedTodos);
                     actions.Add(activateSomeResolvedTodos);
                     actions.Add(activateAllResolvedTodos);
                     actions.Add(deleteSomeResolvedTodos);
@@ -306,7 +311,7 @@ namespace TodoAPIsReleaseTokenA
                 case endSession:
                     inSession = false;
                     break;
-                case editTodos:
+                case editSomeTodos:
                     break;
                 case addSomeActiveTodos:
                     if (activeTodos == ActiveTodos.Zero)

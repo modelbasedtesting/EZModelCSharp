@@ -17,7 +17,7 @@ namespace TodoAPIsActiveResolvedE
             // maxTransitions = 100 + 145 * maxTodos
             // maxNodes = 5 + 4 * maxTodos
             // maxActions = 35
-            EzModelGraph graph = new EzModelGraph(client, 100, 30, 25, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 75, 25, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -59,7 +59,7 @@ namespace TodoAPIsActiveResolvedE
             // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("TodoAPIsActiveResolvedE", 11);
+            graph.RandomDestinationCoverage("TodoAPIsActiveResolvedE", 7);
             return 0;
         }
     }
@@ -212,19 +212,22 @@ namespace TodoAPIsActiveResolvedE
                 actions.Add(activateResolvedTodo);
             }
 
+            if (numResolvedTodos + numActiveTodos > 0)
+            {
+                if (includeSelfLinkNoise)
+                {
+                    actions.Add(getTodo);
+                    actions.Add(editTodo);
+                    actions.Add(getTodos);
+                }
+            }
+
             actions.Add(endSession);
 
             if (numResolvedTodos + numActiveTodos < maxTodos)
             {
                 actions.Add(addActiveTodo);
                 actions.Add(addResolvedTodo);
-                actions.Add(getTodo);
-                actions.Add(editTodo);
-            }
-
-            if (includeSelfLinkNoise)
-            {
-                actions.Add(getTodos);
             }
 
             return actions;

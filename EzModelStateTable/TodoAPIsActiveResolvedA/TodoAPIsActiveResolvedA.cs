@@ -9,7 +9,7 @@ namespace TodoAPIsActiveResolvedA
         static int Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
             client.IncludeSelfLinkNoise = true;
 
             // We learned after generating the graph that it has 62 edges,
@@ -18,7 +18,7 @@ namespace TodoAPIsActiveResolvedA
             // created and traversed when exactly enough graph components
             // are allocated.  Try reducing any of the three arguments and
             // observe the consequences.
-            EzModelGraph graph = new EzModelGraph(client, 800, 20, 36);
+            EzModelGraph graph = new EzModelGraph(client, 120, 20, 20);
 
             if (!graph.GenerateGraph())
             {
@@ -115,7 +115,7 @@ namespace TodoAPIsActiveResolvedA
         const string addSomeResolvedTodos = "Add some Resolved Todos";
         const string addAllActiveTodos = "Add all Active Todos";
         const string addAllResolvedTodos = "Add all Resolved Todos";
-        const string editTodos = "Edit Todos";
+        const string editSomeTodos = "Edit some Todos";
         const string deleteAllResolvedTodos = "Delete all Resolved Todos";
         const string deleteAllActiveTodos = "Delete all Active Todos";
         const string deleteSomeResolvedTodos = "Delete some Resolved Todos";
@@ -195,7 +195,10 @@ namespace TodoAPIsActiveResolvedA
 
             if (includeSelfLinkNoise)
             {
-                actions.Add(editTodos);
+                if (activeTodos != ActiveTodos.Zero || resolvedTodos != ResolvedTodos.Zero)
+                {
+                    actions.Add(editSomeTodos);
+                }
             }
 
             switch (activeTodos)
@@ -228,6 +231,7 @@ namespace TodoAPIsActiveResolvedA
             {
                 case ResolvedTodos.Zero:
                     actions.Add(addSomeResolvedTodos);
+                    actions.Add(addAllResolvedTodos);
                     break;
                 case ResolvedTodos.Some:
                     if (!actions.Contains(deleteAllTodos))
@@ -235,6 +239,7 @@ namespace TodoAPIsActiveResolvedA
                         actions.Add(deleteAllTodos);
                     }
                     actions.Add(addSomeResolvedTodos);
+                    actions.Add(addAllResolvedTodos);
                     actions.Add(activateSomeResolvedTodos);
                     actions.Add(activateAllResolvedTodos);
                     actions.Add(deleteSomeResolvedTodos);
@@ -276,7 +281,7 @@ namespace TodoAPIsActiveResolvedA
                 case endSession:
                     inSession = false;
                     break;
-                case editTodos:
+                case editSomeTodos:
                     break;
                 case addSomeActiveTodos:
                     if (activeTodos == ActiveTodos.Zero)

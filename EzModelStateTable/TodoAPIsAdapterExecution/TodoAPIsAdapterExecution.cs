@@ -15,7 +15,7 @@ namespace TodoAPIsAdapterExecution
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
             client.IncludeSelfLinkNoise = true;
 
-            EzModelGraph graph = new EzModelGraph(client, 3000, 100, 30, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 300, 30, 30, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -618,7 +618,10 @@ namespace TodoAPIsAdapterExecution
 
             if (includeSelfLinkNoise)
             {
-                actions.Add(editSomeTodos);
+                if (activeTodos != ActiveTodos.Zero || resolvedTodos != ResolvedTodos.Zero)
+                {
+                    actions.Add(editSomeTodos);
+                }
             }
 
             switch (activeTodos)

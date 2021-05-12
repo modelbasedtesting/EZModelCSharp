@@ -9,7 +9,7 @@ namespace TodoAPIsHugeE
         static int Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
             client.IncludeSelfLinkNoise = true;
 
             // If you increase maxTodos (around line 86, below), then alter
@@ -17,7 +17,7 @@ namespace TodoAPIsHugeE
             // maxTransitions = 100 + 145 * maxTodos
             // maxNodes = 5 + 4 * maxTodos
             // maxActions = 35
-            EzModelGraph graph = new EzModelGraph(client, 1500, 200, 25, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 1500, 320, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -59,7 +59,7 @@ namespace TodoAPIsHugeE
             // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("TodoAPIsHugeE", 5);
+            graph.RandomDestinationCoverage("TodoAPIsHugeE", 3);
             return 0;
         }
     }
@@ -112,7 +112,7 @@ namespace TodoAPIsHugeE
 
         // A helper variable to limit the size of the state-transition table, and
         // thus also limit the size of the model graph.
-        const uint maxTodos = 12;
+        const uint maxTodos = 16;
 
         // Actions handled by APIs
         const string startSession = "Start Session";
@@ -213,19 +213,22 @@ namespace TodoAPIsHugeE
                 actions.Add(activateResolvedTodo);
             }
 
+            if (numResolvedTodos + numActiveTodos > 0)
+            {
+                if (includeSelfLinkNoise)
+                {
+                    actions.Add(getTodos);
+                    actions.Add(getTodo);
+                    actions.Add(editTodo);
+                }
+            }
+
             actions.Add(endSession);
 
             if (numResolvedTodos + numActiveTodos < maxTodos)
             {
                 actions.Add(addActiveTodo);
                 actions.Add(addResolvedTodo);
-                actions.Add(getTodo);
-                actions.Add(editTodo);
-            }
-
-            if (includeSelfLinkNoise)
-            {
-                actions.Add(getTodos);
             }
 
             return actions;
