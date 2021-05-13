@@ -1013,6 +1013,9 @@ TH {
 </style>
 	</head>
 	<body onresize=""updateWindowDimensions()"">
+		<script>
+			var t0 = performance.now();
+		</script>
     <table border=""0"" width=""100%"" height=""100%"">
 		<tr>
 			<th colspan=""2"" id=""selectedSvgElementInfo"" style=""height:20px; color:#e00000"">INITIAL STATE</th> 
@@ -1136,7 +1139,7 @@ TH {
                             <td style=""padding-top: 11px; padding-left: 7px; text-align: left; height: 19px"">1</td>
 							<td style=""padding-top: 5px; text-align: center; height: 19px""><label id=""speedLabel"">Speed: 1</label></td>
                             <td style=""padding-top: 5px; text-align: center; height: 19px""><button id=""playPause"" onclick=""startTraversal()"">&#9654;</button></td>
-                            <td style=""padding-top: 11px; padding-right: 5px; text-align: right; height: 19px"">60</td>
+                            <td id=""maxSpeed"" style=""padding-top: 11px; padding-right: 5px; text-align: right; height: 19px"">60</td>
 						</tr>
 			    		<tr>
 							<td style=""padding-bottom: 3px; padding-top: 0px; padding-left: 2px; padding-right: 2px"" colspan=""4""><input type=""range"" min=""1"" max=""60"" oninput=""changeSpeed()"" value=""60"" id=""traversalSpeed""></td>
@@ -1250,12 +1253,23 @@ var svgRescale = 1.0;
 var previousDeltaWasPositive = true;
 var bOuterWidth = false;
 var strokeScale = 0.0;
-
-var worldWidth = 632.84;
+var numRenders = 1;
+var renderAccum = performance.now() - t0;");
+                    w.WriteLine("var worldWidth = {0};", worldWidth);
+                    w.WriteLine(
+@"var renderTimeout;
 
 document.addEventListener(""load"", init(), false);
 
 function init() {
+	renderTimeout = renderAccum + 5;
+
+	maxSpeed = Math.floor(1000.0 / renderTimeout);
+	if (maxSpeed > 190)
+	{
+		maxSpeed = 190;
+	}
+
     setStepText();
     assessCoverageFloor();
     mbrBox = document.getElementById(""svgOuter"").getAttribute(""viewBox"");
@@ -1282,6 +1296,7 @@ function init() {
     strokeScale = Math.log10(newBits[2]*worldWidth/mbrBits[2]) - 1.0;
     updateViewBox(newBits[0], newBits[1], newBits[2], newBits[3]);
     updateWindowDimensions();
+    updateSpeedControl();
     changeSpeed();
     translateScale = newBits[2] / (window.innerWidth - hMargin); 
     fitGraph();
@@ -1295,6 +1310,17 @@ for (var j=0; j < transitionActions.length; j++)
     {
         text[0].innerHTML = action;
     }
+}
+
+function updateSpeedControl() {
+    document.getElementById(""maxSpeed"").innerHTML = maxSpeed;
+    var tS = document.getElementById(""traversalSpeed"")
+    if (tS.value > maxSpeed)
+    {
+    	tS.value = maxSpeed;
+        changeSpeed();
+    }
+    tS.max = maxSpeed;
 }
 
 function changeSpeed(e) {
@@ -1722,12 +1748,7 @@ function timedTraversal() {
     traversalStepForward();
     if (timer_is_on)
     {
-        var dt = Math.round(1000.0 / parseFloat(document.getElementById(""traversalSpeed"").value));
-        if (dt > 14)
-        {
-            dt -= 14;
-        }
-        t = setTimeout(timedTraversal, dt);
+        t = setTimeout(timedTraversal, renderTimeout);
     }
 }
 
@@ -1934,6 +1955,7 @@ function traversalStepForward() {
         return;
     }
 
+    t0 = performance.now()
     if (step > -1)
     {
         var e = svgOuter.getElementById(""edge"" + traversedEdge[step]);
@@ -1961,6 +1983,35 @@ function traversalStepForward() {
     refreshGraphics();
     assessCoverageFloor();
     traversalStepCommon();
+    renderAccum += performance.now() - t0;
+    numRenders++;
+    var temp = 5 + renderAccum / numRenders;
+    if (Math.abs(renderTimeout - temp) > 5)
+    {
+    	if (temp > renderTimeout)
+    	{
+    		maxSpeed--;
+    		if (maxSpeed < 1)
+    		{
+    			maxSpeed = 1;
+    		}
+    	}
+    	else
+    	{
+    		maxSpeed++;
+    		if (maxSpeed > 190)
+    		{
+    			maxSpeed = 190;
+    		}
+    	}
+		updateSpeedControl();
+    	renderTimeout = temp;
+    }
+    if (numRenders < 4)
+    {
+    	renderAccum = performance.now() - t0;
+    	numRenders = 1;
+    }
 }
 
 window.addEventListener( 'keydown', (e) => { 
