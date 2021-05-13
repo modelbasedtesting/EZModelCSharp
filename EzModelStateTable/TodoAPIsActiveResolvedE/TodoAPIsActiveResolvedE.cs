@@ -9,7 +9,7 @@ namespace TodoAPIsActiveResolvedE
         static int Main()
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
             client.IncludeSelfLinkNoise = true;
 
             // If you increase maxTodos (around line 86, below), then alter
@@ -34,7 +34,7 @@ namespace TodoAPIsActiveResolvedE
                 {
                     Console.WriteLine(S);
                 }
-                return -2;
+ //               return -2;
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
@@ -222,7 +222,7 @@ namespace TodoAPIsActiveResolvedE
                 }
             }
 
-            actions.Add(endSession);
+ //           actions.Add(endSession);
 
             if (numResolvedTodos + numActiveTodos < maxTodos)
             {

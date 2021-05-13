@@ -17,7 +17,7 @@ namespace TodoAPIs4NodesE
             // maxTransitions = 100 + 145 * maxTodos
             // maxNodes = 5 + 4 * maxTodos
             // maxActions = 35
-            EzModelGraph graph = new EzModelGraph(client, 2200, 61, 35);
+            EzModelGraph graph = new EzModelGraph(client, 2200, 61, 35, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -59,7 +59,7 @@ namespace TodoAPIs4NodesE
             // and then return false from the client.AreStatesAcceptablySimilar() method.
             client.StopOnProblem = true;
 
-            graph.RandomDestinationCoverage("TodoAPIs4NodesE", 5);
+            graph.RandomDestinationCoverage("TodoAPIs4NodesE", 3);
             return 0;
         }
     }

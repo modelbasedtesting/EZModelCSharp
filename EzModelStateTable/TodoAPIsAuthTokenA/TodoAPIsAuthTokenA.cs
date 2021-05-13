@@ -18,7 +18,7 @@ namespace TodoAPIsAuthTokenA
             // created and traversed when exactly enough graph components
             // are allocated.  Try reducing any of the three arguments and
             // observe the consequences.
-            EzModelGraph graph = new EzModelGraph(client, 5000, 200, 25, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 5000, 200, 25, EzModelGraph.LayoutRankDirection.LeftRight);
 
             if (!graph.GenerateGraph())
             {
@@ -201,7 +201,7 @@ namespace TodoAPIsAuthTokenA
                 return actions;
             }
 
-            actions.Add(endSession);
+//            actions.Add(endSession);
 
             if (includeSelfLinkNoise)
             {

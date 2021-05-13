@@ -28,7 +28,7 @@ namespace SynchronousHttpClientExecuter
         // A process for the APIs server
         private Process process;
 
-        private string responseBody;
+        public string responseBody;
 
         private HttpResponseMessage response;
 
