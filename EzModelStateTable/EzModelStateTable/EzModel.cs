@@ -1265,10 +1265,7 @@ function init() {
 	renderTimeout = renderAccum + 5;
 
 	maxSpeed = Math.floor(1000.0 / renderTimeout);
-	if (maxSpeed > 100)
-	{
-		maxSpeed = 100;
-	}
+    maxSpeed = maxSpeed > 100 ? 100 : maxSpeed;
 
     setStepText();
     assessCoverageFloor();
@@ -2006,6 +2003,7 @@ function traversalStepForward() {
         {
             renderTimeout = sample;
             maxSpeed = Math.floor(1000.0 / renderTimeout);
+            maxSpeed = maxSpeed > 100 ? 100 : maxSpeed;
             updateSpeedControl();
         }
         numRenders = 1;
@@ -2016,14 +2014,8 @@ function traversalStepForward() {
         if (Math.abs(deltaT - renderTimeout) > 10)
         {
             maxSpeed += deltaT > renderTimeout ? -1 : 1;
-            if (maxSpeed > 100)
-            {
-                maxSpeed = 100;
-            }
-            if (maxSpeed < 2)
-            {
-                maxSpeed = 2;
-            }
+            maxSpeed = maxSpeed > 100 ? 100 : maxSpeed;
+            maxSpeed = maxSpeed < 2 ? 2 : maxSpeed;
             updateSpeedControl();
         }
     }
