@@ -30,7 +30,7 @@ namespace SynchronousHttpClientExecuter
 
         public string responseBody;
 
-        private HttpResponseMessage response;
+        public HttpResponseMessage response;
 
         // TODO: The following variable should set the client.BaseAddress via 
         // new Uri(), but for now it works to concatenate it with the uri 
@@ -54,12 +54,12 @@ namespace SynchronousHttpClientExecuter
             try
             {
                 response = client.GetAsync(server + uri).Result;
-                Console.WriteLine(response.ToString());
+//                Console.WriteLine(response.ToString());
 
                 if (response.IsSuccessStatusCode)
                 {
                     responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
+//                    Console.WriteLine(responseBody);
                 }
                 else
                 {
@@ -95,12 +95,12 @@ namespace SynchronousHttpClientExecuter
             try
             {
                 response = client.DeleteAsync(server + uri).Result;
-                Console.WriteLine(response.ToString());
+//                Console.WriteLine(response.ToString());
 
                 if (response.IsSuccessStatusCode)
                 {
                     responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
+//                    Console.WriteLine(responseBody);
                 }
                 else
                 {
@@ -135,12 +135,12 @@ namespace SynchronousHttpClientExecuter
             try
             { 
                 response = client.PostAsync(server + uri, body).Result;
-                Console.WriteLine(response.ToString());
+//                Console.WriteLine(response.ToString());
 
                 if (response.IsSuccessStatusCode)
                 { 
                     responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
+//                    Console.WriteLine(responseBody);
                 }
                 else
                 {
@@ -175,12 +175,12 @@ namespace SynchronousHttpClientExecuter
             try
             {
                 response = client.PutAsync(server + uri, body).Result;
-                Console.WriteLine(response.ToString());
+//                Console.WriteLine(response.ToString());
 
                 if (response.IsSuccessStatusCode)
                 {
                     responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
+//                    Console.WriteLine(responseBody);
                 }
                 else
                 {
@@ -215,12 +215,12 @@ namespace SynchronousHttpClientExecuter
             try
             {
                 response = client.PatchAsync(server + uri, body).Result;
-                Console.WriteLine(response.ToString());
+//                Console.WriteLine(response.ToString());
 
                 if (response.IsSuccessStatusCode)
                 {
                     responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
+//                    Console.WriteLine(responseBody);
                 }
                 else
                 {
@@ -258,11 +258,11 @@ namespace SynchronousHttpClientExecuter
 
                 response = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, server + uri), HttpCompletionOption.ResponseHeadersRead).Result;
 
-                Console.WriteLine(response.ToString());
+//                Console.WriteLine(response.ToString());
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine("{0}: {1}", response.StatusCode, response.Headers.ToString());
+//                    Console.WriteLine("{0}: {1}", response.StatusCode, response.Headers.ToString());
                 }
                 else
                 {
@@ -300,13 +300,13 @@ namespace SynchronousHttpClientExecuter
 
                 response = client.SendAsync(new HttpRequestMessage(HttpMethod.Trace, server + uri), HttpCompletionOption.ResponseHeadersRead).Result;
 
-                Console.WriteLine(response.ToString());
+//                Console.WriteLine(response.ToString());
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine("{0}: {1}", response.StatusCode, response.Headers.ToString());
-                    Console.WriteLine("Trailing headers");
-                    Console.WriteLine("{0}", response.TrailingHeaders.ToString());
+//                    Console.WriteLine("{0}: {1}", response.StatusCode, response.Headers.ToString());
+//                    Console.WriteLine("Trailing headers");
+//                    Console.WriteLine("{0}", response.TrailingHeaders.ToString());
                 }
                 else
                 {
@@ -344,11 +344,11 @@ namespace SynchronousHttpClientExecuter
             {
                 response = client.SendAsync(new HttpRequestMessage(HttpMethod.Options, server + uri), HttpCompletionOption.ResponseHeadersRead).Result;
 
-                Console.WriteLine(response.ToString());
+//                Console.WriteLine(response.ToString());
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine(response.ToString());
+//                    Console.WriteLine(response.ToString());
                 }
                 else
                 {

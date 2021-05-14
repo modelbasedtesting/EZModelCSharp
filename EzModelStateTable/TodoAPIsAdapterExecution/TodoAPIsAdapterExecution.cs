@@ -272,6 +272,13 @@ namespace TodoAPIsAdapterExecution
             public string description { get; set; }
         }
 
+        public class TodoItemNoId
+        {
+            public string title { get; set; }
+            public bool doneStatus { get; set; }
+            public string description { get; set; }
+        }
+
         public class TodosList
         {
             public IList<TodoItem> todos { get; set; }
@@ -386,9 +393,11 @@ namespace TodoAPIsAdapterExecution
             string response = String.Empty;
             TodosList todos = inSession ? GetTodosList() : new TodosList();
             TodoItem todo = new TodoItem();
+            TodoItemNoId todoNoId = new TodoItemNoId();
             int quantity;
             uint headroom = maximumTodosCount - activeTodosCount - resolvedTodosCount;
-
+            int someTodosCount = random.Next((int)activeTodosCount + (int)resolvedTodosCount) + 1;
+            bool doneStatus = random.Next(1) == 0 ? true : false;
             int SUTactiveTodosCount = 0;
             int SUTresolvedTodosCount = 0;
 
@@ -407,7 +416,7 @@ namespace TodoAPIsAdapterExecution
                     else
                     {
                         SUTactiveTodosCount++;
-                        if (selectedResolvedTodo == SUTactiveTodosCount)
+                        if (selectedActiveTodo == SUTactiveTodosCount)
                         {
                             selectedActiveTodo = t.id;
                         }
@@ -484,28 +493,59 @@ namespace TodoAPIsAdapterExecution
                         break;
 
                     case editSomeTodos:
-                        acceptHeaders.Add("application/json");
-
-                        if (selectedActiveTodo > 0)
+                        if (someTodosCount == 0)
                         {
-                            body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"POST-amended\", \"doneStatus\": true, \"description\": \"This todo modified by POST request with Id\"}", selectedActiveTodo), Encoding.UTF8, "application/json");
-
-                            if (!executer.PostRequest(acceptHeaders, "todos", body))
-                            {
-                                Console.WriteLine("Edit Active Todo failed");
-                                Environment.Exit(-3);
-                            }
+                            break;
                         }
+                        acceptHeaders.Add("application/json");
+                        quantity = someTodosCount;
 
-                        if (selectedResolvedTodo > 0)
+                        bool postThisEdit = false;
+
+                        foreach( TodoItem t in todos.todos )
                         {
-                            body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"PUT done\", \"doneStatus\": false, \"description\": \"This todo modified by PUT request\"}", selectedResolvedTodo), Encoding.UTF8, "application/json");
-
-                            if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", selectedResolvedTodo), body))
+                            postThisEdit = !postThisEdit;
+                            if (quantity == 0)
                             {
-                                Console.WriteLine("Edit Resolved Todo failed");
-                                Environment.Exit(-4);
+                                break;
                             }
+                            todo.id = t.id;
+                            todo.title = actionCount.ToString() + "editSomeTodos";
+                            todo.description = (postThisEdit ? "POST;" : "PUT;") + t.description;
+                            if (t.doneStatus != doneStatus)
+                            {
+                                if (doneStatus)
+                                {
+                                    resolvedTodosCount++;
+                                    activeTodosCount--;
+                                }
+                                else
+                                {
+                                    resolvedTodosCount--;
+                                    activeTodosCount++;
+                                }
+                            }
+                            todo.doneStatus = doneStatus;
+
+                            body = new StringContent(JsonSerializer.Serialize(todo));
+
+                            if (postThisEdit)
+                            {
+                                if (!executer.PostRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
+                                {
+                                    Console.WriteLine("Edit Some Todos failed on POST {0}", t.id);
+                                    Environment.Exit(-3);
+                                }
+                            }
+                            else
+                            {
+                                if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
+                                {
+                                    Console.WriteLine("Edit Some Todos failed on PUT {0}", t.id);
+                                    Environment.Exit(-33);
+                                }
+                            }
+                            quantity--;
                         }
                         break;
 
@@ -520,7 +560,10 @@ namespace TodoAPIsAdapterExecution
 
                         for (var k = 0; k < quantity; k++)
                         {
-                            body = new StringContent("{\"title\": \"POST JSON todo and accept JSON\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+                            todoNoId.title = actionCount.ToString() + "AddSomeActiveTodos";
+                            todoNoId.doneStatus = false;
+                            todoNoId.description = "Created by POST method";
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
                             if (!executer.PostRequest(acceptHeaders, "todos", body))
                             {
@@ -545,7 +588,10 @@ namespace TodoAPIsAdapterExecution
 
                         for (var k = 0; k < quantity; k++)
                         {
-                            body = new StringContent("{\"title\": \"POST JSON todo and accept JSON\", \"doneStatus\": true, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+                            todoNoId.title = actionCount.ToString() + "AddSomeResolvedTodos";
+                            todoNoId.doneStatus = true;
+                            todoNoId.description = "Created by POST method";
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
                             if (!executer.PostRequest(acceptHeaders, "todos", body))
                             {
@@ -564,7 +610,10 @@ namespace TodoAPIsAdapterExecution
 
                         for (var k = activeTodosCount + resolvedTodosCount; k < maximumTodosCount; k++)
                         {
-                            body = new StringContent("{\"title\": \"POST JSON todo and accept JSON\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+                            todoNoId.title = actionCount.ToString() + "AddAllActiveTodos";
+                            todoNoId.doneStatus = false;
+                            todoNoId.description = "Created by POST method";
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
                             if (!executer.PostRequest(acceptHeaders, "todos", body))
                             {
@@ -583,7 +632,10 @@ namespace TodoAPIsAdapterExecution
 
                         for (var k = activeTodosCount + resolvedTodosCount; k < maximumTodosCount; k++)
                         {
-                            body = new StringContent("{\"title\": \"POST JSON todo and accept JSON\", \"doneStatus\": true, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
+                            todoNoId.title = actionCount.ToString() + "AddAllResolvedTodos";
+                            todoNoId.doneStatus = false;
+                            todoNoId.description = "Created by POST method";
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
                             if (!executer.PostRequest(acceptHeaders, "todos", body))
                             {
@@ -604,7 +656,7 @@ namespace TodoAPIsAdapterExecution
                         {
                             if (!t.doneStatus)
                             {
-                                if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", selectedActiveTodo)))
+                                if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", t.id)))
                                 {
                                     Console.WriteLine("Delete All Active Todos failed.");
                                     Environment.Exit(-5);
@@ -624,7 +676,7 @@ namespace TodoAPIsAdapterExecution
                         {
                             if (t.doneStatus)
                             {
-                                if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", selectedResolvedTodo)))
+                                if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", t.id)))
                                 {
                                     Console.WriteLine("Delete All Resolved Todos failed.");
                                     Environment.Exit(-25);
@@ -643,8 +695,8 @@ namespace TodoAPIsAdapterExecution
                         {
                             if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", t.id)))
                             {
-                                Console.WriteLine("Delete All Resolved Todos failed.");
-                                Environment.Exit(-25);
+                                Console.WriteLine("Delete All Todos failed.");
+                                Environment.Exit(-24);
                             }
                             else
                             {
@@ -866,7 +918,7 @@ namespace TodoAPIsAdapterExecution
                         break;
 
                     default:
-                        Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
+                        Console.WriteLine("ERROR: Unknown action '{0}' in AdapterTransition()", action);
                         break;
                 }
             }
@@ -1119,6 +1171,8 @@ namespace TodoAPIsAdapterExecution
                     activeTodos = ActiveTodos.Max;
                     break;
                 case invalidRequest:
+                    break;
+                case getTodosList:
                     break;
                 default:
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
