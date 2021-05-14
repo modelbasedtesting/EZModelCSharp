@@ -1313,14 +1313,19 @@ for (var j=0; j < transitionActions.length; j++)
 }
 
 function updateSpeedControl() {
-    document.getElementById(""maxSpeed"").innerHTML = maxSpeed;
     var tS = document.getElementById(""traversalSpeed"")
+    if (maxSpeed == tS.max)
+    {
+        return;
+    }
+
     if (tS.value > maxSpeed)
     {
     	tS.value = maxSpeed;
         changeSpeed();
     }
     tS.max = maxSpeed;
+    document.getElementById(""maxSpeed"").innerHTML = maxSpeed;
 }
 
 function changeSpeed(e) {
@@ -1746,9 +1751,11 @@ function setTransitionFloorText() {
 function timedTraversal() {
     c = c + 1;
     traversalStepForward();
+
+    var dt = Math.floor(1000.0 / document.getElementById(""traversalSpeed"").value - renderTimeout);
     if (timer_is_on)
     {
-        t = setTimeout(timedTraversal, renderTimeout);
+        t = setTimeout(timedTraversal, dt);
     }
 }
 
@@ -1983,34 +1990,38 @@ function traversalStepForward() {
     refreshGraphics();
     assessCoverageFloor();
     traversalStepCommon();
-    renderAccum += performance.now() - t0;
+    var deltaT = 5 + performance.now() - t0;
+
+    renderAccum += deltaT;
     numRenders++;
-    var temp = 5 + renderAccum / numRenders;
-    if (Math.abs(renderTimeout - temp) > 5)
+
+    if (numRenders > 4)
     {
-    	if (temp > renderTimeout)
-    	{
-    		maxSpeed--;
-    		if (maxSpeed < 1)
-    		{
-    			maxSpeed = 1;
-    		}
-    	}
-    	else
-    	{
-    		maxSpeed++;
-    		if (maxSpeed > 190)
-    		{
-    			maxSpeed = 190;
-    		}
-    	}
-		updateSpeedControl();
-    	renderTimeout = temp;
+        var sample = renderAccum / numRenders;
+        if (Math.abs(sample - renderTimeout) > 5)
+        {
+            renderTimeout = sample;
+            maxSpeed = Math.floor(1000.0 / renderTimeout);
+            updateSpeedControl();
+        }
+        numRenders = 1;
+        renderAccum = deltaT;
     }
-    if (numRenders < 4)
+    else
     {
-    	renderAccum = performance.now() - t0;
-    	numRenders = 1;
+        if (Math.abs(deltaT - renderTimeout) > 10)
+        {
+            maxSpeed += deltaT > renderTimeout ? -1 : 1;
+            if (maxSpeed > 190)
+            {
+                maxSpeed = 190;
+            }
+            if (maxSpeed < 2)
+            {
+                maxSpeed = 2;
+            }
+            updateSpeedControl();
+        }
     }
 }
 
