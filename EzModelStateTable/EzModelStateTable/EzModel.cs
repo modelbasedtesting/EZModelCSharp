@@ -1753,6 +1753,10 @@ function timedTraversal() {
     traversalStepForward();
 
     var dt = Math.floor(1000.0 / document.getElementById(""traversalSpeed"").value - renderTimeout);
+    if (dt < 2)
+    {
+        dt = 2;
+    }
     if (timer_is_on)
     {
         t = setTimeout(timedTraversal, dt);
