@@ -1265,9 +1265,9 @@ function init() {
 	renderTimeout = renderAccum + 5;
 
 	maxSpeed = Math.floor(1000.0 / renderTimeout);
-	if (maxSpeed > 190)
+	if (maxSpeed > 100)
 	{
-		maxSpeed = 190;
+		maxSpeed = 100;
 	}
 
     setStepText();
@@ -2016,9 +2016,9 @@ function traversalStepForward() {
         if (Math.abs(deltaT - renderTimeout) > 10)
         {
             maxSpeed += deltaT > renderTimeout ? -1 : 1;
-            if (maxSpeed > 190)
+            if (maxSpeed > 100)
             {
-                maxSpeed = 190;
+                maxSpeed = 100;
             }
             if (maxSpeed < 2)
             {
