@@ -2384,7 +2384,8 @@ function getHitColor(hitCount) {
                         {
                             string action = transitions.ActionByTransitionIndex((uint)tIndex);
                             popcornTrail.Add(action);
-                            string reportedEndState = client.AdapterTransition(state, action);
+                            Console.WriteLine("During path traversal");
+                            string reportedEndState = client.AdapterTransition(transitions.StartStateByTransitionIndex((uint)tIndex), action);
                             string predicted = transitions.EndStateByTransitionIndex((uint)tIndex);
                             if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
                             {
@@ -2453,7 +2454,8 @@ function getHitColor(hitCount) {
                 {
                     string action = transitions.ActionByTransitionIndex((uint)targetIndex);
                     popcornTrail.Add(action);
-                    string reportedEndState = client.AdapterTransition(transitions.StartStateByTransitionIndex((uint)targetIndex), action);
+                    Console.WriteLine("After Path traversal");
+                    string reportedEndState = client.AdapterTransition(targetStartState, action);
                     string predicted = transitions.EndStateByTransitionIndex((uint)targetIndex);
                     if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
                     {

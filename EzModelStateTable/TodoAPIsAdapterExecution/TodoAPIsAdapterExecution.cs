@@ -54,7 +54,7 @@ namespace TodoAPIsAdapterExecution
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            client.WaitForObserverKeystroke = true;
+            client.WaitForObserverKeystroke = false;
             graph.RandomDestinationCoverage("TodoAPIsAdapterExecution", 4);
 
             // normal finish
@@ -113,14 +113,15 @@ namespace TodoAPIsAdapterExecution
             waitForObserverKeystroke = false;
         }
 
-        // Initially the system is not running, and this affects a lot of
-        // state.
-        bool svInSession = false;
-
         // Reduce state explosion on todos by classifing the quantity of todos
         // into either zero or more than zero.
         enum ResolvedTodos { Zero, Some, Max };
         enum ActiveTodos { Zero, Some, Max };
+
+        // Initially the system is not running, and this affects a lot of
+        // state.
+        bool svInSession = false;
+        bool svAtMaxTodos = false;
 
         ResolvedTodos svResolvedTodos = ResolvedTodos.Zero;
         ActiveTodos svActiveTodos = ActiveTodos.Some;
@@ -128,10 +129,25 @@ namespace TodoAPIsAdapterExecution
         uint actionCount = 0;
         uint activeTodosCount = 10; // Default initial state due to jar file behavior.
         uint resolvedTodosCount = 0;
-        uint maximumTodosCount = 14; // Arbitrary maximum
+        const uint maximumTodosCount = 14; // Arbitrary maximum
         Random random = new Random(DateTime.Now.Millisecond);
 
         // Actions handled by APIs
+        uint addQuantity = 0;
+        // addQuantity is a random number between 0 and
+        // maximumTodosCount - activeTodosCount - resolvedTodosCount - 1.
+        // addQuantity is the decided amount of addition change when an action is
+        // addSome*, e.g., addSomeActiveTodos
+        uint resolveQuantity = 0;
+        // resolveQuantity is the amount active todos affected by Some-type actions.
+        uint activateQuantity = 0;
+        // activateQuantity is the amount resolved todos affected by Some-type actions.
+
+        // The above numbers are needed ahead of GetEndState so that the adapter/executer
+        // is guided in how much change data in the SUT.
+        // The numbers is applied in GetEndState, and then after the
+        // adapter/executer does work on the SUT, the SUT state can be
+        // compared to the model state.
         const string startSession = "Start Session";
         const string endSession = "End Session";
         const string getTodosList = "Get Todos List";
@@ -151,22 +167,22 @@ namespace TodoAPIsAdapterExecution
         const string activateSomeResolvedTodos = "Activate some Resolved Todos";
         const string activateAllResolvedTodos = "Activate all Resolved Todos";
 
-        const string showDocs = "Get Documentation";
+        const string getDocs = "Get Documentation";
         const string getHeartbeat = "Get Service Heartbeat";
 
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
-        string StringifyStateVector(bool inSession, ResolvedTodos resolvedTodos, ActiveTodos activeTodos)
+        string StringifyStateVector(bool inSession, ResolvedTodos resolvedTodos, ActiveTodos activeTodos, bool atMaxTodos)
         {
-            string s = String.Format("InSession.{0}, ResolvedTodos.{1}, ActiveTodos.{2}", inSession, resolvedTodos.ToString(), activeTodos.ToString());
+            string s = String.Format("InSession.{0}, ResolvedTodos.{1}, ActiveTodos.{2}, AtMaxTodos.{3}", inSession, resolvedTodos.ToString(), activeTodos.ToString(), atMaxTodos.ToString());
             return s;
         }
 
         // Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector(svInSession, svResolvedTodos, svActiveTodos);
+            return StringifyStateVector(svInSession, svResolvedTodos, svActiveTodos, svAtMaxTodos);
         }
 
         // Interface method
@@ -183,6 +199,7 @@ namespace TodoAPIsAdapterExecution
             ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
             arg = vState[2].Split(".")[1];
             ActiveTodos activeTodos = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
+            bool atMaxTodos = vState[3].Contains("True") ? true : false;
 
             if (!inSession)
             {
@@ -246,6 +263,9 @@ namespace TodoAPIsAdapterExecution
         // Interface method
         public bool AreStatesAcceptablySimilar(string observed, string expected)
         {
+            Console.WriteLine("observed vs expected:");
+            Console.WriteLine(observed);
+            Console.WriteLine(expected);
             // Compare reported to expected, if unacceptable return false.
 
             // For the Alan Richardson APIs, we want matches on the SUT state versus the model state.
@@ -303,45 +323,23 @@ namespace TodoAPIsAdapterExecution
                 todos = JsonSerializer.Deserialize<TodosList>(response);
                 return todos;
             }
-            catch (Exception e2)
+            catch (Exception e)
             {
                 Console.WriteLine("Exception working on response for Get Todos List");
-                Console.WriteLine(e2.Message);
+                Console.WriteLine(e.Message);
                 return todos;
             }
         }
 
-        // Interface method
-        public string AdapterTransition(string startState, string action)
+        bool compareSUTtoModelState(string prefix, bool modelInSession, TodosList sutTodos, ActiveTodos modelActiveTodos, ResolvedTodos modelResolvedTodos, bool modelAtMaxTodos)
         {
-            //TodoItem todoItem = new TodoItem() { id=1, title="title", doneStatus=false, description="description" };
-            //string jsonString = JsonSerializer.Serialize(todoItem);
-            //jsonString = JsonSerializer.Serialize<TodoItem>(todoItem);
-            //TodoItem item2 = new TodoItem();
-            //item2 = JsonSerializer.Deserialize<TodoItem>(jsonString);
-
-            string expected = GetEndState(startState, action);
-
-            string observed = "";
-
-            // In this model, actions are all about REST communications and
-            // whether the APIs server is up or down.
-            // With respect to the four state variables,
-
-            string[] vState = startState.Split(", ");
-            bool inSession = vState[0].Contains("True") ? true : false;
-            string arg = vState[1].Split(".")[1];
-            ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
-            arg = vState[2].Split(".")[1];
-            ActiveTodos activeTodos = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
-
-            actionCount++;
-
-            Console.WriteLine("****{0,6} **** {1,29} ****", actionCount, action);
+            bool comparable = true;
+            int SUTactiveTodosCount = 0;
+            int SUTresolvedTodosCount = 0;
 
             // IN CASE THE ADAPTER FINDS A DISCREPANCY BETWEEN THE SUT STATE
             // AND THE STARTSTATE ARGUMENT, OUTPUT A NOTICE.  CONTINUE RUNNING.
-            if (inSession)
+            if (modelInSession)
             {
                 // confirm the service is running
                 // for Java, look for the pid or process status.
@@ -352,87 +350,143 @@ namespace TodoAPIsAdapterExecution
                 // confirm the service is not running
             }
 
-            switch (activeTodos)
+            if (modelInSession)
             {
-                case ActiveTodos.Zero:
-                    // confirm the service has zero Todos
-                    break;
-                case ActiveTodos.Some:
-                    // confirm the service has between zero and max todos
-                    break;
-                case ActiveTodos.Max:
-                    // confirm the service has maximum todos
-                    break;
-                default:
-                    Console.WriteLine("ERROR: Unknown Todos Class '{0}' AdapterTransition()", activeTodos.ToString());
-                    break;
-            }
+                foreach (TodoItem t in sutTodos.todos)
+                {
+                    if (t.doneStatus)
+                    {
+                        SUTresolvedTodosCount++;
+                    }
+                    else
+                    {
+                        SUTactiveTodosCount++;
+                    }
+                }
 
-            switch (resolvedTodos)
+                Console.WriteLine("{4} SUT:model todo count {0}:{1} active, {2}:{3} resolved", SUTactiveTodosCount, activeTodosCount, SUTresolvedTodosCount, resolvedTodosCount, prefix);
+
+                if (activeTodosCount != SUTactiveTodosCount)
+                {
+                    Console.WriteLine("PROBLEM: SUT {0} and model {1} active todos count differ.", SUTactiveTodosCount, activeTodosCount);
+                    comparable = false;
+                }
+
+                if (resolvedTodosCount != SUTresolvedTodosCount)
+                {
+                    Console.WriteLine("PROBLEM: SUT {0} and model {1} resolved todos count differ.", SUTresolvedTodosCount, resolvedTodosCount);
+                    comparable = false;
+                }
+
+                switch (modelActiveTodos)
+                {
+                    case ActiveTodos.Zero:
+                        if (activeTodosCount != 0)
+                        {
+                            Console.WriteLine("MODEL ERROR: Active todos category is Zero when count is {0}", activeTodosCount);
+                            comparable = false;
+                        }
+                        break;
+                    case ActiveTodos.Some:
+                        if (activeTodosCount < 1)
+                        {
+                            Console.WriteLine("MODEL ERROR: Active todos category is Some when counts are active {0}, resolved {1}, max {2}", activeTodosCount, resolvedTodosCount, maximumTodosCount);
+                            comparable = false;
+                        }
+                        break;
+                    case ActiveTodos.Max:
+                        if (activeTodosCount + resolvedTodosCount != maximumTodosCount)
+                        {
+                            Console.WriteLine("MODEL ERROR: Active todos category is Max when counts are max {0} vs active {1} + resolved {2}", maximumTodosCount, activeTodosCount, resolvedTodosCount);
+                            comparable = false;
+                        }
+                        break;
+                    default:
+                        Console.WriteLine("ERROR: Unknown Todos Class '{0}' AdapterTransition()", modelActiveTodos.ToString());
+                        break;
+                }
+
+                switch (modelResolvedTodos)
+                {
+                    case ResolvedTodos.Zero:
+                        if (resolvedTodosCount != 0)
+                        {
+                            Console.WriteLine("MODEL ERROR: Resolved todos category is Zero when count is {0}", resolvedTodosCount);
+                            comparable = false;
+                        }
+                        break;
+                    case ResolvedTodos.Some:
+                        if (resolvedTodosCount < 1)
+                        {
+                            Console.WriteLine("MODEL ERROR: Resolved todos category is Some when counts are active {0}, resolved {1}, max {2}", activeTodosCount, resolvedTodosCount, maximumTodosCount);
+                            comparable = false;
+                        }
+                        break;
+                    case ResolvedTodos.Max:
+                        if (resolvedTodosCount + activeTodosCount != maximumTodosCount)
+                        {
+                            Console.WriteLine("MODEL ERROR: Resolved todos category is Max when counts are max {0} vs active {1} + resolved {2}", maximumTodosCount, activeTodosCount, resolvedTodosCount);
+                            comparable = false;
+                        }
+                        break;
+                    default:
+                        Console.WriteLine("ERROR: Unknown Todos Class '{0}' AdapterTransition()", modelResolvedTodos.ToString());
+                        break;
+                }
+            }
+            return comparable;
+        }
+
+        // Interface method
+        public string AdapterTransition(string startState, string action)
+        {
+            string observed = "";
+
+            string[] vState = startState.Split(", ");
+            bool inSessionStart = vState[0].Contains("True") ? true : false;
+            string arg = vState[1].Split(".")[1];
+            ResolvedTodos resolvedStart = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
+            arg = vState[2].Split(".")[1];
+            ActiveTodos activeStart = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
+            bool atMaxStart = vState[3].Contains("True") ? true : false;
+
+            actionCount++;
+
+            Console.WriteLine("{2} {3} <<<<{0,6} **** {1,30} ****", actionCount, action, activeStart, resolvedStart);
+
+            TodosList sutTodos = inSessionStart ? GetTodosList() : new TodosList();
+
+            if (!compareSUTtoModelState("BEFORE", inSessionStart, sutTodos, activeStart, resolvedStart, atMaxStart))
             {
-                case ResolvedTodos.Zero:
-                    // confirm the service has zero Todos
-                    break;
-                case ResolvedTodos.Some:
-                    // confirm the service has between zero and max todos
-                    break;
-                case ResolvedTodos.Max:
-                    // confirm the service has maximum todos
-                    break;
-                default:
-                    Console.WriteLine("ERROR: Unknown Todos Class '{0}' AdapterTransition()", resolvedTodos.ToString());
-                    break;
+                Console.WriteLine("Stopping test run: SUT and Model states differ before {0}", action);
+                Environment.Exit(-100);
             }
 
             // Define the acceptHeaders list just once, outside the
             // switch where they are used in several cases.
             List<string> acceptHeaders = new List<string>();
             StringContent body;
-            int selectedActiveTodo = activeTodosCount > 0 ? random.Next((int)activeTodosCount) + 1 : 0;
-            int selectedResolvedTodo = resolvedTodosCount > 0 ? random.Next((int)resolvedTodosCount) + 1 : 0;
             string response = String.Empty;
-            TodosList todos = inSession ? GetTodosList() : new TodosList();
             TodoItem todo = new TodoItem();
             TodoItemNoId todoNoId = new TodoItemNoId();
-            int quantity;
+            uint quantity;
+
+            // We need to know the start state abstract values to decide how to
+            // constrain the addQuantity, resolveQuantity, and activateQuantity.
+            string endState = GetEndState(startState, action);
+            vState = endState.Split(", ");
+            bool inSessionEnd = vState[0].Contains("True") ? true : false;
+            arg = vState[1].Split(".")[1];
+            ResolvedTodos resolvedEnd = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
+            arg = vState[2].Split(".")[1];
+            ActiveTodos activeEnd = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
+            bool atMaxEnd = vState[3].Contains("True") ? true : false;
+
+
             uint headroom = maximumTodosCount - activeTodosCount - resolvedTodosCount;
-            int someTodosCount = random.Next((int)activeTodosCount + (int)resolvedTodosCount) + 1;
-            bool doneStatus = random.Next(1) == 0 ? true : false;
-            int SUTactiveTodosCount = 0;
-            int SUTresolvedTodosCount = 0;
-
-            if (inSession)
-            {
-                foreach (TodoItem t in todos.todos)
-                {
-                    if (t.doneStatus)
-                    {
-                        SUTresolvedTodosCount++;
-                        if (selectedResolvedTodo == SUTresolvedTodosCount)
-                        {
-                            selectedResolvedTodo = t.id; // realize the selectedResolvedTodo ID
-                        }
-                    }
-                    else
-                    {
-                        SUTactiveTodosCount++;
-                        if (selectedActiveTodo == SUTactiveTodosCount)
-                        {
-                            selectedActiveTodo = t.id;
-                        }
-                    }
-                }
-
-                if (activeTodosCount != SUTactiveTodosCount)
-                {
-                    Console.WriteLine("PROBLEM: SUT {0} and model {1} active todos count differ.", SUTactiveTodosCount, activeTodosCount);
-                }
-
-                if (resolvedTodosCount != SUTresolvedTodosCount)
-                {
-                    Console.WriteLine("PROBLEM: SUT {0} and model {1} resolved todos count differ.", SUTresolvedTodosCount, resolvedTodosCount);
-                }
-            }
+            addQuantity = headroom < 2 ? 0 : (uint)random.Next((int)headroom - 2) + 1;
+            resolveQuantity = activeTodosCount < 2 ? 0 : (uint)random.Next((int)activeTodosCount - 2) + 1;
+            activateQuantity = resolvedTodosCount < 2 ? 0 : (uint)random.Next((int)resolvedTodosCount - 2) + 1;
 
             try
             {
@@ -486,6 +540,7 @@ namespace TodoAPIsAdapterExecution
                             // exception at the caller.
                             //            Environment.Exit(-15);
                         }
+                        inSessionStart = false;
                         break;
 
                     case getTodosList:
@@ -493,16 +548,17 @@ namespace TodoAPIsAdapterExecution
                         break;
 
                     case editSomeTodos:
-                        if (someTodosCount == 0)
-                        {
-                            break;
-                        }
+                        // Don't resolve or activate as part of edit, because that
+                        // could change the size category of the active or resolved
+                        // todos.  That is, you could go from zero to some, or from
+                        // max to some, and that would not match the model.
                         acceptHeaders.Add("application/json");
-                        quantity = someTodosCount;
 
                         bool postThisEdit = false;
 
-                        foreach( TodoItem t in todos.todos )
+                        quantity = (uint)random.Next((int)(activeTodosCount + resolvedTodosCount));
+
+                        foreach( TodoItem t in sutTodos.todos )
                         {
                             postThisEdit = !postThisEdit;
                             if (quantity == 0)
@@ -512,20 +568,9 @@ namespace TodoAPIsAdapterExecution
                             todo.id = t.id;
                             todo.title = actionCount.ToString() + "editSomeTodos";
                             todo.description = (postThisEdit ? "POST;" : "PUT;") + t.description;
-                            if (t.doneStatus != doneStatus)
-                            {
-                                if (doneStatus)
-                                {
-                                    resolvedTodosCount++;
-                                    activeTodosCount--;
-                                }
-                                else
-                                {
-                                    resolvedTodosCount--;
-                                    activeTodosCount++;
-                                }
-                            }
-                            todo.doneStatus = doneStatus;
+                            todo.doneStatus = t.doneStatus;
+                            quantity--;
+                            Console.Write("-");
 
                             body = new StringContent(JsonSerializer.Serialize(todo));
 
@@ -545,20 +590,29 @@ namespace TodoAPIsAdapterExecution
                                     Environment.Exit(-33);
                                 }
                             }
-                            quantity--;
                         }
+                        Console.WriteLine(" ");
                         break;
 
                     case addSomeActiveTodos:
-                        if (headroom < 2)
+                        if (atMaxStart)
                         {
+                            Console.WriteLine("ERROR: addSomeActiveTodos is atMaxStart");
                             break;
                         }
 
-                        quantity = random.Next((int)headroom - 1) + 1;
+                        addQuantity = headroom == 1 ? 0 : (uint)random.Next((int)(headroom - 2) + 1);
+
+                        if (activeTodosCount == 0 && addQuantity == 0)
+                        {
+                            addQuantity = 1; // Necessary to get to model end state.
+                        }
+
+                        Console.WriteLine("headroom = {1}, addQuantity = {0}", addQuantity, headroom);
+
                         acceptHeaders.Add("application/json");
 
-                        for (var k = 0; k < quantity; k++)
+                        for (var k = 0; k < addQuantity; k++)
                         {
                             todoNoId.title = actionCount.ToString() + "AddSomeActiveTodos";
                             todoNoId.doneStatus = false;
@@ -570,23 +624,31 @@ namespace TodoAPIsAdapterExecution
                                 Console.WriteLine("Add Some Active Todos failed.");
                                 Environment.Exit(-7);
                             }
-                            else
-                            {
-                                activeTodosCount++;
-                            }
+                            Console.Write("+");
                         }
+                        Console.WriteLine(" ");
+                        activeTodosCount += addQuantity;
                         break;
 
                     case addSomeResolvedTodos:
-                        if (headroom < 2)
+                        if (atMaxStart)
                         {
+                            Console.WriteLine("ERROR: addSomeResolvedTodos is atMaxStart");
                             break;
                         }
 
-                        quantity = random.Next((int)headroom - 1) + 1;
+                        addQuantity = headroom == 1 ? 0 : (uint)random.Next((int)(headroom - 2) + 1);
+
+                        if (resolvedTodosCount == 0 && addQuantity == 0)
+                        {
+                            addQuantity = 1; // Necessary to get to model end state.
+                        }
+
+                        Console.WriteLine("headroom = {1}, addQuantity = {0}", addQuantity, headroom);
+
                         acceptHeaders.Add("application/json");
 
-                        for (var k = 0; k < quantity; k++)
+                        for (var k = 0; k < addQuantity; k++)
                         {
                             todoNoId.title = actionCount.ToString() + "AddSomeResolvedTodos";
                             todoNoId.doneStatus = true;
@@ -598,17 +660,16 @@ namespace TodoAPIsAdapterExecution
                                 Console.WriteLine("Add Some Resolved Todos failed.");
                                 Environment.Exit(-27);
                             }
-                            else
-                            {
-                                resolvedTodosCount++;
-                            }
+                            Console.Write("+");
                         }
+                        Console.WriteLine(" ");
+                        resolvedTodosCount += addQuantity;
                         break;
 
                     case addAllActiveTodos:
                         acceptHeaders.Add("application/json");
 
-                        for (var k = activeTodosCount + resolvedTodosCount; k < maximumTodosCount; k++)
+                        for (var k = 0; k < headroom; k++)
                         {
                             todoNoId.title = actionCount.ToString() + "AddAllActiveTodos";
                             todoNoId.doneStatus = false;
@@ -620,20 +681,19 @@ namespace TodoAPIsAdapterExecution
                                 Console.WriteLine("Add All Active Todos failed.");
                                 Environment.Exit(-3);
                             }
-                            else
-                            {
-                                activeTodosCount++;
-                            }
+                            Console.Write("+");
                         }
+                        Console.WriteLine(" ");
+                        activeTodosCount += headroom;
                         break;
 
                     case addAllResolvedTodos:
                         acceptHeaders.Add("application/json");
 
-                        for (var k = activeTodosCount + resolvedTodosCount; k < maximumTodosCount; k++)
+                        for (var k = 0; k < headroom; k++)
                         {
                             todoNoId.title = actionCount.ToString() + "AddAllResolvedTodos";
-                            todoNoId.doneStatus = false;
+                            todoNoId.doneStatus = true;
                             todoNoId.description = "Created by POST method";
                             body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
@@ -642,17 +702,16 @@ namespace TodoAPIsAdapterExecution
                                 Console.WriteLine("Add All Resolved Todos failed.");
                                 Environment.Exit(-23);
                             }
-                            else
-                            {
-                                resolvedTodosCount++;
-                            }
+                            Console.Write("+");
                         }
+                        Console.WriteLine(" ");
+                        resolvedTodosCount += headroom;
                         break;
 
                     case deleteAllActiveTodos:
                         acceptHeaders.Add("application/json");
 
-                        foreach (TodoItem t in todos.todos)
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (!t.doneStatus)
                             {
@@ -661,18 +720,17 @@ namespace TodoAPIsAdapterExecution
                                     Console.WriteLine("Delete All Active Todos failed.");
                                     Environment.Exit(-5);
                                 }
-                                else
-                                {
-                                    activeTodosCount--;
-                                }
+                                Console.Write("-");
                             }
                         }
+                        Console.WriteLine(" ");
+                        activeTodosCount = 0;
                         break;
 
                     case deleteAllResolvedTodos:
                         acceptHeaders.Add("application/json");
 
-                        foreach (TodoItem t in todos.todos)
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (t.doneStatus)
                             {
@@ -681,49 +739,62 @@ namespace TodoAPIsAdapterExecution
                                     Console.WriteLine("Delete All Resolved Todos failed.");
                                     Environment.Exit(-25);
                                 }
-                                else
-                                {
-                                    resolvedTodosCount--;
-                                }
+                                Console.Write("-");
                             }
                         }
+                        Console.WriteLine(" ");
+                        resolvedTodosCount = 0;
                         break;
 
                     case deleteAllTodos:
                         acceptHeaders.Add("application/json");
-                        foreach (TodoItem t in todos.todos)
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", t.id)))
                             {
                                 Console.WriteLine("Delete All Todos failed.");
                                 Environment.Exit(-24);
                             }
-                            else
-                            {
-                                if (t.doneStatus)
-                                {
-                                    resolvedTodosCount--;
-                                }
-                                else
-                                {
-                                    activeTodosCount--;
-                                }
-                            }
+                            Console.Write("-");
                         }
-
+                        Console.WriteLine(" ");
+                        activeTodosCount = 0;
+                        resolvedTodosCount = 0;
                         break;
 
                     case deleteSomeActiveTodos:
-                        if (activeTodosCount < 2)
+                        acceptHeaders.Add("application/json");
+
+                        if (activeTodosCount == 1)
                         {
+                            if (atMaxStart)
+                            { // We need to delete a resolved todo so that activeTodos and resolvedTodos
+                                // both fit the Some category.
+                                Console.WriteLine("Deleting a resolved todo in deleteSomeActiveTodos to reach correct abstract end state");
+
+                                foreach (TodoItem t in sutTodos.todos)
+                                {
+                                    if (!t.doneStatus)
+                                    {
+                                        continue;
+                                    }
+                                    if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", t.id)))
+                                    {
+                                        Console.WriteLine("Delete Some Active Todos failed.");
+                                        Environment.Exit(-17);
+                                    }
+                                    Console.WriteLine("X");
+                                    resolvedTodosCount--;
+                                    break; // we only need to delete one..
+                                }
+                            }
                             break;
                         }
 
-                        quantity = random.Next((int)activeTodosCount - 1) + 1;
+                        quantity = (uint)random.Next((int)activeTodosCount - 2) + 1;
+                        activeTodosCount -= quantity;
 
-                        acceptHeaders.Add("application/json");
-
-                        foreach (TodoItem t in todos.todos)
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (t.doneStatus)
                             {
@@ -734,31 +805,49 @@ namespace TodoAPIsAdapterExecution
                                 Console.WriteLine("Delete Some Active Todos failed.");
                                 Environment.Exit(-16);
                             }
-                            else
+                            quantity--;
+                            Console.Write("-");
+                            if (quantity == 0)
                             {
-                                activeTodosCount--;
-                                quantity--;
-                                if (quantity == 0)
-                                {
-                                    break;
-                                }
+                                break;
                             }
                         }
+                        Console.WriteLine(" ");
                         break;
 
                     case deleteSomeResolvedTodos:
                         acceptHeaders.Add("application/json");
 
-                        if (resolvedTodosCount < 2)
+                        if (resolvedTodosCount == 1)
                         {
+                            if (atMaxStart)
+                            { // We need to delete an active todo so that activeTodos and resolvedTodos
+                                // both fit the Some category.
+                                Console.WriteLine("Deleting an active todo in deleteSomeResolvedTodos to reach correct abstract end state");
+
+                                foreach (TodoItem t in sutTodos.todos)
+                                {
+                                    if (t.doneStatus)
+                                    {
+                                        continue;
+                                    }
+                                    if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", t.id)))
+                                    {
+                                        Console.WriteLine("Delete Some Resolved Todos failed.");
+                                        Environment.Exit(-19);
+                                    }
+                                    Console.WriteLine("X");
+                                    activeTodosCount--;
+                                    break; // we only need to delete one..
+                                }
+                            }
                             break;
                         }
 
-                        quantity = random.Next((int)resolvedTodosCount - 1) + 1;
+                        quantity = (uint)random.Next((int)resolvedTodosCount - 2) + 1;
+                        resolvedTodosCount -= quantity;
 
-                        acceptHeaders.Add("application/json");
-
-                        foreach (TodoItem t in todos.todos)
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (!t.doneStatus)
                             {
@@ -769,133 +858,173 @@ namespace TodoAPIsAdapterExecution
                                 Console.WriteLine("Delete Some Resolved Todos failed.");
                                 Environment.Exit(-25);
                             }
-                            else
+                            quantity--;
+                            Console.Write("-");
+                            if (quantity == 0)
                             {
-                                resolvedTodosCount--;
-                                quantity--;
-                                if (quantity == 0)
-                                {
-                                    break;
-                                }
+                                break;
                             }
                         }
+                        Console.WriteLine(" ");
                         break;
 
                     case resolveSomeActiveTodos:
-                        if (activeTodosCount < 2)
+                        acceptHeaders.Add("application/json");
+                        // If activeTodosCount == 1 and ResolvedTodosCount == 0
+                        // we must add a resolved todo to get to the right end state
+                        if (activeTodosCount == 1 && resolvedTodosCount == 0)
+                        {
+                            Console.WriteLine("Adding a resolved todo in resolveSomeActiveTodos to achieve correct end state.");
+                            todoNoId.title = actionCount.ToString() + "ResolveSomeActiveTodos";
+                            todoNoId.doneStatus = true;
+                            todoNoId.description = "Created by POST method";
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId));
+
+                            if (!executer.PostRequest(acceptHeaders, "todos", body))
+                            {
+                                Console.WriteLine("Resolve Some Active Todos failed.");
+                                Environment.Exit(-28);
+                            }
+                            Console.WriteLine("+");
+                            resolvedTodosCount++;
+                            break;
+                        }
+
+                        if (activeTodosCount == 1)
                         {
                             break;
                         }
 
-                        quantity = random.Next((int)activeTodosCount - 1) + 1;
+                        quantity = (uint)random.Next((int)activeTodosCount - 2) + 1;
+                        activeTodosCount -= quantity;
+                        resolvedTodosCount += quantity;
 
-                        acceptHeaders.Add("application/json");
-
-                        foreach (TodoItem t in todos.todos)
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (!t.doneStatus)
                             {
-                                t.doneStatus = true;
-                                body = new StringContent(JsonSerializer.Serialize(t));
+                                todoNoId.doneStatus = true;
+                                todoNoId.title = t.title;
+                                todoNoId.description = t.description;
+                                body = new StringContent(JsonSerializer.Serialize(todoNoId));
                                 if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
                                 {
                                     Console.WriteLine("Resolve Some Active Todos Failed");
                                     Environment.Exit(-11);
                                 }
                                 quantity--;
-                                resolvedTodosCount++;
-                                activeTodosCount--;
+                                Console.Write("*");
                                 if (quantity == 0)
                                 {
                                     break;
                                 }
                             }
                         }
+                        Console.WriteLine(" ");
                         break;
 
                     case activateSomeResolvedTodos:
-                        if (resolvedTodosCount < 2)
+                        acceptHeaders.Add("application/json");
+                        // If activeTodosCount == 0 and ResolvedTodosCount == 1
+                        // we must add an active todo to get to the right end state
+                        if (activeTodosCount == 0 && resolvedTodosCount == 1)
+                        {
+                            Console.WriteLine("Adding an active todo in activateSomeResolvedTodos to achieve correct end state.");
+                            todoNoId.title = actionCount.ToString() + "ActivateSomeResolvedTodos";
+                            todoNoId.doneStatus = false;
+                            todoNoId.description = "Created by POST method";
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId));
+
+                            if (!executer.PostRequest(acceptHeaders, "todos", body))
+                            {
+                                Console.WriteLine("Activate Some Resolved Todos failed.");
+                                Environment.Exit(-29);
+                            }
+                            Console.WriteLine("+");
+                            activeTodosCount++;
+                            break;
+                        }
+
+                        if (resolvedTodosCount == 1)
                         {
                             break;
                         }
 
-                        quantity = random.Next((int)resolvedTodosCount - 1) + 1;
+                        quantity = (uint)random.Next((int)resolvedTodosCount - 2) + 1;
+                        resolvedTodosCount -= quantity;
+                        activeTodosCount += quantity;
 
-                        acceptHeaders.Add("application/json");
-
-                        foreach (TodoItem t in todos.todos)
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (t.doneStatus)
                             {
-                                t.doneStatus = false;
-                                body = new StringContent(JsonSerializer.Serialize(t));
+                                todoNoId.doneStatus = false;
+                                todoNoId.title = t.title;
+                                todoNoId.description = t.description;
+                                body = new StringContent(JsonSerializer.Serialize(todoNoId));
                                 if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
                                 {
                                     Console.WriteLine("Activate Some Resolved Todos Failed");
                                     Environment.Exit(-21);
                                 }
                                 quantity--;
-                                resolvedTodosCount--;
-                                activeTodosCount++;
+                                Console.Write("*");
                                 if (quantity == 0)
                                 {
                                     break;
                                 }
                             }
                         }
+                        Console.WriteLine(" ");
                         break;
 
                     case resolveAllActiveTodos:
-                        if (activeTodosCount == 0)
-                        {
-                            break;
-                        }
-
                         acceptHeaders.Add("application/json");
 
-                        foreach (TodoItem t in todos.todos)
+                        resolvedTodosCount += activeTodosCount;
+                        activeTodosCount = 0;
+
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (!t.doneStatus)
                             {
-                                t.doneStatus = true;
-                                body = new StringContent(JsonSerializer.Serialize(t));
+                                todoNoId.doneStatus = true;
+                                todoNoId.title = t.title;
+                                todoNoId.description = t.description;
+                                body = new StringContent(JsonSerializer.Serialize(todoNoId));
                                 if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
                                 {
                                     Console.WriteLine("Resolve All Resolved Todos Failed");
                                     Environment.Exit(-32);
                                 }
-                                resolvedTodosCount++;
-                                activeTodosCount--;
                             }
                         }
                         break;
 
                     case activateAllResolvedTodos:
-                        if (resolvedTodosCount == 0)
-                        {
-                            break;
-                        }
-
                         acceptHeaders.Add("application/json");
 
-                        foreach (TodoItem t in todos.todos)
+                        activeTodosCount += resolvedTodosCount;
+                        resolvedTodosCount = 0;
+
+                        foreach (TodoItem t in sutTodos.todos)
                         {
                             if (t.doneStatus)
                             {
-                                t.doneStatus = false;
-                                body = new StringContent(JsonSerializer.Serialize(t));
+                                todoNoId.doneStatus = false;
+                                todoNoId.title = t.title;
+                                todoNoId.description = t.description;
+                                body = new StringContent(JsonSerializer.Serialize(todoNoId));
                                 if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
                                 {
                                     Console.WriteLine("Activate All Resolved Todos Failed");
                                     Environment.Exit(-22);
                                 }
-                                resolvedTodosCount--;
-                                activeTodosCount++;
                             }
                         }
                         break;
 
-                    case showDocs:
+                    case getDocs:
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
@@ -921,6 +1050,16 @@ namespace TodoAPIsAdapterExecution
                         Console.WriteLine("ERROR: Unknown action '{0}' in AdapterTransition()", action);
                         break;
                 }
+
+                sutTodos = inSessionEnd ? GetTodosList() : new TodosList();
+
+                if (!compareSUTtoModelState("AFTER", inSessionEnd, sutTodos, activeEnd, resolvedEnd, atMaxEnd))
+                {
+                    Console.WriteLine("Stopping test run: SUT and Model states differ after {0}", action);
+                    Environment.Exit(-101);
+                }
+                Console.WriteLine("****{0,6} **** {1,30} >>>> {2} {3}", actionCount, action, activeEnd, resolvedEnd);
+
             }
             catch (Exception e)
             {
@@ -932,6 +1071,10 @@ namespace TodoAPIsAdapterExecution
             if (waitForObserverKeystroke)
             {
                 var keyValue = Console.ReadKey();
+            }
+            else
+            {
+                System.Threading.Thread.Sleep(20);
             }
 
             // 1.determine running state value
@@ -959,19 +1102,20 @@ namespace TodoAPIsAdapterExecution
             // one state in this object.
             string[] vState = startState.Split(", ");
             bool inSession = vState[0].Contains("True") ? true : false;
-            string arg = vState[1].Split(".")[1];
-            ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
-            arg = vState[2].Split(".")[1];
-            ActiveTodos activeTodos = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
-
             if (!inSession)
             {
                 actions.Add(startSession);
                 return actions;
             }
 
+            string arg = vState[1].Split(".")[1];
+            ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
+            arg = vState[2].Split(".")[1];
+            ActiveTodos activeTodos = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
+            bool atMaxTodos = vState[3].Contains("True") ? true : false;
+
             actions.Add(getTodosList);
-            actions.Add(showDocs);
+            actions.Add(getDocs);
             actions.Add(getHeartbeat);
 
             if (includeSelfLinkNoise)
@@ -985,26 +1129,9 @@ namespace TodoAPIsAdapterExecution
             switch (activeTodos)
             {
                 case ActiveTodos.Zero:
-                    // This if condition is an example of
-                    // the adapter execution implementation details
-                    // meeting the abstractness of the test model.
-                    // Without the adapter, add*ActiveTodos would
-                    // be available because we don't know the actual
-                    // number of active, resolved, or maximum todos
-                    // during model time.  During execution, however,
-                    // we keep track of the real numbers and that
-                    // affects the set of actions that are really
-                    // available at a particular state.
-                    // During modeling we don't actually change the
-                    // counts of active, resolved, or maximum todos,
-                    // and we choose those initial values so the
-                    // if condition is always true during modeling.
-                    if (activeTodosCount + resolvedTodosCount < maximumTodosCount)
+                    if (!atMaxTodos)
                     {
                         actions.Add(addAllActiveTodos);
-                    }
-                    if (activeTodosCount + resolvedTodosCount + 1 < maximumTodosCount)
-                    {
                         actions.Add(addSomeActiveTodos);
                     }
                     break;
@@ -1015,12 +1142,9 @@ namespace TodoAPIsAdapterExecution
                     actions.Add(resolveSomeActiveTodos);
                     actions.Add(resolveAllActiveTodos);
                     // See comment on the if condition above.  Same is true here.
-                    if (activeTodosCount + resolvedTodosCount + 1 < maximumTodosCount)
-                    {
+                    if (!atMaxTodos)
+                    { 
                         actions.Add(addSomeActiveTodos);
-                    }
-                    if (activeTodosCount + resolvedTodosCount < maximumTodosCount)
-                    {
                         actions.Add(addAllActiveTodos);
                     }
                     break;
@@ -1038,12 +1162,9 @@ namespace TodoAPIsAdapterExecution
             switch (resolvedTodos)
             {
                 case ResolvedTodos.Zero:
-                    if (activeTodosCount + resolvedTodosCount + 1 < maximumTodosCount)
+                    if (!atMaxTodos)
                     {
                         actions.Add(addSomeResolvedTodos);
-                    }
-                    if (activeTodosCount + resolvedTodosCount < maximumTodosCount)
-                    {
                         actions.Add(addAllResolvedTodos);
                     }
                     break;
@@ -1052,12 +1173,9 @@ namespace TodoAPIsAdapterExecution
                     {
                         actions.Add(deleteAllTodos);
                     }
-                    if (activeTodosCount + resolvedTodosCount + 1 < maximumTodosCount)
+                    if (!atMaxTodos)
                     {
                         actions.Add(addSomeResolvedTodos);
-                    }
-                    if (activeTodosCount + resolvedTodosCount < maximumTodosCount)
-                    {
                         actions.Add(addAllResolvedTodos);
                     }
                     actions.Add(activateSomeResolvedTodos);
@@ -1097,6 +1215,7 @@ namespace TodoAPIsAdapterExecution
             ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
             arg = vState[2].Split(".")[1];
             ActiveTodos activeTodos = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
+            bool atMaxTodos = vState[3].Contains("True") ? true : false;
 
             switch (action)
             {
@@ -1106,79 +1225,90 @@ namespace TodoAPIsAdapterExecution
                 case endSession:
                     inSession = false;
                     break;
-                case editSomeTodos:
+                case addSomeResolvedTodos:
+                    resolvedTodos = ResolvedTodos.Some;
+                    atMaxTodos = false;
                     break;
                 case addSomeActiveTodos:
-                    if (activeTodos == ActiveTodos.Zero)
-                    {
-                        activeTodos = ActiveTodos.Some;
-                    }
+                    activeTodos = ActiveTodos.Some;
+                    atMaxTodos = false;
                     break;
-                case addSomeResolvedTodos:
-                    if (resolvedTodos == ResolvedTodos.Zero)
-                    {
-                        resolvedTodos = ResolvedTodos.Some;
-                    }
+                case addAllResolvedTodos:
+                    resolvedTodos = ResolvedTodos.Max;
+                    atMaxTodos = true;
+                    break;
+                case addAllActiveTodos:
+                    activeTodos = ActiveTodos.Max;
+                    atMaxTodos = true;
+                    break;
+                case editSomeTodos:                        
                     break;
                 case activateSomeResolvedTodos:
-                    if (activeTodos == ActiveTodos.Zero)
+                    if (!(atMaxTodos && activeTodos == ActiveTodos.Max))
                     {
-                        activeTodos = ActiveTodos.Some;
+                        if (activeTodos == ActiveTodos.Zero)
+                        {
+                            activeTodos = ActiveTodos.Some;
+                        }
                     }
-                    if (resolvedTodos == ResolvedTodos.Max)
+                    resolvedTodos = ResolvedTodos.Some;
+                    break;
+                case resolveSomeActiveTodos:
+                    if (!(atMaxTodos && resolvedTodos == ResolvedTodos.Max))
                     {
-                        resolvedTodos = ResolvedTodos.Some;
+                        if (resolvedTodos == ResolvedTodos.Zero)
+                        {
+                            resolvedTodos = ResolvedTodos.Some;
+                        }
                     }
+                    activeTodos = ActiveTodos.Some;
+                    break;
+                case activateAllResolvedTodos:
+                    resolvedTodos = ResolvedTodos.Zero;
+                    activeTodos = atMaxTodos ? ActiveTodos.Max : ActiveTodos.Some;
+                    break;
+                case resolveAllActiveTodos:
+                    activeTodos = ActiveTodos.Zero;
+                    resolvedTodos = atMaxTodos ? ResolvedTodos.Max : ResolvedTodos.Some;
+                    break;
+                case deleteSomeResolvedTodos:
+                    resolvedTodos = ResolvedTodos.Some;
+                    activeTodos = activeTodos == ActiveTodos.Zero ? ActiveTodos.Zero : ActiveTodos.Some;
+                    atMaxTodos = false;
+                    break;
+                case deleteSomeActiveTodos:
+                    activeTodos = ActiveTodos.Some;
+                    resolvedTodos = resolvedTodos == ResolvedTodos.Zero ? ResolvedTodos.Zero : ResolvedTodos.Some;
+                    atMaxTodos = false;
+                    break;
+                case deleteAllResolvedTodos:
+                    resolvedTodos = ResolvedTodos.Zero;
+                    activeTodos = activeTodos == ActiveTodos.Zero ? ActiveTodos.Zero : ActiveTodos.Some;
+                    atMaxTodos = false;
                     break;
                 case deleteAllActiveTodos:
                     activeTodos = ActiveTodos.Zero;
+                    resolvedTodos = resolvedTodos == ResolvedTodos.Zero ? ResolvedTodos.Zero : ResolvedTodos.Some;
+                    atMaxTodos = false;
                     break;
                 case deleteAllTodos:
                     resolvedTodos = ResolvedTodos.Zero;
                     activeTodos = ActiveTodos.Zero;
-                    break;
-                case resolveSomeActiveTodos:
-                    if (activeTodos == ActiveTodos.Max)
-                    {
-                        activeTodos = ActiveTodos.Some;
-                    }
-                    if (resolvedTodos == ResolvedTodos.Zero)
-                    {
-                        resolvedTodos = ResolvedTodos.Some;
-                    }
-                    break;
-                case resolveAllActiveTodos:
-                    activeTodos = ActiveTodos.Zero;
-                    resolvedTodos = ResolvedTodos.Max;
-                    break;
-                case addAllActiveTodos:
-                    activeTodos = ActiveTodos.Max;
-                    break;
-                case addAllResolvedTodos:
-                    resolvedTodos = ResolvedTodos.Max;
-                    break;
-                case deleteAllResolvedTodos:
-                    resolvedTodos = ResolvedTodos.Zero;
-                    break;
-                case deleteSomeResolvedTodos:
-                    if (resolvedTodos == ResolvedTodos.Max)
-                    {
-                        resolvedTodos = ResolvedTodos.Some;
-                    }
-                    break;
-                case activateAllResolvedTodos:
-                    resolvedTodos = ResolvedTodos.Zero;
-                    activeTodos = ActiveTodos.Max;
+                    atMaxTodos = false;
                     break;
                 case invalidRequest:
                     break;
                 case getTodosList:
                     break;
+                case getDocs:
+                    break;
+                case getHeartbeat:
+                    break;
                 default:
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(inSession, resolvedTodos, activeTodos);
+            return StringifyStateVector(inSession, resolvedTodos, activeTodos, atMaxTodos);
         }
     }
 }

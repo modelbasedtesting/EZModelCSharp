@@ -386,6 +386,10 @@ namespace SynchronousHttpClientExecuter
             try
             {
                 process.Start();
+                // Give Java time to get the jar running, otherwise
+                // we won't get the first response from the service and
+                // we will report a problem - false positive.
+                System.Threading.Thread.Sleep(1000);
             }
             catch (Exception e)
             {

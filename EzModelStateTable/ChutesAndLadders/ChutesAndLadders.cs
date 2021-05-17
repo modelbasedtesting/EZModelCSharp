@@ -24,7 +24,7 @@ namespace ChutesAndLaddersExample
             ChutesAndLadders client = new ChutesAndLadders();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
 
-            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 10);
+            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 10, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (graph.GenerateGraph())
             {
@@ -40,7 +40,7 @@ namespace ChutesAndLaddersExample
                 // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
                 client.StopOnProblem = true;
 
-                graph.RandomDestinationCoverage("ChutesAndLadders", 3);
+                graph.RandomDestinationCoverage("ChutesAndLadders", 6);
             }
         }
     }
