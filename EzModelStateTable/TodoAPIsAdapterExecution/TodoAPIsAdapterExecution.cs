@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Text;
 using System.Net.Http;
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 using SynchronousHttpClientExecuter;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace TodoAPIsAdapterExecution
 {

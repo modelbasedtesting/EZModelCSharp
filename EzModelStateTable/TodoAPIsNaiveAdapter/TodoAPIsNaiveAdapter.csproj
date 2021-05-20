@@ -5,4 +5,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\EzModelStateTable\EzModelStateTable.csproj" />
+    <ProjectReference Include="..\SynchronousHttpClientExecuter\SynchronousHttpClientExecuter.csproj" />
+  </ItemGroup>
 </Project>

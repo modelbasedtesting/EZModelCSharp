@@ -18,9 +18,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
-// using System.Text.Json.Serialization;
 using System.Diagnostics;
-// using System.Globalization;
 
 namespace SeriousQualityEzModel
 {
@@ -2193,9 +2191,9 @@ function getHitColor(hitCount) {
 
             Process dotProc = Process.Start(layoutProgram, inputFile + " -Tsvg -o " + outputFile);
             Console.WriteLine("Producing {0} from {1}", outputFile, inputFile);
-            if (!dotProc.WaitForExit(60000))
+            if (!dotProc.WaitForExit(300000))
             {
-                Console.WriteLine("ERROR: Layout program {0} did not produce file {1} after 60 seconds of execution time.", layoutProgram, outputFile);
+                Console.WriteLine("ERROR: Layout program {0} did not produce file {1} after 300 seconds of execution time.", layoutProgram, outputFile);
                 dotProc.Kill(true);
             }
         }
