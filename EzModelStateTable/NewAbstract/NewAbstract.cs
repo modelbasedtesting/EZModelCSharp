@@ -93,16 +93,17 @@ namespace NewAbstract
             set => includeSelfLinkNoise = value;
         }
 
-        // TODO: Declare state variables
-        // Example:
-        string[] svNode = { "0,0", "0 < P+Q < max", "R,0", "0,S", "P+Q == max" };
 
-        // TODO: Declare transitions
-        // SUGGESTION: Choose "const string" as the transition
-        // data type whenever possible.  A "const string" value
-        // can be utilized in a switch case, which is useful in
-        // GetEndState().
-        // Example:
+        // State variables
+        const string s1 = "0,0";
+        const string s2 = "P>0 Q>0 P+Q<max";
+        const string s3 = "P>0 Q=0"; // "R>0 R,0";
+        const string s4 = "P=0 Q>0"; // "S>0 0,S";
+        const string s5 = "P>0 Q>0 P+Q=max";
+
+        string[] svNode = { s1, s2, s3, s4, s5 };
+
+        // Transitions
         const string actionA = "A"; // 0->1
         const string actionB = "B"; // 1->1
         const string actionC = "C"; // 1->4
@@ -147,39 +148,39 @@ namespace NewAbstract
 
             switch (startState)
             {
-                case "0,0":
-                    actions.Add(actionA);
+                case s1:
+//                    actions.Add(actionA);
                     actions.Add(actionJ);
-                    actions.Add(actionN);
-                    actions.Add(actionY);
+//                    actions.Add(actionN);
+//                    actions.Add(actionY);
                     actions.Add(actionAC);
                     break;
-                case "0 < P+Q < max":
+                case s2:
                     actions.Add(actionB);
                     actions.Add(actionC);
-                    actions.Add(actionE);
+//                    actions.Add(actionE);
                     actions.Add(actionF);
                     actions.Add(actionK);
                     break;
-                case "R,0":
+                case s3:
                     actions.Add(actionG);
                     actions.Add(actionH);
-                    actions.Add(actionR);
+//                    actions.Add(actionR);
                     actions.Add(actionAA);
                     actions.Add(actionAE);
                     break;
-                case "0,S":
+                case s4:
                     actions.Add(actionM);
-                    actions.Add(actionS);
+//                    actions.Add(actionS);
                     actions.Add(actionV);
                     actions.Add(actionAD);
                     actions.Add(actionAF);
                     break;
-                case "P+Q == max":
+                case s5:
                     actions.Add(actionD);
                     actions.Add(actionT);
                     actions.Add(actionW);
-                    actions.Add(actionZ);
+//                    actions.Add(actionZ);
                     actions.Add(actionAB);
                     break;
                 default:
