@@ -14,9 +14,9 @@ namespace TodoAPIsNaiveAdapter
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
             client.IncludeSelfLinkNoise = true;
-            client.AbstractTheState = true;
+            client.AbstractTheState = false;
 
-            EzModelGraph graph = new EzModelGraph(client, 2000, 300, 30, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 3000, 1000, 30, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -49,11 +49,11 @@ namespace TodoAPIsNaiveAdapter
 
             graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
 
-            client.NotifyAdapter = false;
+            client.NotifyAdapter = true;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
             client.StopOnProblem = true;
 
-            client.WaitForObserverKeystroke = true;
+            client.WaitForObserverKeystroke = false;
             graph.RandomDestinationCoverage("TodoAPIsNaiveAdapter", 2);
 
             // normal finish
@@ -142,18 +142,18 @@ namespace TodoAPIsNaiveAdapter
 
         bool svInSession = false;
         uint svResolvedTodos = 0; 
-        uint svActiveTodos = 3;
+        uint svActiveTodos = 10;
 
         uint activeTodosCount;
         uint resolvedTodosCount;
         uint actionCount = 0;
-        const uint maximumTodosCount = 3; // Arbitrary maximum
+        const uint maximumTodosCount = 12; // Arbitrary maximum
         Random random = new Random(DateTime.Now.Millisecond);
 
         const string startSession = "Start Session";
         const string endSession = "End Session";
-        const string getTodosList = "Get Todos List";
 
+        // Manipulating data in the todos list
         const string addActiveTodo = "Add an Active Todo";
         const string addMaximumActiveTodo = "Add Maximum Active Todo";
         const string addResolvedTodo = "Add a Resolved Todo";
@@ -168,8 +168,20 @@ namespace TodoAPIsNaiveAdapter
         const string activateResolvedTodo = "Activate a Resolved Todo";
         const string activateFinalResolvedTodo = "Activate Final Resolved Todo";
 
+        // Read-only actions
+        const string getTodosList = "Get Todos List";
         const string getDocs = "Get Documentation";
         const string getHeartbeat = "Get Service Heartbeat";
+        const string getChallenges = "Get Challenges List"; // *
+        const string getTodoById = "Get Specific Todo"; // *
+        const string getResolvedTodos = "Get Resolved Todos List"; // *
+        const string getTodosHead = "Get Todos HEAD"; // *
+        const string getTodosOPTIONS = "Get Todos OPTIONS"; // *
+        const string getXMLTodosList = "Get XML Todos List"; // *
+        const string getAnyTodosList = "Get Any Todos List"; // * Accept */*
+        const string getXMLJSONTodosList = "Prefer XML Todos List"; // * Accept XML, JSON
+        const string getNoAcceptTodosList = "Get No Accept Header Todos List"; // *
+
 
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
@@ -274,6 +286,18 @@ namespace TodoAPIsNaiveAdapter
             public IList<TodoItem> todos { get; set; }
         }
 
+        public class ChallengeItem
+        {
+            public string name { get; set; }
+            public string description { get; set; }
+            public bool status { get; set; } // true when challenge achieved, false otherwise
+        }
+
+        public class ChallengesList
+        {
+            public IList<ChallengeItem> challenges { get; set; }
+        }
+
         TodosList GetTodosList()
         {
             List<string> acceptHeaders = new List<string>();
@@ -373,6 +397,14 @@ namespace TodoAPIsNaiveAdapter
             Console.WriteLine("{2} {3} <<<<{0,6} **** {1,30} ****", actionCount, action, activeTodosCount, resolvedTodosCount);
 
             TodosList sutTodos = inSession ? GetTodosList() : new TodosList();
+            List<int> todoIds = new List<int>();
+            if (sutTodos.todos != null)
+            {
+                foreach (TodoItem t2 in sutTodos.todos)
+                {
+                    todoIds.Add(t2.id);
+                }
+            }
 
             if (!compareSUTtoModelState("BEFORE", inSession, sutTodos))
             {
@@ -389,6 +421,7 @@ namespace TodoAPIsNaiveAdapter
             TodoItemNoId todoNoId = new TodoItemNoId();
             int index;
             uint headroom = maximumTodosCount - activeTodosCount - resolvedTodosCount;
+            bool debuggerHugger = false;
 
             try
             {
@@ -446,6 +479,210 @@ namespace TodoAPIsNaiveAdapter
                         inSession = false;
                         break;
 
+                    case getChallenges:
+                        debuggerHugger = true;
+                        acceptHeaders.Add("application/json");
+
+                        ChallengesList challenges = new ChallengesList();
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "challenges"))
+                        {
+                            Console.WriteLine("Get Challenges List failed");
+                            Environment.Exit(-32);
+                        }
+                        try
+                        {
+                            response = executer.responseBody;
+//                            challenges = JsonSerializer.Deserialize<ChallengesList>(response);
+                            Console.WriteLine(response);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response for Get Challenges List");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
+                    case getTodoById:
+                        debuggerHugger = true;
+                        acceptHeaders.Add("application/json");
+
+                        int todoId = todoIds[random.Next(todoIds.Count)];
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "todos/" + todoId.ToString()))
+                        {
+                            Console.WriteLine("Get Todo by ID failed");
+                            Environment.Exit(-33);
+                        }
+                        try
+                        {
+                            response = executer.responseBody;
+                            // todo = JsonSerializer.Deserialize<TodoItem>(response);
+                            Console.WriteLine(response);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response for Get Todo by ID");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
+                    case getResolvedTodos:
+                        debuggerHugger = true;
+                        acceptHeaders.Add("application/json");
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "todos?doneStatus=true" ))
+                        {
+                            Console.WriteLine("Get Resolved Todos failed");
+                            Environment.Exit(-34);
+                        }
+                        try
+                        {
+                            response = executer.responseBody;
+                            // sutTodos = JsonSerializer.Deserialize<TodosList>(response);
+                            Console.WriteLine(response);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response for Get Resolved Todos");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
+                    case getTodosHead: // HEAD request on /todos
+                        debuggerHugger = true;
+                        acceptHeaders.Add("application/json");
+
+                        if (!executer.HeadRequest(acceptHeaders, "todos"))
+                        {
+                            Console.WriteLine("Get Todos HEAD failed");
+                            Environment.Exit(-35);
+                        }
+                        try
+                        {
+                            response = executer.response.Headers.ToString();
+                            Console.WriteLine(response);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response headers for Get Todos Head");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
+                    case getTodosOPTIONS: // OPTIONS request on /todos
+                        debuggerHugger = true;
+                        acceptHeaders.Add("application/json");
+
+                        if (!executer.OptionsRequest(acceptHeaders, "todos"))
+                        {
+                            Console.WriteLine("Get Todos OPTIONS failed");
+                            Environment.Exit(-36);
+                        }
+                        try
+                        {
+                            response = executer.response.Headers.ToString();
+                            Console.WriteLine(response);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response headers for Get Todos OPTIONS");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
+                    case getXMLTodosList: // Accept application/xml
+                        debuggerHugger = true;
+                        acceptHeaders.Add("application/xml");
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        {
+                            Console.WriteLine("Get XML Todos List failed");
+                            Environment.Exit(-42);
+                        }
+                        try
+                        {
+                            response = executer.responseBody;
+                            Console.WriteLine(response); // should look like XML
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response for Get XML Todos List");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
+                    case getAnyTodosList: // Accept */*
+                        debuggerHugger = true;
+                        acceptHeaders.Add("*/*");
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        {
+                            Console.WriteLine("Get Any Todos List failed");
+                            Environment.Exit(-43);
+                        }
+                        try
+                        {
+                            response = executer.responseBody;
+                            // sutTodos = JsonSerializer.Deserialize<TodosList>(response);
+                            Console.WriteLine(response);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response for Get Any Todos List");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
+                    case getXMLJSONTodosList: // Accept application/xml, application/json
+                        debuggerHugger = true;
+                        acceptHeaders.Add("application/xml");
+                        acceptHeaders.Add("application/json");
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        {
+                            Console.WriteLine("Get XML JSON Todos List failed");
+                            Environment.Exit(-44);
+                        }
+                        try
+                        {
+                            response = executer.responseBody;
+                            // sutTodos = JsonSerializer.Deserialize<TodosList>(response);
+                            Console.WriteLine(response); // Should be XML
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response for Get XML JSON Todos List");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
+                    case getNoAcceptTodosList: // No Accept header, expect JSON
+                        debuggerHugger = true;
+                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        {
+                            Console.WriteLine("Get No Accept Todos List failed");
+                            Environment.Exit(-45);
+                        }
+                        try
+                        {
+                            response = executer.responseBody;
+                            // sutTodos = JsonSerializer.Deserialize<TodosList>(response);
+                            Console.WriteLine(response);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception working on response for Get No Accept Todos List");
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+
                     case getTodosList:
                         // already done before coming into this switch statement..
                         break;
@@ -462,7 +699,7 @@ namespace TodoAPIsNaiveAdapter
                         bool postThisEdit = random.Next(1) == 0 ? true : false;
 
                         todo.id = t.id;
-                        todo.title = actionCount.ToString() + "editSomeTodos";
+                        todo.title = actionCount.ToString() + " EditATodo";
                         todo.description = (postThisEdit ? "POST;" : "PUT;") + t.description;
                         todo.doneStatus = t.doneStatus;
 
@@ -472,7 +709,7 @@ namespace TodoAPIsNaiveAdapter
                         {
                             if (!executer.PostRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
                             {
-                                Console.WriteLine("Edit Some Todos failed on POST {0}", t.id);
+                                Console.WriteLine("Edit a Todo failed on POST {0}", t.id);
                                 Environment.Exit(-3);
                             }
                         }
@@ -480,7 +717,7 @@ namespace TodoAPIsNaiveAdapter
                         {
                             if (!executer.PutRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
                             {
-                                Console.WriteLine("Edit Some Todos failed on PUT {0}", t.id);
+                                Console.WriteLine("Edit a Todo failed on PUT {0}", t.id);
                                 Environment.Exit(-33);
                             }
                         }
@@ -489,14 +726,30 @@ namespace TodoAPIsNaiveAdapter
                     case addActiveTodo:
                         acceptHeaders.Add("application/json");
 
-                        todoNoId.title = actionCount.ToString() + "Add an Active Todo";
+                        todoNoId.title = actionCount.ToString() + " AddAnActiveTodo";
                         todoNoId.doneStatus = false;
                         todoNoId.description = "Created by POST method";
                         body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
                         if (!executer.PostRequest(acceptHeaders, "todos", body))
                         {
-                            Console.WriteLine("Add Some Active Todos failed.");
+                            Console.WriteLine("Add an Active Todo failed.");
+                            Environment.Exit(-7);
+                        }
+                        activeTodosCount++;
+                        break;
+
+                    case addMaximumActiveTodo:
+                        acceptHeaders.Add("application/json");
+
+                        todoNoId.title = actionCount.ToString() + " AddMaximumActiveTodo";
+                        todoNoId.doneStatus = false;
+                        todoNoId.description = "Created by POST method";
+                        body = new StringContent(JsonSerializer.Serialize(todoNoId));
+
+                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        {
+                            Console.WriteLine("Add Maximum Active Todo failed.");
                             Environment.Exit(-7);
                         }
                         activeTodosCount++;
@@ -505,15 +758,31 @@ namespace TodoAPIsNaiveAdapter
                     case addResolvedTodo:
                         acceptHeaders.Add("application/json");
 
-                        todoNoId.title = actionCount.ToString() + "AddSomeResolvedTodos";
+                        todoNoId.title = actionCount.ToString() + " AddResolvedTodo";
                         todoNoId.doneStatus = true;
                         todoNoId.description = "Created by POST method";
                         body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
                         if (!executer.PostRequest(acceptHeaders, "todos", body))
                         {
-                            Console.WriteLine("Add Some Resolved Todos failed.");
+                            Console.WriteLine("Add a Resolved Todo failed.");
                             Environment.Exit(-27);
+                        }
+                        resolvedTodosCount++;
+                        break;
+
+                    case addMaximumResolvedTodo:
+                        acceptHeaders.Add("application/json");
+
+                        todoNoId.title = actionCount.ToString() + " AddMaximumResolvedTodo";
+                        todoNoId.doneStatus = true;
+                        todoNoId.description = "Created by POST method";
+                        body = new StringContent(JsonSerializer.Serialize(todoNoId));
+
+                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        {
+                            Console.WriteLine("Add Maximum Resolved Todo failed.");
+                            Environment.Exit(-37);
                         }
                         resolvedTodosCount++;
                         break;
@@ -541,6 +810,24 @@ namespace TodoAPIsNaiveAdapter
                         }
                         break;
 
+                    case deleteFinalActiveTodo:
+                        acceptHeaders.Add("application/json");
+
+                        foreach (TodoItem ti in sutTodos.todos)
+                        {
+                            if (!ti.doneStatus)
+                            {
+                                if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", ti.id)))
+                                {
+                                    Console.WriteLine("Delete Final Active Todo failed.");
+                                    Environment.Exit(-18);
+                                }
+                                activeTodosCount--;
+                                break;
+                            }
+                        }
+                        break;
+
                     case deleteResolvedTodo:
                         acceptHeaders.Add("application/json");
 
@@ -560,6 +847,24 @@ namespace TodoAPIsNaiveAdapter
                                     break;
                                 }
                                 index--;
+                            }
+                        }
+                        break;
+
+                    case deleteFinalResolvedTodo:
+                        acceptHeaders.Add("application/json");
+
+                        foreach (TodoItem ti in sutTodos.todos)
+                        {
+                            if (ti.doneStatus)
+                            {
+                                if (!executer.DeleteRequest(acceptHeaders, String.Format("todos/{0}", ti.id)))
+                                {
+                                    Console.WriteLine("Delete Final Resolved Todo failed.");
+                                    Environment.Exit(-17);
+                                }
+                                resolvedTodosCount--;
+                                break;
                             }
                         }
                         break;
@@ -612,8 +917,8 @@ namespace TodoAPIsNaiveAdapter
                                         Console.WriteLine("Activate Resolved Todo Failed");
                                         Environment.Exit(-11);
                                     }
-                                    resolvedTodosCount++;
-                                    activeTodosCount--;
+                                    resolvedTodosCount--;
+                                    activeTodosCount++;
                                     break;
                                 }
                                 index--;
@@ -665,7 +970,7 @@ namespace TodoAPIsNaiveAdapter
                 Console.WriteLine("Exception: {0}", e.Message);
             }
 
-            if (waitForObserverKeystroke)
+            if (waitForObserverKeystroke || debuggerHugger)
             {
                 var keyValue = Console.ReadKey();
             }
@@ -714,6 +1019,18 @@ namespace TodoAPIsNaiveAdapter
                 if (activeTodosCount + resolvedTodosCount > 0)
                 {
                     actions.Add(editTodo);
+                    actions.Add(getChallenges); // challenge
+                    actions.Add(getTodoById); // challenge
+                    actions.Add(getTodosHead); // challenge
+                    actions.Add(getTodosOPTIONS); // challenge
+                    actions.Add(getXMLTodosList); // challenge
+                    actions.Add(getAnyTodosList); // challenge
+                    actions.Add(getXMLJSONTodosList); // challenge
+                    actions.Add(getNoAcceptTodosList); // challenge
+                    if (resolvedTodosCount > 0)
+                    {
+                        actions.Add(getResolvedTodos); // challenge
+                    }
                 }
             }
 
@@ -800,6 +1117,10 @@ namespace TodoAPIsNaiveAdapter
                     // activeTodos > 0 and resolvedTodos > 0
                     // activeTodos == 0 and resolvedTodos < max-1
                     // activeTodos < max-1 and resolvedTodos == 0
+                    if (activeTodosCount + resolvedTodosCount > maximumTodosCount)
+                    {
+                        Console.WriteLine("active, resolved = {0}, {1}", activeTodosCount, resolvedTodosCount);
+                    }
                     actions.Add(addActiveTodo);
                     actions.Add(addResolvedTodo);
                     if (activeTodosCount > 0)
@@ -822,6 +1143,26 @@ namespace TodoAPIsNaiveAdapter
         {
             List<string> actions = new List<string>();
 
+            /*
+                case getChallenges:
+                    break;
+case getTodoById:
+                    break;
+case getResolvedTodos:
+                    break;
+case getTodosHead:
+                    break;
+case getTodosOPTIONS:
+                    break;
+case getXMLTodosList:
+                    break;
+case getAnyTodosList:
+                    break;
+case getXMLJSONTodosList:
+                    break;
+case getNoAcceptTodosList:
+                    break;
+             */
             switch (abstractState)
             {
                 case "Active.0, Resolved.0, MaxTodos.False":
@@ -933,6 +1274,25 @@ namespace TodoAPIsNaiveAdapter
         {
             switch (action)
             {
+                case getChallenges:
+                    break;
+                case getTodoById:
+                    break;
+                case getResolvedTodos:
+                    break;
+                case getTodosHead:
+                    break;
+                case getTodosOPTIONS:
+                    break;
+                case getXMLTodosList:
+                    break;
+                case getAnyTodosList:
+                    break;
+                case getXMLJSONTodosList:
+                    break;
+                case getNoAcceptTodosList:
+                    break;
+
                 case addActiveTodo:
                     switch (startState)
                     {
@@ -1197,46 +1557,70 @@ namespace TodoAPIsNaiveAdapter
 
             switch (action)
             {
+                case getChallenges:
+                case getTodoById:
+                case getResolvedTodos:
+                case getTodosHead:
+                case getTodosOPTIONS:
+                case getXMLTodosList:
+                case getAnyTodosList:
+                case getXMLJSONTodosList:
+                case getNoAcceptTodosList:
+                    break;
+
                 case startSession:
                     inSession = true;
                     break;
+
                 case endSession:
                     inSession = false;
                     break;
+
                 case addResolvedTodo:
                 case addMaximumResolvedTodo:
                     resolvedTodosCount++;
                     break;
+
                 case addActiveTodo:
                 case addMaximumActiveTodo:
                     activeTodosCount++;
                     break;
+
                 case editTodo:
                     break;
+
                 case activateResolvedTodo:
                     resolvedTodosCount--;
                     activeTodosCount++;
                     break;
+
                 case resolveActiveTodo:
                     activeTodosCount--;
                     resolvedTodosCount++;
                     break;
+
                 case deleteResolvedTodo:
                 case deleteFinalResolvedTodo:
                     resolvedTodosCount--;
                     break;
+
                 case deleteActiveTodo:
                 case deleteFinalActiveTodo:
                     activeTodosCount--;
                     break;
+
                 case invalidRequest:
                     break;
+
                 case getTodosList:
                     break;
+
                 case getDocs:
                     break;
+
                 case getHeartbeat:
                     break;
+
                 default:
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
