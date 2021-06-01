@@ -369,7 +369,7 @@ namespace SynchronousHttpClientExecuter
 
         public bool Startup()
         {
-            string workingDirectory = "/Users/dougs/Downloads/";
+            string workingDirectory = "";
             string fileName = "java";
             string arguments = "-jar apichallenges.jar";
 
