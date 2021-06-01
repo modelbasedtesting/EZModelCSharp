@@ -228,12 +228,17 @@ namespace TodoAPIsNaiveAdapter
 
             if (inSession)
             {
-                // fire up the APIs server
+                // If the process of the apichallenges.jar is active, do nothing.
+                // Fire up the APIs server otherwise
+                //if (!executer.Startup())
+                //{
+                //    Console.WriteLine("Failed to start apichallenges.jar in SetStateOfSystemUnderTest()");
+                //}
             }
             else
-            { 
+            {
                 // shut down the APIs server.  Done..
-                return;
+                executer.GetRequest(new List<string>(), "shutdown");
             }
         }
 
@@ -464,7 +469,6 @@ namespace TodoAPIsNaiveAdapter
                         // Question for Alan Richardson: is it acceptable
                         // to call the Shutdown API on the Heroku-hosted
                         // API Challenges.
-                        acceptHeaders.Add("application/json");
 
                         if (!executer.GetRequest(acceptHeaders, "shutdown"))
                         {
