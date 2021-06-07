@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Text; // StringContent Encoding
 using System.Net.Http;
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 using SynchronousHttpClientExecuter;
 using System.Text.Json;
+using System.Xml.Serialization;
+using System.IO;
+using System.Xml;
 
 namespace TodoAPIsNaiveAdapter
 {
@@ -154,7 +158,10 @@ namespace TodoAPIsNaiveAdapter
         const string endSession = "End Session";
 
         // Manipulating data in the todos list
-        const string addActiveTodo = "Add an Active Todo";
+        // To cover the Alan Richardson APIs Challenge for creating a Todo using Content-Type
+        // application/xml and application/json, randomly select the Content-Type header for
+        // "add*" actions below as application/xml or application/json.
+        const string addActiveTodo = "Add an Active Todo"; // Content-Type application/json
         const string addMaximumActiveTodo = "Add Maximum Active Todo";
         const string addResolvedTodo = "Add a Resolved Todo";
         const string addMaximumResolvedTodo = "Add Maximum Resolved Todo";
@@ -172,16 +179,25 @@ namespace TodoAPIsNaiveAdapter
         const string getTodosList = "Get Todos List";
         const string getDocs = "Get Documentation";
         const string getHeartbeat = "Get Service Heartbeat";
-        const string getChallenges = "Get Challenges List"; // *
-        const string getTodoById = "Get Specific Todo"; // *
-        const string getResolvedTodos = "Get Resolved Todos List"; // *
-        const string getTodosHead = "Get Todos HEAD"; // *
-        const string getTodosOPTIONS = "Get Todos OPTIONS"; // *
-        const string getXMLTodosList = "Get XML Todos List"; // *
-        const string getAnyTodosList = "Get Any Todos List"; // * Accept */*
-        const string getXMLJSONTodosList = "Prefer XML Todos List"; // * Accept XML, JSON
-        const string getNoAcceptTodosList = "Get No Accept Header Todos List"; // *
+        const string getChallenges = "Get Challenges List";
+        const string getTodoById = "Get Specific Todo"; 
+        const string getResolvedTodos = "Get Resolved Todos List"; 
+        const string getTodosHead = "Get Todos HEAD"; 
+        const string getTodosOPTIONS = "Get Todos OPTIONS"; 
+        const string getXMLTodosList = "Get XML Todos List"; 
+        const string getAnyTodosList = "Get Any Todos List"; // Accept */*
+        const string getXMLJSONTodosList = "Prefer XML Todos List"; // Accept XML, Accept JSON
+        const string getNoAcceptTodosList = "Get No Accept Header Todos List";
 
+        // State-changing actions outside of todos list
+        const string createNewChallengerSession = "Create new Challenger Session"; // POST /challenger 201 
+
+        // Actions expecting a non 2xx HTTP response code
+        const string getTodoFail = "Get Todo Fail"; // Get /todo - wrong endpoint 404
+        const string getNonexistentTodo = "Get Nonexistent Todo"; // Get /todos/{not an id} 404
+        const string addTodoInvalidDoneStatus = "Add Todo with Invalid Done Status"; // POST x 400
+        const string getTodoGzip = "Get Todo in GZip Format"; // Accept application/gzip 406
+        const string addTodoUnsupportedContentType = "Add Todo Unsupported Content Type"; // Post 415
 
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
@@ -286,6 +302,13 @@ namespace TodoAPIsNaiveAdapter
             public string description { get; set; }
         }
 
+        public class TodoItemInvalidDoneStatus
+        {
+            public string title { get; set; }
+            public string doneStatus { get; set; }
+            public string description { get; set; }
+        }
+
         public class TodosList
         {
             public IList<TodoItem> todos { get; set; }
@@ -379,6 +402,83 @@ namespace TodoAPIsNaiveAdapter
             return comparable;
         }
 
+        string GetXmlSerializedTodoItemNoId(TodoItemNoId value)
+        {
+            // https://stackoverflow.com/questions/4123590/serialize-an-object-to-xml
+            if (value == null)
+            {
+                return string.Empty;
+            }
+            try
+            {
+                XmlSerializer xmlserializer = new XmlSerializer(typeof(TodoItemNoId));
+                StringWriter stringWriter = new StringWriter();
+                using (XmlWriter writer = XmlWriter.Create(stringWriter))
+                {
+                    xmlserializer.Serialize(writer, value);
+                    string serial = stringWriter.ToString();
+                    serial = "<todo>" + serial.Substring(serial.IndexOf("<title>"));
+                    serial = serial.Substring(0, serial.IndexOf("</TodoItemNoId>")) + "</todo>";
+//                    Console.WriteLine(serial);
+//                    ConsoleKeyInfo key = Console.ReadKey();
+                    return serial;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine( "Exception in GetSerializedXml(): {0}", e.Message);
+                return string.Empty;
+            }
+        }
+
+        string GetXmlSerializedTodoItemInvalidDoneStatus(TodoItemInvalidDoneStatus value)
+        {
+            // https://stackoverflow.com/questions/4123590/serialize-an-object-to-xml
+            if (value == null)
+            {
+                return string.Empty;
+            }
+            try
+            {
+                XmlSerializer xmlserializer = new XmlSerializer(typeof(TodoItemInvalidDoneStatus));
+                StringWriter stringWriter = new StringWriter();
+                using (XmlWriter writer = XmlWriter.Create(stringWriter))
+                {
+                    xmlserializer.Serialize(writer, value);
+                    string serial = stringWriter.ToString();
+                    serial = "<todo>" + serial.Substring(serial.IndexOf("<title>"));
+                    serial = serial.Substring(0, serial.IndexOf("</TodoItemNoId>")) + "</todo>";
+                    //                    Console.WriteLine(serial);
+                    //                    ConsoleKeyInfo key = Console.ReadKey();
+                    return serial;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception in GetSerializedXml(): {0}", e.Message);
+                return string.Empty;
+            }
+        }
+
+        int UnusedTodoId( List<int> idList )
+        {
+            int unused = 1;
+            bool found = false;
+
+            while (!found)
+            {
+                if (!idList.Contains(unused))
+                {
+                    found = true;
+                }
+                else
+                {
+                    unused++;
+                }
+            }
+            return unused;
+        }
+
         // Interface method
         public string AdapterTransition(string startState, string action)
         {
@@ -427,6 +527,8 @@ namespace TodoAPIsNaiveAdapter
             int index;
             uint headroom = maximumTodosCount - activeTodosCount - resolvedTodosCount;
             bool debuggerHugger = false;
+            bool isXmlContent = random.Next(2) == 0 ? false : true;
+            string contentType = isXmlContent ? "application/xml" : "application/json";
 
             try
             {
@@ -484,7 +586,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getChallenges:
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         acceptHeaders.Add("application/json");
 
                         ChallengesList challenges = new ChallengesList();
@@ -509,7 +611,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getTodoById:
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         acceptHeaders.Add("application/json");
 
                         int todoId = todoIds[random.Next(todoIds.Count)];
@@ -534,7 +636,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getResolvedTodos:
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
@@ -557,7 +659,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getTodosHead: // HEAD request on /todos
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         acceptHeaders.Add("application/json");
 
                         if (!executer.HeadRequest(acceptHeaders, "todos"))
@@ -578,7 +680,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getTodosOPTIONS: // OPTIONS request on /todos
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         acceptHeaders.Add("application/json");
 
                         if (!executer.OptionsRequest(acceptHeaders, "todos"))
@@ -599,7 +701,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getXMLTodosList: // Accept application/xml
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         acceptHeaders.Add("application/xml");
 
                         // issue the GET request
@@ -621,7 +723,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getAnyTodosList: // Accept */*
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         acceptHeaders.Add("*/*");
 
                         // issue the GET request
@@ -644,7 +746,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getXMLJSONTodosList: // Accept application/xml, application/json
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         acceptHeaders.Add("application/xml");
                         acceptHeaders.Add("application/json");
 
@@ -668,7 +770,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getNoAcceptTodosList: // No Accept header, expect JSON
-                        debuggerHugger = true;
+                        debuggerHugger = false;
                         if (!executer.GetRequest(acceptHeaders, "todos"))
                         {
                             Console.WriteLine("Get No Accept Todos List failed");
@@ -733,7 +835,17 @@ namespace TodoAPIsNaiveAdapter
                         todoNoId.title = actionCount.ToString() + " AddAnActiveTodo";
                         todoNoId.doneStatus = false;
                         todoNoId.description = "Created by POST method";
-                        body = new StringContent(JsonSerializer.Serialize(todoNoId));
+
+                        Console.WriteLine("request Content-Type = {0}", contentType);
+
+                        if (isXmlContent)
+                        {
+                            body = new StringContent(GetXmlSerializedTodoItemNoId(todoNoId), Encoding.UTF8, contentType);
+                        }
+                        else
+                        {
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
+                        }
 
                         if (!executer.PostRequest(acceptHeaders, "todos", body))
                         {
@@ -749,7 +861,17 @@ namespace TodoAPIsNaiveAdapter
                         todoNoId.title = actionCount.ToString() + " AddMaximumActiveTodo";
                         todoNoId.doneStatus = false;
                         todoNoId.description = "Created by POST method";
-                        body = new StringContent(JsonSerializer.Serialize(todoNoId));
+
+                        Console.WriteLine("request Content-Type = {0}", contentType);
+
+                        if (isXmlContent)
+                        {
+                            body = new StringContent(GetXmlSerializedTodoItemNoId(todoNoId), Encoding.UTF8, contentType);
+                        }
+                        else
+                        {
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
+                        }
 
                         if (!executer.PostRequest(acceptHeaders, "todos", body))
                         {
@@ -765,7 +887,17 @@ namespace TodoAPIsNaiveAdapter
                         todoNoId.title = actionCount.ToString() + " AddResolvedTodo";
                         todoNoId.doneStatus = true;
                         todoNoId.description = "Created by POST method";
-                        body = new StringContent(JsonSerializer.Serialize(todoNoId));
+
+                        Console.WriteLine("request Content-Type = {0}", contentType);
+
+                        if (isXmlContent)
+                        {
+                            body = new StringContent(GetXmlSerializedTodoItemNoId(todoNoId), Encoding.UTF8, contentType);
+                        }
+                        else
+                        {
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
+                        }
 
                         if (!executer.PostRequest(acceptHeaders, "todos", body))
                         {
@@ -781,7 +913,17 @@ namespace TodoAPIsNaiveAdapter
                         todoNoId.title = actionCount.ToString() + " AddMaximumResolvedTodo";
                         todoNoId.doneStatus = true;
                         todoNoId.description = "Created by POST method";
-                        body = new StringContent(JsonSerializer.Serialize(todoNoId));
+
+                        Console.WriteLine("request Content-Type = {0}", contentType);
+
+                        if (isXmlContent)
+                        {
+                            body = new StringContent(GetXmlSerializedTodoItemNoId(todoNoId), Encoding.UTF8, contentType);
+                        }
+                        else
+                        {
+                            body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
+                        }
 
                         if (!executer.PostRequest(acceptHeaders, "todos", body))
                         {
@@ -952,6 +1094,109 @@ namespace TodoAPIsNaiveAdapter
                         }
                         break;
 
+                    case createNewChallengerSession:
+                        acceptHeaders.Add("application/json");
+
+                        if (!executer.PostRequest(acceptHeaders, "challenger", new StringContent("")))
+                        {
+                            Console.WriteLine("POST Challenger ID failed.");
+                            Environment.Exit(-19);
+                        }
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case getTodoFail:
+                        acceptHeaders.Add("application/json");
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "todo"))
+                        {
+                            Console.WriteLine("Get Todo Fail failed.");
+                            Environment.Exit(-14);
+                        }
+                        // Expect 404 HTTP code
+                        break;
+
+                    case getNonexistentTodo:
+                        debuggerHugger = false;
+                        acceptHeaders.Add("application/json");
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "todos/" + UnusedTodoId(todoIds).ToString()))
+                        {
+                            Console.WriteLine("Get NonExistent Todo failed.");
+                            Environment.Exit(-15);
+                        }
+                        // Expect 404 HTTP code
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case addTodoInvalidDoneStatus:
+                        debuggerHugger = false;
+                        acceptHeaders.Add("application/json");
+
+                        TodoItemInvalidDoneStatus tids = new TodoItemInvalidDoneStatus();
+                        tids.title = actionCount.ToString() + " AddTodoInvalidDoneStatus";
+                        tids.doneStatus = "false"; // a valid doneStatus would be boolean..
+                        tids.description = "Created by POST method";
+
+                        Console.WriteLine("request Content-Type = {0}", contentType);
+
+                        if (isXmlContent)
+                        {
+                            body = new StringContent(GetXmlSerializedTodoItemInvalidDoneStatus(tids), Encoding.UTF8, contentType);
+                        }
+                        else
+                        {
+                            body = new StringContent(JsonSerializer.Serialize(tids), Encoding.UTF8, contentType);
+                        }
+
+                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        {
+                            Console.WriteLine("Add Todo Invalid Done Status failed.");
+                            Environment.Exit(-8);
+                        }
+                        // Expect 404 HTTP code
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case getTodoGzip:
+                        debuggerHugger = false;
+                        acceptHeaders.Add("application/gzip"); // should get NOT ACCEPTABLE response
+
+                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        {
+                            Console.WriteLine("Get Todos in GZip failed.");
+                            Environment.Exit(-9);
+                        }
+                        // Expect 406 HTTP code
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case addTodoUnsupportedContentType:
+                        debuggerHugger = false;
+                        acceptHeaders.Add("application/json");
+
+                        todoNoId.title = actionCount.ToString() + " AddTodoUnsupportedContentType";
+                        todoNoId.doneStatus = true;
+                        todoNoId.description = "Created by POST method";
+
+                        contentType = "application/text";
+
+                        Console.WriteLine("request Content-Type = {0}", contentType);
+
+                        body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
+
+                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        {
+                            Console.WriteLine("Add Todo Unsupported Content Type failed.");
+                            Environment.Exit(-28);
+                        }
+
+                        // Expect 415 HTTP code
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
                     default:
                         Console.WriteLine("ERROR: Unknown action '{0}' in AdapterTransition()", action);
                         break;
@@ -1036,6 +1281,12 @@ namespace TodoAPIsNaiveAdapter
                         actions.Add(getResolvedTodos); // challenge
                     }
                 }
+                actions.Add(createNewChallengerSession); // challenge
+                actions.Add(getTodoFail); // challenge
+                actions.Add(getNonexistentTodo); // challenge
+                actions.Add(addTodoInvalidDoneStatus); // challenge
+                actions.Add(getTodoGzip); // challenge
+                actions.Add(addTodoUnsupportedContentType);
             }
 
             //            actions.Add(endSession);
@@ -1570,6 +1821,12 @@ case getNoAcceptTodosList:
                 case getAnyTodosList:
                 case getXMLJSONTodosList:
                 case getNoAcceptTodosList:
+                case createNewChallengerSession:
+                case getTodoFail:
+                case getNonexistentTodo:
+                case addTodoInvalidDoneStatus:
+                case getTodoGzip:
+                case addTodoUnsupportedContentType:
                     break;
 
                 case startSession:
