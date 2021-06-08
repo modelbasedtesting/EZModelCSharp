@@ -38,7 +38,7 @@ namespace SynchronousHttpClientExecuter
         // suffix in method calls.
         public string server = "http://foo.bar";
 
-        private async Task<bool> GetRequestTask(List<string> acceptHeaders, string uri)
+        private async Task<bool> GetRequestTask(List<string> acceptHeaders, string uri, List<string[]> customHeaders)
         {
             HttpClient client = new HttpClient();
 
@@ -48,6 +48,12 @@ namespace SynchronousHttpClientExecuter
             {
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(header));
             }
+
+            foreach (string[] customHeader in customHeaders)
+            {
+                client.DefaultRequestHeaders.Add(customHeader[0], customHeader[1]);
+            }
+
             client.DefaultRequestHeaders.Add("User-Agent", ".NET Core test Executer");
 
             responseBody = String.Empty;
@@ -120,7 +126,7 @@ namespace SynchronousHttpClientExecuter
             return true;
         }
 
-        private async Task<bool> PostRequestTask(List<string> acceptHeaders, string uri, StringContent body, string usernamePassword = "")
+        private async Task<bool> PostRequestTask(List<string> acceptHeaders, string uri, StringContent body, List<string[]> customHeaders, string usernamePassword = "")
         {
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Accept.Clear();
@@ -130,6 +136,11 @@ namespace SynchronousHttpClientExecuter
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(header));
             }
             client.DefaultRequestHeaders.Add("User-Agent", ".NET Core test Executer");
+
+            foreach (string[] customHeader in customHeaders)
+            {
+                client.DefaultRequestHeaders.Add(customHeader[0], customHeader[1]);
+            }
 
             if (usernamePassword != "")
             {
@@ -413,9 +424,9 @@ namespace SynchronousHttpClientExecuter
             return true;
         }
 
-        public bool GetRequest(List<string> acceptHeaders, string uri)
+        public bool GetRequest(List<string> acceptHeaders, string uri, List<string[]> customHeaders)
         {
-            Task<bool> get = GetRequestTask(acceptHeaders, uri);
+            Task<bool> get = GetRequestTask(acceptHeaders, uri, customHeaders);
 
             if (get.Status == TaskStatus.RanToCompletion)
             {
@@ -428,9 +439,9 @@ namespace SynchronousHttpClientExecuter
             }
         }
 
-        public bool PostRequest(List<string> acceptHeaders, string uri, StringContent body, string usernamePassword = "")
+        public bool PostRequest(List<string> acceptHeaders, string uri, StringContent body, List<string[]> customHeaders, string usernamePassword = "")
         {
-            Task<bool> post = PostRequestTask(acceptHeaders, uri, body, usernamePassword);
+            Task<bool> post = PostRequestTask(acceptHeaders, uri, body, customHeaders, usernamePassword);
 
             if (post.Status == TaskStatus.RanToCompletion)
             {

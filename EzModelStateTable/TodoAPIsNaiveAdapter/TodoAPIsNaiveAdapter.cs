@@ -148,6 +148,7 @@ namespace TodoAPIsNaiveAdapter
         uint svResolvedTodos = 0; 
         uint svActiveTodos = 10;
         bool svSecretToken = false;
+        string svAuthToken = String.Empty;
 
         uint activeTodosCount;
         uint resolvedTodosCount;
@@ -193,6 +194,7 @@ namespace TodoAPIsNaiveAdapter
         const string getAnyTodosList = "Get Any Todos List"; // Accept */*
         const string getXMLJSONTodosList = "Prefer XML Todos List"; // Accept XML, Accept JSON
         const string getNoAcceptTodosList = "Get No Accept Header Todos List";
+        const string getSecretNote = "Get Secret Note"; // supply valid X-AUTH-TOKEN
 
         // State-changing actions outside of todos list
         const string createNewChallengerSession = "Create new Challenger Session"; // POST /challenger 201 
@@ -208,6 +210,10 @@ namespace TodoAPIsNaiveAdapter
         const string patchHeartbeat = "Patch Heartbeat"; // 500 internal server error
         const string traceHeartbeat = "Trace Heartbeat"; // 501 not implemented
         const string getSecretTokenFailedAuth = "Get Secret Token Failed Auth"; // 401
+        const string getSecretNoteWrongAuthToken = "Get Secret Note Wrong Auth Token"; // 403
+        const string getSecretNoteNoAuthToken = "Get Secret Note No Auth Token"; // 401
+        const string setSecretNoteWrongAuthToken = "Set Secret Note Wrong Auth Token"; // 403
+        const string setSecretNoteNoAuthToken = "Set Secret Note No Auth Token"; // 401
 
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
@@ -224,7 +230,9 @@ namespace TodoAPIsNaiveAdapter
             activeTodosCount = svActiveTodos;
             resolvedTodosCount = svResolvedTodos;
             secretToken = svSecretToken;
+            AuthToken = svAuthToken;
 
+            Console.WriteLine("GET INITIAL STATE secret token = {0}", secretToken);
             if (AbstractTheState)
             {
                 return String.Format("InSession.{0}, {1}", svInSession, abstractState[4]);
@@ -265,7 +273,7 @@ namespace TodoAPIsNaiveAdapter
             else
             {
                 // shut down the APIs server.  Done..
-                executer.GetRequest(new List<string>(), "shutdown");
+                executer.GetRequest(new List<string>(), "shutdown", new List<string[]>());
             }
         }
 
@@ -345,7 +353,7 @@ namespace TodoAPIsNaiveAdapter
             TodosList todos = new TodosList();
 
             // issue the GET request
-            if (!executer.GetRequest(acceptHeaders, "todos"))
+            if (!executer.GetRequest(acceptHeaders, "todos", new List<string[]>()))
             {
                 Console.WriteLine("Get Todos List failed");
                 Environment.Exit(-2);
@@ -473,6 +481,11 @@ namespace TodoAPIsNaiveAdapter
 
         int UnusedTodoId( List<int> idList )
         {
+            if (idList.Count == 0)
+            {
+                return 1; // Set the Todo ID to 1 if there aren't any Todo items.
+            }
+
             int unused = 1;
             bool found = false;
 
@@ -545,6 +558,8 @@ namespace TodoAPIsNaiveAdapter
             // switching between Accept type of XML and JSON covers a Richardson APIs challenge.
             string acceptType = random.Next(2) == 0 ? "application/json" : "application/xml";
 
+            List<string[]> customHeaders = new List<string[]>();
+
             try
             {
                 //  - drive execution of the action (of the transition)
@@ -587,7 +602,7 @@ namespace TodoAPIsNaiveAdapter
                         // to call the Shutdown API on the Heroku-hosted
                         // API Challenges.
 
-                        if (!executer.GetRequest(acceptHeaders, "shutdown"))
+                        if (!executer.GetRequest(acceptHeaders, "shutdown", customHeaders))
                         {
                             // There is a bug in shutdown on the API server:
                             // the function does not return a response
@@ -607,7 +622,7 @@ namespace TodoAPIsNaiveAdapter
                         ChallengesList challenges = new ChallengesList();
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "challenges"))
+                        if (!executer.GetRequest(acceptHeaders, "challenges", customHeaders))
                         {
                             Console.WriteLine("Get Challenges List failed");
                             Environment.Exit(-32);
@@ -632,7 +647,7 @@ namespace TodoAPIsNaiveAdapter
                         int todoId = todoIds[random.Next(todoIds.Count)];
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "todos/" + todoId.ToString()))
+                        if (!executer.GetRequest(acceptHeaders, "todos/" + todoId.ToString(),  customHeaders))
                         {
                             Console.WriteLine("Get Todo by ID failed");
                             Environment.Exit(-33);
@@ -655,7 +670,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add(acceptType);
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "todos?doneStatus=true" ))
+                        if (!executer.GetRequest(acceptHeaders, "todos?doneStatus=true", customHeaders))
                         {
                             Console.WriteLine("Get Resolved Todos failed");
                             Environment.Exit(-34);
@@ -720,7 +735,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add("application/xml");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        if (!executer.GetRequest(acceptHeaders, "todos", customHeaders))
                         {
                             Console.WriteLine("Get XML Todos List failed");
                             Environment.Exit(-42);
@@ -742,7 +757,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add("*/*");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        if (!executer.GetRequest(acceptHeaders, "todos", customHeaders))
                         {
                             Console.WriteLine("Get Any Todos List failed");
                             Environment.Exit(-43);
@@ -766,7 +781,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        if (!executer.GetRequest(acceptHeaders, "todos", customHeaders))
                         {
                             Console.WriteLine("Get XML JSON Todos List failed");
                             Environment.Exit(-44);
@@ -786,7 +801,7 @@ namespace TodoAPIsNaiveAdapter
 
                     case getNoAcceptTodosList: // No Accept header, expect JSON
                         debuggerHugger = false;
-                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        if (!executer.GetRequest(acceptHeaders, "todos", customHeaders))
                         {
                             Console.WriteLine("Get No Accept Todos List failed");
                             Environment.Exit(-45);
@@ -828,7 +843,7 @@ namespace TodoAPIsNaiveAdapter
 
                         if (postThisEdit)
                         {
-                            if (!executer.PostRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
+                            if (!executer.PostRequest(acceptHeaders, String.Format("todos/{0}", t.id), body, customHeaders))
                             {
                                 Console.WriteLine("Edit a Todo failed on POST {0}", t.id);
                                 Environment.Exit(-3);
@@ -862,7 +877,7 @@ namespace TodoAPIsNaiveAdapter
                             body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
                         }
 
-                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        if (!executer.PostRequest(acceptHeaders, "todos", body, customHeaders))
                         {
                             Console.WriteLine("Add an Active Todo failed.");
                             Environment.Exit(-7);
@@ -888,7 +903,7 @@ namespace TodoAPIsNaiveAdapter
                             body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
                         }
 
-                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        if (!executer.PostRequest(acceptHeaders, "todos", body, customHeaders))
                         {
                             Console.WriteLine("Add Maximum Active Todo failed.");
                             Environment.Exit(-7);
@@ -914,7 +929,7 @@ namespace TodoAPIsNaiveAdapter
                             body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
                         }
 
-                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        if (!executer.PostRequest(acceptHeaders, "todos", body, customHeaders))
                         {
                             Console.WriteLine("Add a Resolved Todo failed.");
                             Environment.Exit(-27);
@@ -940,7 +955,7 @@ namespace TodoAPIsNaiveAdapter
                             body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
                         }
 
-                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        if (!executer.PostRequest(acceptHeaders, "todos", body, customHeaders))
                         {
                             Console.WriteLine("Add Maximum Resolved Todo failed.");
                             Environment.Exit(-37);
@@ -1091,7 +1106,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add(acceptType);
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "docs"))
+                        if (!executer.GetRequest(acceptHeaders, "docs", customHeaders))
                         {
                             Console.WriteLine("Get Documentation failed.");
                             Environment.Exit(-9);
@@ -1102,7 +1117,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add(acceptType);
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "heartbeat"))
+                        if (!executer.GetRequest(acceptHeaders, "heartbeat", customHeaders))
                         {
                             Console.WriteLine("Get Service Heartbeat failed.");
                             Environment.Exit(-14);
@@ -1112,7 +1127,7 @@ namespace TodoAPIsNaiveAdapter
                     case createNewChallengerSession:
                         acceptHeaders.Add(acceptType);
 
-                        if (!executer.PostRequest(acceptHeaders, "challenger", new StringContent("")))
+                        if (!executer.PostRequest(acceptHeaders, "challenger", new StringContent(""), customHeaders))
                         {
                             Console.WriteLine("POST Challenger ID failed.");
                             Environment.Exit(-19);
@@ -1124,7 +1139,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add(acceptType);
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "todo"))
+                        if (!executer.GetRequest(acceptHeaders, "todo", customHeaders))
                         {
                             Console.WriteLine("Get Todo Fail failed.");
                             Environment.Exit(-14);
@@ -1137,7 +1152,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add(acceptType);
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "todos/" + UnusedTodoId(todoIds).ToString()))
+                        if (!executer.GetRequest(acceptHeaders, "todos/" + UnusedTodoId(todoIds).ToString(), customHeaders))
                         {
                             Console.WriteLine("Get NonExistent Todo failed.");
                             Environment.Exit(-15);
@@ -1166,7 +1181,7 @@ namespace TodoAPIsNaiveAdapter
                             body = new StringContent(JsonSerializer.Serialize(tids), Encoding.UTF8, contentType);
                         }
 
-                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        if (!executer.PostRequest(acceptHeaders, "todos", body, customHeaders))
                         {
                             Console.WriteLine("Add Todo Invalid Done Status failed.");
                             Environment.Exit(-8);
@@ -1180,7 +1195,7 @@ namespace TodoAPIsNaiveAdapter
                         acceptHeaders.Add(acceptType);
                         // should get NOT ACCEPTABLE response
 
-                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        if (!executer.GetRequest(acceptHeaders, "todos", customHeaders))
                         {
                             Console.WriteLine("Get Todos in GZip failed.");
                             Environment.Exit(-9);
@@ -1203,7 +1218,7 @@ namespace TodoAPIsNaiveAdapter
 
                         body = new StringContent(JsonSerializer.Serialize(todoNoId), Encoding.UTF8, contentType);
 
-                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        if (!executer.PostRequest(acceptHeaders, "todos", body, customHeaders))
                         {
                             Console.WriteLine("Add Todo Unsupported Content Type failed.");
                             Environment.Exit(-28);
@@ -1258,7 +1273,7 @@ namespace TodoAPIsNaiveAdapter
 
                         Console.WriteLine("request Content-Type = {0}", contentType);
 
-                        if (!executer.PostRequest(acceptHeaders, "secret/token", new StringContent(""), "Doogielicious:password"))
+                        if (!executer.PostRequest(acceptHeaders, "secret/token", new StringContent(""), customHeaders, "Doogielicious:password"))
                         {
                             Console.WriteLine("Get Secret Token Failed Auth failed.");
                             Environment.Exit(-9);
@@ -1273,13 +1288,118 @@ namespace TodoAPIsNaiveAdapter
 
                         Console.WriteLine("request Content-Type = {0}", contentType);
 
-                        if (!executer.PostRequest(acceptHeaders, "secret/token", new StringContent(""), "admin:password"))
+                        if (!executer.PostRequest(acceptHeaders, "secret/token", new StringContent(""), customHeaders, "admin:password"))
                         {
                             Console.WriteLine("Get Secret Token Auth Pass failed.");
                             Environment.Exit(-10);
                         }
 
-                        // TODO: output the token that was returned.  Save the token to authToken.
+                        if (executer.response.Headers.Contains("X-AUTH-TOKEN"))
+                        {
+                            IEnumerable<string> values;
+                            if (executer.response.Headers.TryGetValues("X-AUTH-TOKEN", out values))
+                            {
+                                var enumerator = values.GetEnumerator();
+                                if (enumerator.MoveNext())
+                                { 
+                                    AuthToken = enumerator.Current;
+                                    secretToken = true;
+                                }
+                                else
+                                {
+                                    Console.WriteLine("X-AUTH-TOKEN enumerator has no next value in response from getSecretTokenAuthPass");
+                                    Environment.Exit(-22);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("X-AUTH-TOKEN has no value in response from getSecretTokenAuthPass");
+                                Environment.Exit(-21);
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("X-AUTH-TOKEN header not returned from getSecretTokenAuthPass");
+                            Environment.Exit(-20);
+                        }
+
+                        Console.WriteLine("Auth Token = {0}", AuthToken);
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case getSecretNoteWrongAuthToken:
+                        debuggerHugger = false;
+                        acceptHeaders.Add(acceptType);
+
+                        customHeaders.Add(new[] { "X-AUTH-TOKEN", "This ain't right" });
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "secret/note", customHeaders))
+                        {
+                            Console.WriteLine("Get Secret Note Wrong Auth Token failed.");
+                            Environment.Exit(-15);
+                        }
+
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case getSecretNoteNoAuthToken:
+                        debuggerHugger = false;
+                        acceptHeaders.Add(acceptType);
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "secret/note", customHeaders))
+                        {
+                            Console.WriteLine("Get Secret Note No Auth Token failed.");
+                            Environment.Exit(-16);
+                        }
+
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case setSecretNoteWrongAuthToken:
+                        debuggerHugger = false;
+                        acceptHeaders.Add(acceptType);
+
+                        customHeaders.Add(new[] { "X-AUTH-TOKEN", "This ain't right" });
+
+                        if (!executer.PostRequest(acceptHeaders, "secret/note", new StringContent(@"{""note"":""my note""}"), customHeaders))
+                        {
+                             Console.WriteLine("Set Secret Note Wrong Auth Token failed.");
+                            Environment.Exit(-29);
+                        }
+
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case setSecretNoteNoAuthToken:
+                        debuggerHugger = false;
+                        acceptHeaders.Add(acceptType);
+
+                        if (!executer.PostRequest(acceptHeaders, "secret/note", new StringContent(@"{""note"":""my note""}"), customHeaders))
+                        {
+                            Console.WriteLine("Set Secret Note No Auth Token failed.");
+                            Environment.Exit(-39);
+                        }
+
+                        Console.WriteLine(executer.responseBody);
+                        break;
+
+                    case getSecretNote:
+                        debuggerHugger = true;
+                        acceptHeaders.Add(acceptType);
+
+                        Console.WriteLine("AuthToken = {0}", AuthToken);
+
+                        customHeaders.Add(new[] { "X-AUTH-TOKEN", AuthToken });
+
+                        // issue the GET request
+                        if (!executer.GetRequest(acceptHeaders, "secret/note", customHeaders))
+                        {
+                            Console.WriteLine("Get Secret Note failed.");
+                            Environment.Exit(-35);
+                        }
+
                         Console.WriteLine(executer.responseBody);
                         break;
 
@@ -1351,7 +1471,12 @@ namespace TodoAPIsNaiveAdapter
 
             if (!secretToken)
             {
-                actions.Add(getSecretTokenAuthPass);
+                actions.Add(getSecretTokenAuthPass); // challenge
+            }
+
+            if (secretToken)
+            {
+                actions.Add(getSecretNote); // challenge
             }
 
             if (includeSelfLinkNoise)
@@ -1382,6 +1507,10 @@ namespace TodoAPIsNaiveAdapter
                 actions.Add(patchHeartbeat); // challenge
                 actions.Add(traceHeartbeat); // challenge
                 actions.Add(getSecretTokenFailedAuth); // challenge
+                actions.Add(getSecretNoteWrongAuthToken); // challenge
+                actions.Add(getSecretNoteNoAuthToken); // challenge
+                actions.Add(setSecretNoteWrongAuthToken); // challenge
+                actions.Add(setSecretNoteNoAuthToken); // challenge
             }
 
             //            actions.Add(endSession);
@@ -1880,14 +2009,14 @@ case getNoAcceptTodosList:
         {
             string[] vState = startState.Split(", ");
             bool inSession = vState[0].Contains("True") ? true : false;
-            bool secretToken = vState[3].Contains("True") ? true : false;
+            string endState = String.Empty;
 
             if (AbstractTheState)
             {
                 string[] stateArray = { vState[1], vState[2], vState[3] };
 
                 abstractTodos = String.Join(", ", stateArray);
-                string endState = GetAbstractEndState(abstractTodos, action);
+                endState = GetAbstractEndState(abstractTodos, action);
                 string prefix = vState[0] + ", ";
                 if (action == startSession)
                 {
@@ -1926,6 +2055,11 @@ case getNoAcceptTodosList:
                 case patchHeartbeat:
                 case traceHeartbeat:
                 case getSecretTokenFailedAuth:
+                case getSecretNoteWrongAuthToken:
+                case getSecretNoteNoAuthToken:
+                case setSecretNoteWrongAuthToken:
+                case setSecretNoteNoAuthToken:
+                case getSecretNote:
                     break;
 
                 case getSecretTokenAuthPass:
@@ -1989,7 +2123,8 @@ case getNoAcceptTodosList:
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(inSession);
+            endState = StringifyStateVector(inSession);
+            return endState;
         }
     }
 }
