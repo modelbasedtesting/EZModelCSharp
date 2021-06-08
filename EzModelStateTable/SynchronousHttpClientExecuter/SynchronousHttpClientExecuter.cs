@@ -15,6 +15,7 @@
 // Serious Quality LLC
 
 using System;
+using System.Text; // Encoding
 using System.Diagnostics; // Process, ProcessStartInfo
 using System.Threading.Tasks; // Task
 using System.Collections.Generic; // List
@@ -119,7 +120,7 @@ namespace SynchronousHttpClientExecuter
             return true;
         }
 
-        private async Task<bool> PostRequestTask(List<string> acceptHeaders, string uri, StringContent body)
+        private async Task<bool> PostRequestTask(List<string> acceptHeaders, string uri, StringContent body, string usernamePassword = "")
         {
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Accept.Clear();
@@ -129,6 +130,13 @@ namespace SynchronousHttpClientExecuter
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(header));
             }
             client.DefaultRequestHeaders.Add("User-Agent", ".NET Core test Executer");
+
+            if (usernamePassword != "")
+            {
+                // https://gist.github.com/bryanbarnard/8102915
+                var byteArray = Encoding.ASCII.GetBytes(usernamePassword);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+            }
 
             responseBody = String.Empty;
 
@@ -420,9 +428,9 @@ namespace SynchronousHttpClientExecuter
             }
         }
 
-        public bool PostRequest(List<string> acceptHeaders, string uri, StringContent body)
+        public bool PostRequest(List<string> acceptHeaders, string uri, StringContent body, string usernamePassword = "")
         {
-            Task<bool> post = PostRequestTask(acceptHeaders, uri, body);
+            Task<bool> post = PostRequestTask(acceptHeaders, uri, body, usernamePassword);
 
             if (post.Status == TaskStatus.RanToCompletion)
             {
