@@ -9,17 +9,18 @@ using System.Xml.Serialization;
 using System.IO;
 using System.Xml;
 
-namespace TodoAPIsNaiveAdapter
+namespace BeforeFixes
 {
     class TodoAPIsNaiveAdapterProgram
     {
         static int Main(string[] args)
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
             client.IncludeSelfLinkNoise = true;
+            client.AbstractTheState = false;
 
-            EzModelGraph graph = new EzModelGraph(client, 7000, 500, 60, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 3000, 1000, 50, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -54,7 +55,7 @@ namespace TodoAPIsNaiveAdapter
 
             client.NotifyAdapter = true;
             // If you want stopOnProblem to stop, you need to return false from the AreStatesAcceptablySimilar method
-            client.StopOnProblem = false;
+            client.StopOnProblem = true;
 
             client.WaitForObserverKeystroke = false;
             graph.RandomDestinationCoverage("TodoAPIsNaiveAdapter", 2);
@@ -115,6 +116,34 @@ namespace TodoAPIsNaiveAdapter
             waitForObserverKeystroke = false;
         }
 
+        public bool AbstractTheState = false;
+
+        // Initially the system is not running, and this affects a lot of
+        // state.
+        // When AbstractTheState is true, we pass the following state values to EzModel
+        // for the Todos.
+        //        string[] abstractStates = { "Zero", "One", "1 < Todos < Max-1", "Max-1", "Max" };
+        // abstractStates is bigger when the resolved and active todos are kept track of.
+        static string[] abstractState = {
+            "Active.0, Resolved.0, MaxTodos.False", 
+            "Active.0, Resolved.1, MaxTodos.False", 
+            "Active.0, Resolved.>1, MaxTodos.False", 
+            "Active.1, Resolved.0, MaxTodos.False", 
+            "Active.>1, Resolved.0, MaxTodos.False",
+            "Active.1, Resolved.1, MaxTodos.False",
+            "Active.1, Resolved.>1, MaxTodos.False",
+            "Active.>1, Resolved.1, MaxTodos.False",
+            "Active.>1, Resolved.>1, MaxTodos.False",
+            "Active.Max-1, Resolved.0, MaxTodos.False", 
+            "Active.0, Resolved.Max-1, MaxTodos.False",
+            "Active.0, Resolved.Max, MaxTodos.True", 
+            "Active.1, Resolved.Max-1, MaxTodos.True", 
+            "Active.Max, Resolved.0, MaxTodos.True", 
+            "Active.Max-1, Resolved.1, MaxTodos.True", 
+            "Active.>1, Resolved.>1, MaxTodos.True"};
+
+        string abstractTodos = abstractState[4];
+
         bool svInSession = false;
         uint svResolvedTodos = 0; 
         uint svActiveTodos = 10;
@@ -170,7 +199,6 @@ namespace TodoAPIsNaiveAdapter
         // State-changing actions outside of todos list
         const string createNewChallengerSession = "Create new Challenger Session"; // POST /challenger 201 
         const string getSecretTokenAuthPass = "Get Secret Token Auth Pass"; // 201
-        const string setSecretNote = "Set Secret Note"; // 200
 
         // Actions expecting a non 2xx HTTP response code
         const string getTodoFail = "Get Todo Fail"; // Get /todo - wrong endpoint 404
@@ -190,9 +218,9 @@ namespace TodoAPIsNaiveAdapter
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
-        string StringifyStateVector(bool inSession, uint activeCount, uint resolvedCount, bool secretTok )
+        string StringifyStateVector(bool inSession)
         {
-            string s = String.Format("InSession.{0}, Resolved.{1}, Active.{2}, SecretToken.{3}", inSession, resolvedCount, activeCount, secretTok);
+            string s = String.Format("InSession.{0}, Resolved.{1}, Active.{2}, SecretToken.{3}", inSession, resolvedTodosCount, activeTodosCount, secretToken);
             return s;
         }
 
@@ -204,7 +232,12 @@ namespace TodoAPIsNaiveAdapter
             secretToken = svSecretToken;
             AuthToken = svAuthToken;
 
-            return StringifyStateVector(svInSession, activeTodosCount, resolvedTodosCount, secretToken);
+            Console.WriteLine("GET INITIAL STATE secret token = {0}", secretToken);
+            if (AbstractTheState)
+            {
+                return String.Format("InSession.{0}, {1}", svInSession, abstractState[4]);
+            }
+            return StringifyStateVector(svInSession);
         }
 
         // Interface method
@@ -218,8 +251,15 @@ namespace TodoAPIsNaiveAdapter
             string[] vState = state.Split(", ");
             bool inSession = vState[0].Contains("True") ? true : false;
 
-            resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
-            activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
+            if (AbstractTheState)
+            {
+                abstractTodos = vState[1].Split(".")[1];
+            }
+            else
+            {
+                resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
+                activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
+            }
 
             if (inSession)
             {
@@ -470,10 +510,15 @@ namespace TodoAPIsNaiveAdapter
 
             string[] vState = startState.Split(", ");
             bool inSession = vState[0].Contains("True") ? true : false;
-            resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
-            activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
-            secretToken = vState[3].Contains("True") ? true : false;
-
+            if (AbstractTheState)
+            {
+                abstractTodos = vState[1].Split(".")[1];
+            }
+            else
+            {
+                resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
+                activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
+            }
             TodoItem t;
 
             actionCount++;
@@ -1238,7 +1283,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getSecretTokenAuthPass:
-                        debuggerHugger = false;
+                        debuggerHugger = true;
                         acceptHeaders.Add(acceptType);
 
                         Console.WriteLine("request Content-Type = {0}", contentType);
@@ -1341,7 +1386,7 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getSecretNote:
-                        debuggerHugger = false;
+                        debuggerHugger = true;
                         acceptHeaders.Add(acceptType);
 
                         Console.WriteLine("AuthToken = {0}", AuthToken);
@@ -1353,21 +1398,6 @@ namespace TodoAPIsNaiveAdapter
                         {
                             Console.WriteLine("Get Secret Note failed.");
                             Environment.Exit(-35);
-                        }
-
-                        Console.WriteLine(executer.responseBody);
-                        break;
-
-                    case setSecretNote:
-                        debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
-
-                        customHeaders.Add(new[] { "X-AUTH-TOKEN", AuthToken });
-
-                        if (!executer.PostRequest(acceptHeaders, "secret/note", new StringContent(@"{""note"":""my note""}"), customHeaders))
-                        {
-                            Console.WriteLine("Set Secret Note failed.");
-                            Environment.Exit(-40);
                         }
 
                         Console.WriteLine(executer.responseBody);
@@ -1435,8 +1465,6 @@ namespace TodoAPIsNaiveAdapter
                 return actions;
             }
 
-            secretToken = vState[3].Contains("True") ? true : false;
-
             actions.Add(getTodosList);
             actions.Add(getDocs);
             actions.Add(getHeartbeat);
@@ -1448,7 +1476,6 @@ namespace TodoAPIsNaiveAdapter
             else
             {
                 actions.Add(getSecretNote); // challenge
-                actions.Add(setSecretNote); // challenge
             }
 
             if (includeSelfLinkNoise)
@@ -1482,7 +1509,7 @@ namespace TodoAPIsNaiveAdapter
                 actions.Add(getSecretNoteWrongAuthToken); // challenge
                 actions.Add(getSecretNoteNoAuthToken); // challenge
                 actions.Add(setSecretNoteWrongAuthToken); // challenge
-                actions.Add(setSecretNoteNoAuthToken); // challenge
+//                actions.Add(setSecretNoteNoAuthToken); // challenge
             }
 
             //            actions.Add(endSession);
@@ -1491,8 +1518,19 @@ namespace TodoAPIsNaiveAdapter
             // specific invalid actions cited in the API Challenges list.
             //            actions.Add(invalidRequest);
 
-            resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
-            activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
+            if (AbstractTheState)
+            {
+                string[] stateArray = { vState[1], vState[2], vState[3] };
+
+                abstractTodos = String.Join(", ", stateArray);
+                actions.AddRange(GetAvailableAbstractActions(abstractTodos));
+                return actions;
+            }
+            else
+            {
+                resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
+                activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
+            }
 
             switch (activeTodosCount + resolvedTodosCount)
             {
@@ -1579,6 +1617,392 @@ namespace TodoAPIsNaiveAdapter
             return actions;
         }
 
+        List<string> GetAvailableAbstractActions(string abstractState)
+        {
+            List<string> actions = new List<string>();
+
+            /*
+                case getChallenges:
+                    break;
+case getTodoById:
+                    break;
+case getResolvedTodos:
+                    break;
+case getTodosHead:
+                    break;
+case getTodosOPTIONS:
+                    break;
+case getXMLTodosList:
+                    break;
+case getAnyTodosList:
+                    break;
+case getXMLJSONTodosList:
+                    break;
+case getNoAcceptTodosList:
+                    break;
+             */
+            switch (abstractState)
+            {
+                case "Active.0, Resolved.0, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    break;
+                case "Active.0, Resolved.1, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    actions.Add(deleteFinalResolvedTodo);
+                    actions.Add(activateFinalResolvedTodo);
+                    break;
+                case "Active.0, Resolved.>1, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    actions.Add(activateResolvedTodo);
+                    actions.Add(deleteResolvedTodo);
+                    break;
+                case "Active.1, Resolved.0, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    actions.Add(deleteFinalActiveTodo);
+                    actions.Add(resolveFinalActiveTodo);
+                    break;
+                case "Active.>1, Resolved.0, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    actions.Add(resolveActiveTodo);
+                    actions.Add(deleteActiveTodo);
+                    break;
+                case "Active.1, Resolved.1, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    actions.Add(deleteFinalResolvedTodo);
+                    actions.Add(activateFinalResolvedTodo);
+                    actions.Add(deleteFinalActiveTodo);
+                    actions.Add(resolveFinalActiveTodo);
+                    break;
+                case "Active.1, Resolved.>1, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    actions.Add(deleteResolvedTodo);
+                    actions.Add(activateResolvedTodo);
+                    actions.Add(deleteFinalActiveTodo);
+                    actions.Add(resolveFinalActiveTodo);
+                    break;
+                case "Active.>1, Resolved.1, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    actions.Add(deleteFinalResolvedTodo);
+                    actions.Add(activateFinalResolvedTodo);
+                    actions.Add(deleteActiveTodo);
+                    actions.Add(resolveActiveTodo);
+                    break;
+                case "Active.>1, Resolved.>1, MaxTodos.False":
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    actions.Add(resolveActiveTodo);
+                    actions.Add(deleteActiveTodo);
+                    actions.Add(activateResolvedTodo);
+                    actions.Add(deleteResolvedTodo);
+                    break;
+                case "Active.Max-1, Resolved.0, MaxTodos.False":
+                    actions.Add(addMaximumActiveTodo);
+                    actions.Add(addMaximumResolvedTodo);
+                    actions.Add(resolveActiveTodo);
+                    actions.Add(deleteActiveTodo);
+                    break;
+                case "Active.0, Resolved.Max-1, MaxTodos.False":
+                    actions.Add(addMaximumActiveTodo);
+                    actions.Add(addMaximumResolvedTodo);
+                    actions.Add(activateResolvedTodo);
+                    actions.Add(deleteResolvedTodo);
+                    break;
+                case "Active.0, Resolved.Max, MaxTodos.True":
+                    actions.Add(deleteResolvedTodo);
+                    actions.Add(activateResolvedTodo);
+                    break;
+                case "Active.1, Resolved.Max-1, MaxTodos.True":
+                    actions.Add(deleteFinalActiveTodo);
+                    actions.Add(deleteResolvedTodo);
+                    actions.Add(resolveFinalActiveTodo);
+                    actions.Add(activateResolvedTodo);
+                    break;
+                case "Active.Max, Resolved.0, MaxTodos.True":
+                    actions.Add(deleteActiveTodo);
+                    actions.Add(resolveActiveTodo);
+                    break;
+                case "Active.Max-1, Resolved.1, MaxTodos.True":
+                    actions.Add(deleteFinalResolvedTodo);
+                    actions.Add(deleteActiveTodo);
+                    actions.Add(activateFinalResolvedTodo);
+                    actions.Add(resolveActiveTodo);
+                    break;
+                case "Active.>1, Resolved.>1, MaxTodos.True":
+                    actions.Add(deleteActiveTodo);
+                    actions.Add(deleteResolvedTodo);
+                    actions.Add(resolveActiveTodo);
+                    actions.Add(activateResolvedTodo);
+                    break;
+                default:
+                    Console.WriteLine("Unknown abstract state {0} in GetAvailableAbstractActions()", abstractState);
+                    break;
+            }
+            return actions;
+        }
+
+        string GetAbstractEndState(string startState, string action)
+        {
+            switch (action)
+            {
+                case getChallenges:
+                    break;
+                case getTodoById:
+                    break;
+                case getResolvedTodos:
+                    break;
+                case getTodosHead:
+                    break;
+                case getTodosOPTIONS:
+                    break;
+                case getXMLTodosList:
+                    break;
+                case getAnyTodosList:
+                    break;
+                case getXMLJSONTodosList:
+                    break;
+                case getNoAcceptTodosList:
+                    break;
+
+                case addActiveTodo:
+                    switch (startState)
+                    {
+                        case "Active.0, Resolved.0, MaxTodos.False":
+                            return "Active.1, Resolved.0, MaxTodos.False";
+                        case "Active.0, Resolved.1, MaxTodos.False":
+                            return "Active.1, Resolved.1, MaxTodos.False";
+                        case "Active.0, Resolved.>1, MaxTodos.False":
+                            return "Active.1, Resolved.>1, MaxTodos.False";
+                        case "Active.1, Resolved.0, MaxTodos.False":
+                            return "Active.>1, Resolved.0, MaxTodos.False";
+                        case "Active.>1, Resolved.0, MaxTodos.False":
+                            return startState;
+                        case "Active.1, Resolved.1, MaxTodos.False":
+                            return "Active.>1, Resolved.1, MaxTodos.False";
+                        case "Active.1, Resolved.>1, MaxTodos.False":
+                            return "Active.>1, Resolved.>1, MaxTodos.False";
+                        case "Active.>1, Resolved.1, MaxTodos.False":
+                            return startState;
+                        case "Active.>1, Resolved.>1, MaxTodos.False":
+                            return startState;
+                        case "Active.Max-1, Resolved.0, MaxTodos.False":
+                            return "Active.Max, Resolved.0, MaxTodos.True";
+                        case "Active.0, Resolved.Max-1, MaxTodos.False":
+                            return "Active.1, Resolved.Max-1, MaxTodos.True";
+                        default:
+                            break;
+                    }
+                    break;
+                case addResolvedTodo:
+                    switch (startState)
+                    {
+                        case "Active.0, Resolved.0, MaxTodos.False":
+                            return "Active.0, Resolved.1, MaxTodos.False";
+                        case "Active.0, Resolved.1, MaxTodos.False":
+                            return "Active.0, Resolved.>1, MaxTodos.False";
+                        case "Active.0, Resolved.>1, MaxTodos.False":
+                            return startState;
+                        case "Active.1, Resolved.0, MaxTodos.False":
+                            return "Active.1, Resolved.1, MaxTodos.False";
+                        case "Active.>1, Resolved.0, MaxTodos.False":
+                            return "Active.>1, Resolved.1, MaxTodos.False";
+                        case "Active.1, Resolved.1, MaxTodos.False":
+                            return "Active.1, Resolved.>1, MaxTodos.False";
+                        case "Active.1, Resolved.>1, MaxTodos.False":
+                            return startState;
+                        case "Active.>1, Resolved.1, MaxTodos.False":
+                            return "Active.>1, Resolved.>1, MaxTodos.False";
+                        case "Active.>1, Resolved.>1, MaxTodos.False":
+                            return startState;
+                        case "Active.Max-1, Resolved.0, MaxTodos.False":
+                            return "Active.Max-1, Resolved.1, MaxTodos.True";
+                        case "Active.0, Resolved.Max-1, MaxTodos.False":
+                            return "Active.0, Resolved.Max, MaxTodos.True";
+                        default:
+                            break;
+                    }
+                    break;
+                case resolveActiveTodo:
+                    switch (startState)
+                    {
+                        case "Active.>1, Resolved.0, MaxTodos.False":
+                            return "Active.1, Resolved.1, MaxTodos.False";
+                        case "Active.>1, Resolved.1, MaxTodos.False":
+                        case "Active.>1, Resolved.>1, MaxTodos.False":
+                            return "Active.1, Resolved.>1, MaxTodos.False";
+                        case "Active.Max-1, Resolved.0, MaxTodos.False":
+                            return "Active.>1, Resolved.1, MaxTodos.False";
+                        case "Active.Max, Resolved.0, MaxTodos.True":
+                            return "Active.Max-1, Resolved.1, MaxTodos.True";
+                        case "Active.Max-1, Resolved.1, MaxTodos.True":
+                            return "Active.>1, Resolved.>1, MaxTodos.True";
+                        case "Active.>1, Resolved.>1, MaxTodos.True":
+                            return "Active.1, Resolved.Max-1, MaxTodos.True";
+                        default:
+                            break;
+                    }
+                    break;
+                case activateResolvedTodo:
+                    switch (startState)
+                    {
+                        case "Active.0, Resolved.>1, MaxTodos.False":
+                            return "Active.1, Resolved.1, MaxTodos.False";
+                        case "Active.1, Resolved.>1, MaxTodos.False":
+                        case "Active.>1, Resolved.>1, MaxTodos.False":
+                            return "Active.>1, Resolved.1, MaxTodos.False";
+                        case "Active.0, Resolved.Max-1, MaxTodos.False":
+                            return "Active.1, Resolved.>1, MaxTodos.False";
+                        case "Active.0, Resolved.Max, MaxTodos.True":
+                            return "Active.1, Resolved.Max-1, MaxTodos.True";
+                        case "Active.1, Resolved.Max-1, MaxTodos.True":
+                            return "Active.>1, Resolved.>1, MaxTodos.True";
+                        case "Active.>1, Resolved.>1, MaxTodos.True":
+                            return "Active.Max-1, Resolved.1, MaxTodos.True";
+                        default:
+                            break;
+                    }
+                    break;
+                case deleteActiveTodo:
+                    switch (startState)
+                    {
+                        case "Active.>1, Resolved.0, MaxTodos.False":
+                            return "Active.1, Resolved.0, MaxTodos.False";
+                        case "Active.>1, Resolved.1, MaxTodos.False":
+                            return "Active.1, Resolved.1, MaxTodos.False";
+                        case "Active.>1, Resolved.>1, MaxTodos.False":
+                            return "Active.1, Resolved.>1, MaxTodos.False";
+                        case "Active.Max-1, Resolved.0, MaxTodos.False":
+                            return "Active.>1, Resolved.0, MaxTodos.False";
+                        case "Active.Max, Resolved.0, MaxTodos.True":
+                            return "Active.Max-1, Resolved.0, MaxTodos.False";
+                        case "Active.Max-1, Resolved.1, MaxTodos.True":
+                            return "Active.>1, Resolved.1, MaxTodos.False";
+                        case "Active.>1, Resolved.>1, MaxTodos.True":
+                            return "Active.1, Resolved.>1, MaxTodos.False";
+                        default:
+                            break;
+                    }
+                    break;
+                case deleteResolvedTodo:
+                    switch (startState)
+                    {
+                        case "Active.0, Resolved.>1, MaxTodos.False":
+                            return "Active.0, Resolved.1, MaxTodos.False";
+                        case "Active.1, Resolved.>1, MaxTodos.False":
+                            return "Active.1, Resolved.1, MaxTodos.False";
+                        case "Active.>1, Resolved.>1, MaxTodos.False":
+                            return "Active.>1, Resolved.1, MaxTodos.False";
+                        case "Active.0, Resolved.Max-1, MaxTodos.False":
+                            return "Active.0, Resolved.>1, MaxTodos.False";
+                        case "Active.0, Resolved.Max, MaxTodos.True":
+                            return "Active.0, Resolved.Max-1, MaxTodos.False";
+                        case "Active.1, Resolved.Max-1, MaxTodos.True":
+                            return "Active.1, Resolved.>1, MaxTodos.False";
+                        case "Active.>1, Resolved.>1, MaxTodos.True":
+                            return "Active.>1, Resolved.1, MaxTodos.False";
+                        default:
+                            break;
+                    }
+                    break;
+                case addMaximumActiveTodo:
+                    switch (startState)
+                    {
+                        case "Active.Max-1, Resolved.0, MaxTodos.False":
+                            return "Active.Max, Resolved.0, MaxTodos.True";
+                        case "Active.>1, Resolved.>1, MaxTodos.False":
+                            return "Active.>1, Resolved.>1, MaxTodos.True";
+                        case "Active.0, Resolved.Max-1, MaxTodos.False":
+                            return "Active.1, Resolved.Max-1, MaxTodos.True";
+                        default:
+                            break;
+                    }
+                    break;
+                case addMaximumResolvedTodo:
+                    switch (startState)
+                    {
+                        case "Active.0, Resolved.Max-1, MaxTodos.False":
+                            return "Active.0, Resolved.Max, MaxTodos.True";
+                        case "Active.>1, Resolved.>1, MaxTodos.False":
+                            return "Active.>1, Resolved.>1, MaxTodos.True";
+                        case "Active.Max-1, Resolved.0, MaxTodos.False":
+                            return "Active.Max-1, Resolved.1, MaxTodos.True";
+                        default:
+                            break;
+                    }
+                    break;
+                case deleteFinalActiveTodo:
+                    switch (startState)
+                    {
+                        case "Active.1, Resolved.0, MaxTodos.False":
+                            return "Active.0, Resolved.0, MaxTodos.False";
+                        case "Active.1, Resolved.1, MaxTodos.False":
+                            return "Active.0, Resolved.1, MaxTodos.False";
+                        case "Active.1, Resolved.>1, MaxTodos.False":
+                            return "Active.0, Resolved.>1, MaxTodos.False";
+                        case "Active.1, Resolved.Max-1, MaxTodos.True":
+                            return "Active.0, Resolved.Max-1, MaxTodos.False";
+                        default:
+                            break;
+                    }
+                    break;
+                case deleteFinalResolvedTodo:
+                    switch (startState)
+                    {
+                        case "Active.0, Resolved.1, MaxTodos.False":
+                            return "Active.0, Resolved.0, MaxTodos.False";
+                        case "Active.1, Resolved.1, MaxTodos.False":
+                            return "Active.1, Resolved.0, MaxTodos.False";
+                        case "Active.>1, Resolved.1, MaxTodos.False":
+                            return "Active.>1, Resolved.0, MaxTodos.False";
+                        case "Active.Max-1, Resolved.1, MaxTodos.True":
+                            return "Active.Max-1, Resolved.0, MaxTodos.False";
+                        default:
+                            break;
+                    }
+                    break;
+                case activateFinalResolvedTodo:
+                    switch (startState)
+                    {
+                        case "Active.0, Resolved.1, MaxTodos.False":
+                            return "Active.1, Resolved.0, MaxTodos.False";
+                        case "Active.1, Resolved.1, MaxTodos.False":
+                            return "Active.>1, Resolved.0, MaxTodos.False";
+                        case "Active.>1, Resolved.1, MaxTodos.False":
+                            return "Active.Max-1, Resolved.0, MaxTodos.False";
+                        case "Active.Max-1, Resolved.1, MaxTodos.True":
+                            return "Active.Max, Resolved.0, MaxTodos.True";
+                        default:
+                            break;
+                    }
+                    break;
+                case resolveFinalActiveTodo:
+                    switch (startState)
+                    {
+                        case "Active.1, Resolved.0, MaxTodos.False":
+                            return "Active.0, Resolved.1, MaxTodos.False";
+                        case "Active.1, Resolved.1, MaxTodos.False":
+                            return "Active.0, Resolved.>1, MaxTodos.False";
+                        case "Active.1, Resolved.>1, MaxTodos.False":
+                            return "Active.0, Resolved.Max-1, MaxTodos.False";
+                        case "Active.1, Resolved.Max-1, MaxTodos.True":
+                            return "Active.0, Resolved.Max, MaxTodos.True";
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    Console.WriteLine("Endstate same as startstate: {0}", startState);
+                    return startState;
+            }
+            return String.Empty;
+        }
         // Interface method
         public string GetEndState(string startState, string action)
         {
@@ -1586,9 +2010,28 @@ namespace TodoAPIsNaiveAdapter
             bool inSession = vState[0].Contains("True") ? true : false;
             string endState = String.Empty;
 
-            resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
-            activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
-            secretToken = vState[3].Contains("True") ? true : false;
+            if (AbstractTheState)
+            {
+                string[] stateArray = { vState[1], vState[2], vState[3] };
+
+                abstractTodos = String.Join(", ", stateArray);
+                endState = GetAbstractEndState(abstractTodos, action);
+                string prefix = vState[0] + ", ";
+                if (action == startSession)
+                {
+                    prefix = "InSession.True, ";
+                }
+                if (action == endSession)
+                {
+                    prefix = "InSession.False, ";
+                }
+                return prefix + endState;
+            }
+            else
+            {
+                resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
+                activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
+            }
 
             switch (action)
             {
@@ -1616,7 +2059,6 @@ namespace TodoAPIsNaiveAdapter
                 case setSecretNoteWrongAuthToken:
                 case setSecretNoteNoAuthToken:
                 case getSecretNote:
-                case setSecretNote:
                     break;
 
                 case getSecretTokenAuthPass:
@@ -1680,7 +2122,7 @@ namespace TodoAPIsNaiveAdapter
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            endState = StringifyStateVector(inSession, activeTodosCount, resolvedTodosCount, secretToken);
+            endState = StringifyStateVector(inSession);
             return endState;
         }
     }
