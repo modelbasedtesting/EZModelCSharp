@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq; // Enumerable
 using System.Text; // StringContent Encoding
 using System.Net.Http;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace TodoAPIsNaiveAdapter
         static int Main(string[] args)
         {
             APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
             client.IncludeSelfLinkNoise = true;
 
             EzModelGraph graph = new EzModelGraph(client, 7000, 500, 60, EzModelGraph.LayoutRankDirection.TopDown);
@@ -116,7 +117,7 @@ namespace TodoAPIsNaiveAdapter
         }
 
         bool svInSession = false;
-        uint svResolvedTodos = 0; 
+        uint svResolvedTodos = 0;
         uint svActiveTodos = 10;
         bool svSecretToken = false;
         string svAuthToken = String.Empty;
@@ -128,6 +129,13 @@ namespace TodoAPIsNaiveAdapter
 
         const uint maximumTodosCount = 12; // Arbitrary maximum
         string AuthToken = "";
+        // Special counter for adapter, to run with Accept header of application/json
+        // on all actions that would otherwise allow either application/xml or
+        // application/json, until all those actions have been covered at least once.
+        // Then, allow random setting of Accept header to either application/xml or
+        // application/json.
+        bool[] executed = Enumerable.Repeat(true, 34).ToArray();
+        bool executionAlertShown = false;
 
         Random random = new Random(DateTime.Now.Millisecond);
 
@@ -148,9 +156,9 @@ namespace TodoAPIsNaiveAdapter
         const string deleteActiveTodo = "Delete an Active Todo";
         const string deleteFinalActiveTodo = "Delete Final Active Todo";
         const string resolveActiveTodo = "Resolve an Active Todo";
-        const string resolveFinalActiveTodo = "Resolve Final Active Todo";
+//        const string resolveFinalActiveTodo = "Resolve Final Active Todo";
         const string activateResolvedTodo = "Activate a Resolved Todo";
-        const string activateFinalResolvedTodo = "Activate Final Resolved Todo";
+//        const string activateFinalResolvedTodo = "Activate Final Resolved Todo";
 
         // Read-only actions
         const string getTodosList = "Get Todos List";
@@ -463,6 +471,26 @@ namespace TodoAPIsNaiveAdapter
             return unused;
         }
 
+        bool AllExecuted()
+        {
+            foreach ( bool value in executed)
+            {
+                if (!value)
+                {
+                    return false;
+                }
+            }
+            if (!executionAlertShown)
+            {
+                executionAlertShown = true;
+                Console.WriteLine("All variable Accept methods have accepted application/json.");
+                Console.WriteLine("From here forward, Accept method will randomly vary between");
+                Console.WriteLine("application/xml and application/json.");
+                Console.ReadKey();
+            }
+            return true;
+        }
+
         // Interface method
         public string AdapterTransition(string startState, string action)
         {
@@ -572,7 +600,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getChallenges:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[0] = true;
+                            isXmlContent = false;
+                        }
 
                         ChallengesList challenges = new ChallengesList();
 
@@ -622,7 +659,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getResolvedTodos:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[1] = true;
+                            isXmlContent = false;
+                        }
 
                         // issue the GET request
                         if (!executer.GetRequest(acceptHeaders, "todos?doneStatus=true", customHeaders))
@@ -645,7 +691,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getTodosHead: // HEAD request on /todos
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[2] = true;
+                            isXmlContent = false;
+                        }
 
                         if (!executer.HeadRequest(acceptHeaders, "todos"))
                         {
@@ -666,7 +721,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getTodosOPTIONS: // OPTIONS request on /todos
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[3] = true;
+                            isXmlContent = false;
+                        }
 
                         if (!executer.OptionsRequest(acceptHeaders, "todos"))
                         {
@@ -783,7 +847,16 @@ namespace TodoAPIsNaiveAdapter
                         // could change the size category of the active or resolved
                         // todos.  That is, you could go from zero to some, or from
                         // max to some, and that would not match the model.
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[4] = true;
+                            isXmlContent = false;
+                        }
 
                         int todoIndex = random.Next(sutTodos.todos.Count);
                         t = sutTodos.todos[todoIndex];
@@ -815,7 +888,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case addActiveTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[5] = true;
+                            isXmlContent = false;
+                        }
 
                         todoNoId.title = actionCount.ToString() + " AddAnActiveTodo";
                         todoNoId.doneStatus = false;
@@ -841,7 +923,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case addMaximumActiveTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[6] = true;
+                            isXmlContent = false;
+                        }
 
                         todoNoId.title = actionCount.ToString() + " AddMaximumActiveTodo";
                         todoNoId.doneStatus = false;
@@ -867,7 +958,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case addResolvedTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[7] = true;
+                            isXmlContent = false;
+                        }
 
                         todoNoId.title = actionCount.ToString() + " AddResolvedTodo";
                         todoNoId.doneStatus = true;
@@ -893,7 +993,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case addMaximumResolvedTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[8] = true;
+                            isXmlContent = false;
+                        }
 
                         todoNoId.title = actionCount.ToString() + " AddMaximumResolvedTodo";
                         todoNoId.doneStatus = true;
@@ -919,7 +1028,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case deleteActiveTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[9] = true;
+                            isXmlContent = false;
+                        }
 
                         index = random.Next((int)activeTodosCount);
                         foreach (TodoItem ti in sutTodos.todos)
@@ -942,7 +1060,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case deleteFinalActiveTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[10] = true;
+                            isXmlContent = false;
+                        }
 
                         foreach (TodoItem ti in sutTodos.todos)
                         {
@@ -960,7 +1087,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case deleteResolvedTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[11] = true;
+                            isXmlContent = false;
+                        }
 
                         index = random.Next((int)resolvedTodosCount);
                         foreach (TodoItem ti in sutTodos.todos)
@@ -983,7 +1119,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case deleteFinalResolvedTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[12] = true;
+                            isXmlContent = false;
+                        }
 
                         foreach (TodoItem ti in sutTodos.todos)
                         {
@@ -1001,7 +1146,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case resolveActiveTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[13] = true;
+                            isXmlContent = false;
+                        }
 
                         index = random.Next((int)activeTodosCount);
 
@@ -1030,7 +1184,17 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case activateResolvedTodo:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[14] = true;
+                            isXmlContent = false;
+                        }
+
                         index = random.Next((int)resolvedTodosCount);
 
                         foreach (TodoItem ti in sutTodos.todos)
@@ -1058,7 +1222,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getDocs:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[15] = true;
+                            isXmlContent = false;
+                        }
 
                         // issue the GET request
                         if (!executer.GetRequest(acceptHeaders, "docs", customHeaders))
@@ -1069,7 +1242,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getHeartbeat:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[16] = true;
+                            isXmlContent = false;
+                        }
 
                         // issue the GET request
                         if (!executer.GetRequest(acceptHeaders, "heartbeat", customHeaders))
@@ -1080,7 +1262,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case createNewChallengerSession:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[17] = true;
+                            isXmlContent = false;
+                        }
 
                         if (!executer.PostRequest(acceptHeaders, "challenger", new StringContent(""), customHeaders))
                         {
@@ -1091,7 +1282,16 @@ namespace TodoAPIsNaiveAdapter
                         break;
 
                     case getTodoFail:
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[18] = true;
+                            isXmlContent = false;
+                        }
 
                         // issue the GET request
                         if (!executer.GetRequest(acceptHeaders, "todo", customHeaders))
@@ -1104,7 +1304,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getNonexistentTodo:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[19] = true;
+                            isXmlContent = false;
+                        }
 
                         // issue the GET request
                         if (!executer.GetRequest(acceptHeaders, "todos/" + UnusedTodoId(todoIds).ToString(), customHeaders))
@@ -1118,7 +1327,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case addTodoInvalidDoneStatus:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[20] = true;
+                            isXmlContent = false;
+                        }
 
                         TodoItemInvalidDoneStatus tids = new TodoItemInvalidDoneStatus();
                         tids.title = actionCount.ToString() + " AddTodoInvalidDoneStatus";
@@ -1147,7 +1365,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getTodoGzip:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[21] = true;
+                            isXmlContent = false;
+                        }
                         // should get NOT ACCEPTABLE response
 
                         if (!executer.GetRequest(acceptHeaders, "todos", customHeaders))
@@ -1161,7 +1388,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case addTodoUnsupportedContentType:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[22] = true;
+                            isXmlContent = false;
+                        }
 
                         todoNoId.title = actionCount.ToString() + " AddTodoUnsupportedContentType";
                         todoNoId.doneStatus = true;
@@ -1185,7 +1421,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case deleteHeartbeat:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[23] = true;
+                            isXmlContent = false;
+                        }
 
                         if (!executer.DeleteRequest(acceptHeaders, "heartbeat"))
                         {
@@ -1198,7 +1443,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case patchHeartbeat:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[24] = true;
+                            isXmlContent = false;
+                        }
 
                         if (!executer.PatchRequest(acceptHeaders, "heartbeat", new StringContent("No nada, nothing")))
                         {
@@ -1211,7 +1465,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case traceHeartbeat:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[25] = true;
+                            isXmlContent = false;
+                        }
 
                         if (!executer.TraceRequest(acceptHeaders, "heartbeat"))
                         {
@@ -1224,7 +1487,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getSecretTokenFailedAuth:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[26] = true;
+                            isXmlContent = false;
+                        }
 
                         Console.WriteLine("request Content-Type = {0}", contentType);
 
@@ -1239,7 +1511,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getSecretTokenAuthPass:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[27] = true;
+                            isXmlContent = false;
+                        }
 
                         Console.WriteLine("request Content-Type = {0}", contentType);
 
@@ -1284,7 +1565,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getSecretNoteWrongAuthToken:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[28] = true;
+                            isXmlContent = false;
+                        }
 
                         customHeaders.Add(new[] { "X-AUTH-TOKEN", "This ain't right" });
 
@@ -1300,7 +1590,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getSecretNoteNoAuthToken:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[29] = true;
+                            isXmlContent = false;
+                        }
 
                         // issue the GET request
                         if (!executer.GetRequest(acceptHeaders, "secret/note", customHeaders))
@@ -1314,7 +1613,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case setSecretNoteWrongAuthToken:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[30] = true;
+                            isXmlContent = false;
+                        }
 
                         customHeaders.Add(new[] { "X-AUTH-TOKEN", "This ain't right" });
 
@@ -1329,7 +1637,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case setSecretNoteNoAuthToken:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[31] = true;
+                            isXmlContent = false;
+                        }
 
                         if (!executer.PostRequest(acceptHeaders, "secret/note", new StringContent(@"{""note"":""my note""}"), customHeaders))
                         {
@@ -1342,7 +1659,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case getSecretNote:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[32] = true;
+                            isXmlContent = false;
+                        }
 
                         Console.WriteLine("AuthToken = {0}", AuthToken);
 
@@ -1360,7 +1686,16 @@ namespace TodoAPIsNaiveAdapter
 
                     case setSecretNote:
                         debuggerHugger = false;
-                        acceptHeaders.Add(acceptType);
+                        if (AllExecuted())
+                        {
+                            acceptHeaders.Add(acceptType);
+                        }
+                        else
+                        {
+                            acceptHeaders.Add("application/json");
+                            executed[33] = true;
+                            isXmlContent = false;
+                        }
 
                         customHeaders.Add(new[] { "X-AUTH-TOKEN", AuthToken });
 
