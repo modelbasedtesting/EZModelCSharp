@@ -19,6 +19,8 @@ namespace TodoAPIsNaiveAdapter
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
             client.IncludeSelfLinkNoise = true;
+            client.IncludeSecretToken = true;
+            client.AcceptJsonBeforeXml = true;
 
             EzModelGraph graph = new EzModelGraph(client, 7000, 500, 60, EzModelGraph.LayoutRankDirection.TopDown);
 
@@ -134,8 +136,10 @@ namespace TodoAPIsNaiveAdapter
         // application/json, until all those actions have been covered at least once.
         // Then, allow random setting of Accept header to either application/xml or
         // application/json.
-        bool[] executed = Enumerable.Repeat(true, 34).ToArray();
         bool executionAlertShown = false;
+        public bool IncludeSecretToken = true;
+        public bool AcceptJsonBeforeXml = false;
+        bool[] executed;
 
         Random random = new Random(DateTime.Now.Millisecond);
 
@@ -211,6 +215,8 @@ namespace TodoAPIsNaiveAdapter
             resolvedTodosCount = svResolvedTodos;
             secretToken = svSecretToken;
             AuthToken = svAuthToken;
+
+            executed = Enumerable.Repeat(!AcceptJsonBeforeXml, 33).ToArray();
 
             return StringifyStateVector(svInSession, activeTodosCount, resolvedTodosCount, secretToken);
         }
@@ -1365,16 +1371,7 @@ namespace TodoAPIsNaiveAdapter
 
                     case getTodoGzip:
                         debuggerHugger = false;
-                        if (AllExecuted())
-                        {
-                            acceptHeaders.Add(acceptType);
-                        }
-                        else
-                        {
-                            acceptHeaders.Add("application/json");
-                            executed[21] = true;
-                            isXmlContent = false;
-                        }
+                        acceptHeaders.Add("application/gzip");
                         // should get NOT ACCEPTABLE response
 
                         if (!executer.GetRequest(acceptHeaders, "todos", customHeaders))
@@ -1395,7 +1392,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[22] = true;
+                            executed[21] = true;
                             isXmlContent = false;
                         }
 
@@ -1428,7 +1425,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[23] = true;
+                            executed[22] = true;
                             isXmlContent = false;
                         }
 
@@ -1450,7 +1447,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[24] = true;
+                            executed[23] = true;
                             isXmlContent = false;
                         }
 
@@ -1472,7 +1469,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[25] = true;
+                            executed[24] = true;
                             isXmlContent = false;
                         }
 
@@ -1494,7 +1491,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[26] = true;
+                            executed[25] = true;
                             isXmlContent = false;
                         }
 
@@ -1518,7 +1515,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[27] = true;
+                            executed[26] = true;
                             isXmlContent = false;
                         }
 
@@ -1572,7 +1569,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[28] = true;
+                            executed[27] = true;
                             isXmlContent = false;
                         }
 
@@ -1597,7 +1594,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[29] = true;
+                            executed[28] = true;
                             isXmlContent = false;
                         }
 
@@ -1620,7 +1617,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[30] = true;
+                            executed[29] = true;
                             isXmlContent = false;
                         }
 
@@ -1644,7 +1641,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[31] = true;
+                            executed[30] = true;
                             isXmlContent = false;
                         }
 
@@ -1666,7 +1663,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[32] = true;
+                            executed[31] = true;
                             isXmlContent = false;
                         }
 
@@ -1693,7 +1690,7 @@ namespace TodoAPIsNaiveAdapter
                         else
                         {
                             acceptHeaders.Add("application/json");
-                            executed[33] = true;
+                            executed[32] = true;
                             isXmlContent = false;
                         }
 
@@ -1736,7 +1733,7 @@ namespace TodoAPIsNaiveAdapter
             }
             else
             {
-                System.Threading.Thread.Sleep(20);
+                System.Threading.Thread.Sleep(1);
             }
 
             // 1.determine running state value
@@ -1776,14 +1773,21 @@ namespace TodoAPIsNaiveAdapter
             actions.Add(getDocs);
             actions.Add(getHeartbeat);
 
-            if (secretToken == false)
+            if (IncludeSecretToken)
             {
-                actions.Add(getSecretTokenAuthPass); // challenge
-            }
-            else
-            {
-                actions.Add(getSecretNote); // challenge
-                actions.Add(setSecretNote); // challenge
+                if (secretToken == false)
+                {
+                    actions.Add(getSecretTokenAuthPass); // challenge
+                }
+                else
+                {
+                    actions.Add(getSecretNote); // challenge
+                    actions.Add(setSecretNote); // challenge
+                    actions.Add(getSecretNoteWrongAuthToken); // challenge
+                    actions.Add(getSecretNoteNoAuthToken); // challenge
+                    actions.Add(setSecretNoteWrongAuthToken); // challenge
+                    actions.Add(setSecretNoteNoAuthToken); // challenge
+                }
             }
 
             if (includeSelfLinkNoise)
@@ -1813,11 +1817,10 @@ namespace TodoAPIsNaiveAdapter
                 actions.Add(deleteHeartbeat); // challenge
                 actions.Add(patchHeartbeat); // challenge
                 actions.Add(traceHeartbeat); // challenge
-                actions.Add(getSecretTokenFailedAuth); // challenge
-                actions.Add(getSecretNoteWrongAuthToken); // challenge
-                actions.Add(getSecretNoteNoAuthToken); // challenge
-                actions.Add(setSecretNoteWrongAuthToken); // challenge
-                actions.Add(setSecretNoteNoAuthToken); // challenge
+                if (IncludeSecretToken)
+                {
+                    actions.Add(getSecretTokenFailedAuth); // challenge
+                }
             }
 
             //            actions.Add(endSession);
