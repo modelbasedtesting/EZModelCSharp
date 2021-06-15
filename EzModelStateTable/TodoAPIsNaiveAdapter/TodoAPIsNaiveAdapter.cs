@@ -19,10 +19,10 @@ namespace TodoAPIsNaiveAdapter
             APIs client = new APIs();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
             client.IncludeSelfLinkNoise = true;
-            client.IncludeSecretToken = true;
-            client.AcceptJsonBeforeXml = true;
+            client.IncludeSecretToken = true;  // Set false to trim the size of the model by excluding actions about the secret token.
+            client.AcceptJsonBeforeXml = true;  // Only accept JSON in the response until all challenges have been covered at least once.
 
-            EzModelGraph graph = new EzModelGraph(client, 7000, 500, 60, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 7000, 500, 60, EzModelGraph.LayoutRankDirection.TopDown, DateTime.Now.Millisecond);
 
             if (!graph.GenerateGraph())
             {

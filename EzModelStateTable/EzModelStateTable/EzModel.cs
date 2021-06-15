@@ -45,12 +45,12 @@ namespace SeriousQualityEzModel
     public struct TransitionAction
     {
         public string action;
-        public int faultCount; // Keep track of errors involving this action
+        public int problemCount; // Keep track of traversal problems involving this action
 
         public TransitionAction(string actionArg)
         {
             this.action = actionArg;
-            this.faultCount = 0;
+            this.problemCount = 0;
         }
     }
 
@@ -68,12 +68,16 @@ namespace SeriousQualityEzModel
 
         public readonly string transitionSeparator = " | ";
 
-        Random rnd = new Random(DateTime.Now.Millisecond);
+        public int randomSeed;
 
-        public StateTransitions(uint maximumTransitions, uint maximumActions)
+        Random rnd;
+
+        public StateTransitions(uint maximumTransitions, uint maximumActions, int randomSeed = 1)
         {
             transitions = new StateTransition[maximumTransitions];
             actions = new TransitionAction[maximumActions];
+            this.randomSeed = randomSeed;
+            rnd = new Random(this.randomSeed);
         }
 
         public string ActionByTransitionIndex(uint tIndex)
@@ -416,8 +420,8 @@ namespace SeriousQualityEzModel
         {
             if (tIndex < transitionCount)
             {
-                actions[transitions[tIndex].actionIndex].faultCount++;
-                return actions[transitions[tIndex].actionIndex].faultCount;
+                actions[transitions[tIndex].actionIndex].problemCount++;
+                return actions[transitions[tIndex].actionIndex].problemCount;
             }
             return -1;
         }
@@ -486,14 +490,12 @@ namespace SeriousQualityEzModel
     {
         public string state;
         public bool visited;
-        public int visits;
         public string parent;
 
         public Node( string initialState )
         {
             this.state = initialState;
             this.visited = false;
-            this.visits = 0;
             this.parent = "";
         }
     }
@@ -513,7 +515,6 @@ namespace SeriousQualityEzModel
             if (count < nodes.Length)
             {
                 nodes[count].state = state;
-                nodes[count].visits = 0;
                 nodes[count].visited = false;
                 nodes[count].parent = "";
                 count++;
@@ -721,11 +722,11 @@ namespace SeriousQualityEzModel
 
         string[] legendColor = { "#000000", "#DF00DF", "#00AFFF", "#990099", "#00DF00", "#0000DF", "#EFD700", "#8F008F", "#77EF77", "#3737AF", "#BF4F4F", "#008F00", "#A71770", "#3FAF3F", "#4F7FEF", "#8FCF27", "#771FAF", "#97FF2F", "#FF7F7F" };
 
-        public EzModelGraph(IEzModelClient theEzModelClient, uint maxTransitions = 1000, uint maxNodes = 20, uint maxActions = 20, LayoutRankDirection layoutRankDirection = LayoutRankDirection.LeftRight)
+        public EzModelGraph(IEzModelClient theEzModelClient, uint maxTransitions = 1000, uint maxNodes = 20, uint maxActions = 20, LayoutRankDirection layoutRankDirection = LayoutRankDirection.LeftRight, int randomSeed = 1)
         {
             client = theEzModelClient;
 
-            transitions = new StateTransitions(maxTransitions, maxActions);
+            transitions = new StateTransitions(maxTransitions, maxActions, randomSeed);
 
             totalNodes = new Nodes(maxNodes);
 
@@ -993,7 +994,11 @@ Serious Quality model view and activity playback
 Doug Szabo doug.szabo@gmail.com
 
 Copyright (c) 2021 Serious Quality, LLC
--->
+
+");
+                    w.WriteLine("Random seed for this run was {0}", transitions.randomSeed);
+                    w.WriteLine(
+@"-->
 <html>
 	<head>
 		<style>
@@ -2324,6 +2329,8 @@ function getHitColor(hitCount) {
 
             if (client.NotifyAdapter)
             {
+                // TODO: for Abstract model, client must set its own popcorn trail of details
+                // that aligns with the popcorn trail here, which is about the model.
                 client.SetStateOfSystemUnderTest(initialState);
             }
 
@@ -2414,12 +2421,16 @@ function getHitColor(hitCount) {
                                     // was detected on transition Z in the route ...,Y,Z, and then Beeline succeeds in
                                     // route ...,X,Z, we may find that another route of ...,Y,Z also has a problem.  Y
                                     // is then the suspect transition.
+
+                                    // TODO: add a display value to show the disabled transition
                                     transitions.DisableTransition((uint)tIndex);
                                 }
                                 else
                                 {
-                    // On second or later fault on the same action, disable the action everywhere.
-                transitions.DisableTransitionsByAction(transitions.ActionByTransitionIndex((uint)tIndex));
+                                    // TODO: add a display value to show the disabled transition
+
+                                    // On second or later fault on the same action, disable the action everywhere.
+                                    transitions.DisableTransitionsByAction(transitions.ActionByTransitionIndex((uint)tIndex));
             // NOTE: there may be a systemic problem with the action itself.  Two incidents involving the
             // same action is reason enough to avoid the action for the remainder of the run.  Development
             // team can root-cause the issue.
