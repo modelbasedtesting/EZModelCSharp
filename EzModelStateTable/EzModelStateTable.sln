@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewAbstract", "NewAbstract\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetClinic", "PetClinic\PetClinic.csproj", "{FBB17101-D701-4741-B78C-B67E234F9B06}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monopoly", "Monopoly\Monopoly.csproj", "{FE240BDE-6BEF-4999-8DF2-372762180475}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,10 @@ Global
 		{FBB17101-D701-4741-B78C-B67E234F9B06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FBB17101-D701-4741-B78C-B67E234F9B06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBB17101-D701-4741-B78C-B67E234F9B06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE240BDE-6BEF-4999-8DF2-372762180475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE240BDE-6BEF-4999-8DF2-372762180475}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE240BDE-6BEF-4999-8DF2-372762180475}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE240BDE-6BEF-4999-8DF2-372762180475}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
