@@ -973,6 +973,10 @@ namespace SeriousQualityEzModel
             pathEndNode.Add(endOfPathNodeIndex);
         }
 
+        // TODO immediately:
+        // Add array of node name strings.
+        // set selectedSvgElementInfo to action name + node name instead of action name + node index.
+        
         void WriteSvgDeltasFile(string fileName)
         {
             // TODO:
@@ -2082,7 +2086,7 @@ function traversalStepCommon() {
         return; 
     }
 
-    document.getElementById(""selectedSvgElementInfo"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
+    document.getElementById(""selectedSvgElementInfo"").innerHTML = actionNames[transitionActions[traversedEdge[step]]] + "" to "" + endNode[step].toString();
 
     if (step == traversedEdge.length-1)
     {
@@ -2389,7 +2393,8 @@ function getHitColor(hitCount) {
                         {
                             string action = transitions.ActionByTransitionIndex((uint)tIndex);
                             popcornTrail.Add(action);
-                            Console.WriteLine("During path traversal");
+                            // TODO: the following console output relates to the AdapterGetEndState method in the Monopoly client.
+                            Console.WriteLine(" "); //  ("During path traversal");
                             string reportedEndState = client.AdapterTransition(transitions.StartStateByTransitionIndex((uint)tIndex), action);
                             string predicted = transitions.EndStateByTransitionIndex((uint)tIndex);
                             if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
@@ -2463,7 +2468,8 @@ function getHitColor(hitCount) {
                 {
                     string action = transitions.ActionByTransitionIndex((uint)targetIndex);
                     popcornTrail.Add(action);
-                    Console.WriteLine("After Path traversal");
+                    // TODO: the following console output relates to the AdapterGetEndState method in the Monopoly client.
+                    Console.WriteLine(" "); //  ("After Path traversal");
                     string reportedEndState = client.AdapterTransition(targetStartState, action);
                     string predicted = transitions.EndStateByTransitionIndex((uint)targetIndex);
                     if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
