@@ -129,7 +129,7 @@ namespace Monopoly
 
         struct Player
         {
-            uint money;
+            int money; // Player is out of game when this goes negative.
             uint location; // 40 means you are in jail.
             bool[] possessions; // each element is a location value for a property
             bool CommunityChestGoojf;
@@ -137,7 +137,7 @@ namespace Monopoly
             uint numberOfDoubles; // zero initially, set to zero when non-doubles are rolled, or after going to jail.  Go to jail when this hits 3.  Also zero when exiting jail on doubles.
             bool activelyBidding;
 
-            public Player(uint initialMoney = 1500)
+            public Player(int initialMoney = 1500)
             {
                 money = initialMoney;
                 location = 0; // Go
