@@ -127,6 +127,30 @@ namespace Monopoly
             }
         }
 
+        struct Player
+        {
+            uint money;
+            uint location; // 40 means you are in jail.
+            bool[] possessions; // each element is a location value for a property
+            bool CommunityChestGoojf;
+            bool ChanceGoojf;
+            uint numberOfDoubles; // zero initially, set to zero when non-doubles are rolled, or after going to jail.  Go to jail when this hits 3.  Also zero when exiting jail on doubles.
+            bool activelyBidding;
+
+            public Player(uint initialMoney = 1500)
+            {
+                money = initialMoney;
+                location = 0; // Go
+                possessions = new bool[41]; // initial value is false by default
+                CommunityChestGoojf = false;
+                ChanceGoojf = false;
+                numberOfDoubles = 0;
+                activelyBidding = false;
+            }
+        }
+
+        Player Player1;
+
         // State Values for the 40 squares on the board + the in Jail pseudo-square
         GameSquare[] gameSquares = {
             new GameSquare( 0, "Go", SquareType.Go, ColorGroup.None, 0, 0, 0),
@@ -267,43 +291,56 @@ namespace Monopoly
             switch (action)
             {
                 case goToJail:
-                    return "40"; // In Jail
+                    currentState = 40; // In Jail
+                    break;
 
                 case goToJustVisiting:
-                    return "10"; // Just visiting
+                    currentState = 10; // Just visiting
+                    break;
 
                 case roll2:
-                    return ((currentState + 2) % 40).ToString();
+                    currentState = (currentState + 2) % 40;
+                    break;
 
                 case roll3:
-                    return ((currentState + 3) % 40).ToString();
+                    currentState = (currentState + 3) % 40;
+                    break;
 
                 case roll4:
-                    return ((currentState + 4) % 40).ToString();
+                    currentState = (currentState + 4) % 40;
+                    break;
 
                 case roll5:
-                    return ((currentState + 5) % 40).ToString();
+                    currentState = (currentState + 5) % 40;
+                    break;
 
                 case roll6:
-                    return ((currentState + 6) % 40).ToString();
+                    currentState = (currentState + 6) % 40;
+                    break;
 
                 case roll7:
-                    return ((currentState + 7) % 40).ToString();
+                    currentState = (currentState + 7) % 40;
+                    break;
 
                 case roll8:
-                    return ((currentState + 8) % 40).ToString();
+                    currentState = (currentState + 8) % 40;
+                    break;
 
                 case roll9:
-                    return ((currentState + 9) % 40).ToString();
+                    currentState = (currentState + 9) % 40;
+                    break;
 
                 case roll10:
-                    return ((currentState + 10) % 40).ToString();
+                    currentState = (currentState + 10) % 40;
+                    break;
 
                 case roll11:
-                    return ((currentState + 11) % 40).ToString();
+                    currentState = (currentState + 11) % 40;
+                    break;
 
                 case roll12:
-                    return ((currentState + 12) % 40).ToString();
+                    currentState = (currentState + 12) % 40;
+                    break;
 
                 /*
                     * Handle Chance and Community Chest with this kind of case + switch block
@@ -330,6 +367,8 @@ namespace Monopoly
                     Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
                     return startState;
             }
+
+            return currentState.ToString();
         }
 
 /* ****    ADAPTER    **** */
@@ -356,10 +395,19 @@ namespace Monopoly
 
         }
 
+        // For game simulation we need a player turn procedure
+        // The side effect of a player taking a turn is to modify the state of the board.
+        //  - a player may indirectly affect the information of other players according to the sell (and buy) and bid rules.
+
         // Interface method for Adapter
         public string AdapterTransition(string startState, string action)
         {
+            // For Monopoly, this adapter is a simulation of game play with 1 or more players.
+
             string expected = GetEndState(startState, action);
+
+            // affect the player state
+
             string observed = "";
             // What does execution mean?
             //
