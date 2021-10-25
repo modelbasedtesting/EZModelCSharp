@@ -60,7 +60,7 @@ namespace TodoAPIsNaiveAdapter
             client.StopOnProblem = false;
 
             client.WaitForObserverKeystroke = false;
-            graph.RandomDestinationCoverage("TodoAPIsNaiveAdapter", 2);
+            graph.RandomDestinationCoverage("TodoAPIsNaiveAdapter", 7);
 
             // normal finish
             return 0;
@@ -129,7 +129,7 @@ namespace TodoAPIsNaiveAdapter
         uint actionCount = 0;
         bool secretToken;
 
-        const uint maximumTodosCount = 12; // Arbitrary maximum
+        const uint maximumTodosCount = 3; // 12; // Arbitrary maximum
         string AuthToken = "";
         // Special counter for adapter, to run with Accept header of application/json
         // on all actions that would otherwise allow either application/xml or
@@ -1792,6 +1792,9 @@ namespace TodoAPIsNaiveAdapter
 
             if (includeSelfLinkNoise)
             {
+                actions.Add(getTodosList);
+                actions.Add(getDocs);
+                actions.Add(getHeartbeat);
                 if (activeTodosCount + resolvedTodosCount > 0)
                 {
                     actions.Add(editTodo);

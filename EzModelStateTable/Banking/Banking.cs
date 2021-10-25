@@ -2,18 +2,19 @@
 // copyright 2021 Serious Quality LLC
 
 // Model the classic board game Monopoly
+// Step 3: model the bank, and introduce adapter to buy properties that are unowned
 
 using System;
 using System.Collections.Generic;
 using SeriousQualityEzModel;
 
-namespace Monopoly
+namespace Banking
 {
-    public class MonopolyProgram
+    class BankingProgram
     {
         public static void Main()
         {
-            Monopoly client = new Monopoly(1, 1500)
+            Monopoly client = new Monopoly(1500)
             {
                 SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll
             };
@@ -22,7 +23,7 @@ namespace Monopoly
 
             if (graph.GenerateGraph())
             {
-             //   graph.DisplayStateTable(); // Display the Excel-format state table
+                //   graph.DisplayStateTable(); // Display the Excel-format state table
 
                 // write graph file before traversal
                 graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
@@ -66,9 +67,6 @@ namespace Monopoly
 
         // Stave variables
         public uint svSquare = 0; // Index into the Square array indicating board position.
-
-        // array of player pieces?
-        // - square # to say which square the player is on?
 
         public enum SquareType
         {
@@ -129,51 +127,51 @@ namespace Monopoly
             }
         }
 
-        
+
         // State Values for the 40 squares on the board + the in Jail pseudo-square
         public GameSquare[] gameSquares = {
-            new GameSquare( 0, "Go", SquareType.Go, ColorGroup.None, 0, 0, 0),
-            new GameSquare( 1, "Mediterannean Ave", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 2),
-            new GameSquare( 2, "Community Chest 1", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-            new GameSquare( 3, "Baltic Ave", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 4),
-            new GameSquare( 4, "Income Tax", SquareType.Tax, ColorGroup.None, 0, 0, 0),
-            new GameSquare( 5, "Reading Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-            new GameSquare( 6, "Oriental Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
-            new GameSquare( 7, "Chance 1", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-            new GameSquare( 8, "Vermont Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
-            new GameSquare( 9, "Connecticut Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 120, 8),
-            new GameSquare(10, "Just Visiting", SquareType.JustVisiting, ColorGroup.None, 0, 0, 0),
-            new GameSquare(11, "St. Charles Place", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
-            new GameSquare(12, "Electric Co.", SquareType.Utility, ColorGroup.White, 2, 150, 0),
-            new GameSquare(13, "States Ave", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
-            new GameSquare(14, "Virginia Ave", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 160, 12),
-            new GameSquare(15, "Pennsylvania Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-            new GameSquare(16, "St. James Place", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
-            new GameSquare(17, "Community Chest 2", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-            new GameSquare(18, "Tennessee Ave", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
-            new GameSquare(19, "New York Ave", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 200, 16),
-            new GameSquare(20, "Free Parking", SquareType.FreeParking, ColorGroup.None, 0, 0, 0),
-            new GameSquare(21, "Kentucky Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
-            new GameSquare(22, "Chance 2", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-            new GameSquare(23, "Indiana Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
-            new GameSquare(24, "Illinois Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 240, 20),
-            new GameSquare(25, "B & O Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-            new GameSquare(26, "Atlantic Ave", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
-            new GameSquare(27, "Ventnor Ave", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
-            new GameSquare(28, "Water Works", SquareType.Utility, ColorGroup.White, 2, 150, 0),
-            new GameSquare(29, "Marvin Gardens", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 280, 24),
-            new GameSquare(30, "Go to Jail", SquareType.GoToJail, ColorGroup.None, 0, 0, 0),
-            new GameSquare(31, "Pacific Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
-            new GameSquare(32, "North Carolina Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
-            new GameSquare(33, "Community Chest 3", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-            new GameSquare(34, "Pennsylvania Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 320, 28),
-            new GameSquare(35, "Short Line Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-            new GameSquare(36, "Chance 3", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-            new GameSquare(37, "Park Place", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 350, 35),
-            new GameSquare(38, "Luxury Tax", SquareType.Tax, ColorGroup.None, 0, 0, 75),
-            new GameSquare(39, "Board Walk", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 400, 50),
-            new GameSquare(40, "In Jail", SquareType.InJail, ColorGroup.None, 0, 0, 0)
-        };
+        new GameSquare( 0, "Go", SquareType.Go, ColorGroup.None, 0, 0, 0),
+        new GameSquare( 1, "Mediterannean Ave", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 2),
+        new GameSquare( 2, "Community Chest 1", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+        new GameSquare( 3, "Baltic Ave", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 4),
+        new GameSquare( 4, "Income Tax", SquareType.Tax, ColorGroup.None, 0, 0, 0),
+        new GameSquare( 5, "Reading Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+        new GameSquare( 6, "Oriental Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
+        new GameSquare( 7, "Chance 1", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+        new GameSquare( 8, "Vermont Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
+        new GameSquare( 9, "Connecticut Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 120, 8),
+        new GameSquare(10, "Just Visiting", SquareType.JustVisiting, ColorGroup.None, 0, 0, 0),
+        new GameSquare(11, "St. Charles Place", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
+        new GameSquare(12, "Electric Co.", SquareType.Utility, ColorGroup.White, 2, 150, 0),
+        new GameSquare(13, "States Ave", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
+        new GameSquare(14, "Virginia Ave", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 160, 12),
+        new GameSquare(15, "Pennsylvania Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+        new GameSquare(16, "St. James Place", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
+        new GameSquare(17, "Community Chest 2", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+        new GameSquare(18, "Tennessee Ave", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
+        new GameSquare(19, "New York Ave", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 200, 16),
+        new GameSquare(20, "Free Parking", SquareType.FreeParking, ColorGroup.None, 0, 0, 0),
+        new GameSquare(21, "Kentucky Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
+        new GameSquare(22, "Chance 2", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+        new GameSquare(23, "Indiana Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
+        new GameSquare(24, "Illinois Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 240, 20),
+        new GameSquare(25, "B & O Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+        new GameSquare(26, "Atlantic Ave", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
+        new GameSquare(27, "Ventnor Ave", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
+        new GameSquare(28, "Water Works", SquareType.Utility, ColorGroup.White, 2, 150, 0),
+        new GameSquare(29, "Marvin Gardens", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 280, 24),
+        new GameSquare(30, "Go to Jail", SquareType.GoToJail, ColorGroup.None, 0, 0, 0),
+        new GameSquare(31, "Pacific Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
+        new GameSquare(32, "North Carolina Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
+        new GameSquare(33, "Community Chest 3", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+        new GameSquare(34, "Pennsylvania Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 320, 28),
+        new GameSquare(35, "Short Line Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+        new GameSquare(36, "Chance 3", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+        new GameSquare(37, "Park Place", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 350, 35),
+        new GameSquare(38, "Luxury Tax", SquareType.Tax, ColorGroup.None, 0, 0, 75),
+        new GameSquare(39, "Board Walk", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 400, 50),
+        new GameSquare(40, "In Jail", SquareType.InJail, ColorGroup.None, 0, 0, 0)
+    };
 
         // Chance and Community Chest cards
         // State values
@@ -193,25 +191,12 @@ namespace Monopoly
         const string roll4 = "Move_4";
         const string roll3 = "Move_3";
         const string roll2 = "Move_2";
-        const string roll1 = "Move_1"; // not a real thing but lets us cover the board right away.
 
         // Evaluation actions
         const string goToJail = "Go to Jail";
         const string goToJustVisiting = "Go to Just Visiting";
-        const string advanceToGo = "Advance to Go";
-
-        // MULTIPLAYER STARTING RULE
-        // All players roll the dice
-        // Player with the highest roll gets to go first
-        // - In case of a tie roll, do a run-off of rolls
-
-        // ENDING A TURN
-        // - the turn ends when a player is sent to jail
-        // - the turn ends when a player chooses to end their turn
-        //
 
         Player[] players;
-        uint playerTurn = 1; // increment,  (modulo NumberOfPlayers) + 1
         int modelStep = 0;
 
         // Buying property
@@ -223,35 +208,17 @@ namespace Monopoly
         //     - starting bid is $1
         //       - highest bidder receives the property
 
-        // Paying rent on owned property
-
-        public Monopoly(uint NumberOfPlayers, int InitialMoney)
+        public Monopoly(int InitialMoney)
         {
-            players = new Player[NumberOfPlayers + 1];
+            players = new Player[2]; // Player 1 plus the bank.
 
-            for (uint i = 0; i <= NumberOfPlayers; i++)
+            for (uint i = 0; i < players.Length; i++)
             {
                 players[i] = new Player();
                 players[i].GameSetup(i + 1);
             }
 
-            // Set up Real Estate, Chance cards, and Community Chest cards
-            // Set up player info: money, for instance
             svSquare = 0;
-
-            // TEMPORARY: assign some properties to player 2
-            gameSquares[5].ownerId = 2;
-            gameSquares[6].ownerId = 2;
-            gameSquares[9].ownerId = 2;
-            gameSquares[12].ownerId = 2;
-            gameSquares[14].ownerId = 2;
-            gameSquares[18].ownerId = 2;
-            gameSquares[19].ownerId = 2;
-            gameSquares[24].ownerId = 2;
-            gameSquares[25].ownerId = 2;
-            gameSquares[27].ownerId = 2;
-            gameSquares[34].ownerId = 2;
-            gameSquares[37].ownerId = 2;
         }
 
         public bool CanBuySquare(uint square)
@@ -277,8 +244,6 @@ namespace Monopoly
 
             // Players other than playerId get to bid.
         }
-
-
 
         /* ****    MODEL CREATION   **** */
 
@@ -310,7 +275,6 @@ namespace Monopoly
             List<string> actions = new List<string>();
 
             uint currentSquare = findGameSquareFromTitle(startState);
-
 
             if (currentSquare == 40)
             {
@@ -399,27 +363,6 @@ namespace Monopoly
                     currentSquare = (currentSquare + 12) % 40;
                     break;
 
-                /*
-                    * Handle Chance and Community Chest with this kind of case + switch block
-                                case ascendLadder:
-                                    // the end state is determined by a relationship to the start state
-                                    switch (currentState)
-                                    {
-                                        case 1:
-                                            return svSquare + ".38";
-                                        case 4:
-                                            return svSquare + ".14";
-                                        case 9:
-                                            return svSquare + ".31";
-                                        case 21:
-                                            return svSquare + ".42";
-                                        case 80:
-                                            return svSquare + ".100";
-                                        default:
-                                            Console.WriteLine("ERROR: ascendLadder action taken when at square {0}, not at a bottomsOfLadders square, in UserRules.GetEndState()", currentState);
-                                            return startState; // return something...
-                                    }
-                */
                 default:
                     Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
                     return startState;
@@ -433,9 +376,7 @@ namespace Monopoly
         {
             List<string> actions = new List<string>();
 
-            // uint currentState = uint.Parse(startState.Split(".")[0]);
             uint currentSquare = findGameSquareFromTitle(startState);
-
 
             if (currentSquare == 40)
             {
@@ -452,15 +393,16 @@ namespace Monopoly
 
                 actions.Add(roll2);
                 actions.Add(roll3);
-                /*                actions.Add(roll4);
-                                actions.Add(roll5);
-                                actions.Add(roll6);
-                                actions.Add(roll7);
-                                actions.Add(roll8);
-                                actions.Add(roll9);
-                                actions.Add(roll10);
-                                actions.Add(roll11);
-                                actions.Add(roll12); */
+                /*  Control travel around board to 2 or 3 squares at a time
+                        actions.Add(roll4);
+                        actions.Add(roll5);
+                        actions.Add(roll6);
+                        actions.Add(roll7);
+                        actions.Add(roll8);
+                        actions.Add(roll9);
+                        actions.Add(roll10);
+                        actions.Add(roll11);
+                        actions.Add(roll12); */
             }
 
             return actions;
@@ -472,18 +414,15 @@ namespace Monopoly
             uint startSquare = findGameSquareFromTitle(startState);
             uint currentSquare = startSquare;
             modelStep++;
-            bool canCollectGoMoney = true;
 
             switch (action)
             {
                 case goToJail:
                     currentSquare = 40; // In Jail
-                    canCollectGoMoney = false;
                     break;
 
                 case goToJustVisiting:
                     currentSquare = 10; // Just visiting
-                    canCollectGoMoney = false;
                     break;
 
                 case roll2:
@@ -530,27 +469,6 @@ namespace Monopoly
                     currentSquare = (startSquare + 12) % 40;
                     break;
 
-                /*
-                    * Handle Chance and Community Chest with this kind of case + switch block
-                                case ascendLadder:
-                                    // the end state is determined by a relationship to the start state
-                                    switch (currentState)
-                                    {
-                                        case 1:
-                                            return svSquare + ".38";
-                                        case 4:
-                                            return svSquare + ".14";
-                                        case 9:
-                                            return svSquare + ".31";
-                                        case 21:
-                                            return svSquare + ".42";
-                                        case 80:
-                                            return svSquare + ".100";
-                                        default:
-                                            Console.WriteLine("ERROR: ascendLadder action taken when at square {0}, not at a bottomsOfLadders square, in UserRules.GetEndState()", currentState);
-                                            return startState; // return something...
-                                    }
-                */
                 default:
                     Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
                     return startState;
@@ -558,7 +476,7 @@ namespace Monopoly
 
             Console.WriteLine("Step {5}: {0} at square {1} {2}, landed on square {3} {4}", action, startSquare, gameSquares[startSquare].title, currentSquare, gameSquares[currentSquare].title, modelStep);
 
-            if (canCollectGoMoney && currentSquare < startSquare)
+            if (currentSquare < startSquare)
             {
                 players[1].money += 200;
                 Console.WriteLine("Player collected 200 for landing on or passing Go, now has {0}", players[1].money);
@@ -570,16 +488,10 @@ namespace Monopoly
             return currentState;
         }
 
-        void ReceiveMoney( uint playerId, int money)
-        {
-            players[playerId].money += money;
-            Console.WriteLine("Player {0} received {1}, now has {2}", playerId, money, players[playerId].money);
-        }
-
-        void ListSquaresOwnedBy( uint playerId)
+        void ListSquaresOwnedBy(uint playerId)
         {
             int quantity = 0;
-            for (uint i=0; i < 40; i++)
+            for (uint i = 0; i < 40; i++)
             {
                 if (gameSquares[i].ownerId == playerId)
                 {
@@ -598,18 +510,6 @@ namespace Monopoly
             {
                 switch (currentSquare)
                 {
-                    // Community Chest - give 100
-                    case 2:
-                    case 17:
-                    case 33:
-                        ReceiveMoney(1, 100);
-                        break;
-                    // Chance - give 100
-                    case 7:
-                    case 22:
-                    case 36:
-                        ReceiveMoney(1, 100);
-                        break;
                     // Income Tax - $200 or 10% of cash
                     case 4:
                         uint incomeTax = (uint)Math.Round(players[1].money * 0.1);
@@ -688,8 +588,8 @@ namespace Monopoly
         void PayOwner(uint cost, uint payerId, uint ownerId)
         {
             players[payerId].money -= (int)cost;
-// TODO: activate next line in real game
-//            players[ownerId].money += (int)cost;
+            // TODO: activate next line in real game
+            //            players[ownerId].money += (int)cost;
         }
 
         /* ****    ADAPTER    **** */
@@ -773,8 +673,8 @@ namespace Monopoly
         uint playerId;
         public int money; // Player is out of game when this goes negative.
         uint location = 0; // 40 means you are in jail.
-//        bool[] possessions = new bool[41]; // each element is a location value for a property
-        bool CommunityChestGoojf = false;
+                            //        bool[] possessions = new bool[41]; // each element is a location value for a property
+        bool CommunityChestGoojf = false;  // Goojf == Get out of jail free
         bool ChanceGoojf = false;
         uint numberOfDoubles = 0; // zero initially, set to zero when non-doubles are rolled, or after going to jail.  Go to jail when this hits 3.  Also zero when exiting jail on doubles.
         bool activelyBidding = false;
@@ -792,7 +692,7 @@ namespace Monopoly
         public bool CanAffordSquare(uint price)
         {
             if (price <= money)
-            { 
+            {
                 return true;
             }
             return false;
