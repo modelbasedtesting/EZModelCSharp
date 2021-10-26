@@ -19,7 +19,7 @@ namespace Banking
                 SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll
             };
 
-            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 14, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 14, EzModelGraph.LayoutRankDirection.LeftRight);
 
             if (graph.GenerateGraph())
             {
@@ -130,47 +130,47 @@ namespace Banking
 
         // State Values for the 40 squares on the board + the in Jail pseudo-square
         public GameSquare[] gameSquares = {
-        new GameSquare( 0, "Go", SquareType.Go, ColorGroup.None, 0, 0, 0),
-        new GameSquare( 1, "Mediterannean Ave", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 2),
-        new GameSquare( 2, "Community Chest 1", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-        new GameSquare( 3, "Baltic Ave", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 4),
-        new GameSquare( 4, "Income Tax", SquareType.Tax, ColorGroup.None, 0, 0, 0),
-        new GameSquare( 5, "Reading Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-        new GameSquare( 6, "Oriental Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
-        new GameSquare( 7, "Chance 1", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-        new GameSquare( 8, "Vermont Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
-        new GameSquare( 9, "Connecticut Ave", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 120, 8),
-        new GameSquare(10, "Just Visiting", SquareType.JustVisiting, ColorGroup.None, 0, 0, 0),
-        new GameSquare(11, "St. Charles Place", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
-        new GameSquare(12, "Electric Co.", SquareType.Utility, ColorGroup.White, 2, 150, 0),
-        new GameSquare(13, "States Ave", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
-        new GameSquare(14, "Virginia Ave", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 160, 12),
-        new GameSquare(15, "Pennsylvania Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-        new GameSquare(16, "St. James Place", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
-        new GameSquare(17, "Community Chest 2", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-        new GameSquare(18, "Tennessee Ave", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
-        new GameSquare(19, "New York Ave", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 200, 16),
-        new GameSquare(20, "Free Parking", SquareType.FreeParking, ColorGroup.None, 0, 0, 0),
-        new GameSquare(21, "Kentucky Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
-        new GameSquare(22, "Chance 2", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-        new GameSquare(23, "Indiana Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
-        new GameSquare(24, "Illinois Ave", SquareType.ColorGroupMember, ColorGroup.Red, 3, 240, 20),
-        new GameSquare(25, "B & O Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-        new GameSquare(26, "Atlantic Ave", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
-        new GameSquare(27, "Ventnor Ave", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
-        new GameSquare(28, "Water Works", SquareType.Utility, ColorGroup.White, 2, 150, 0),
-        new GameSquare(29, "Marvin Gardens", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 280, 24),
-        new GameSquare(30, "Go to Jail", SquareType.GoToJail, ColorGroup.None, 0, 0, 0),
-        new GameSquare(31, "Pacific Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
-        new GameSquare(32, "North Carolina Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
-        new GameSquare(33, "Community Chest 3", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-        new GameSquare(34, "Pennsylvania Ave", SquareType.ColorGroupMember, ColorGroup.Green, 3, 320, 28),
-        new GameSquare(35, "Short Line Railroad", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-        new GameSquare(36, "Chance 3", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-        new GameSquare(37, "Park Place", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 350, 35),
-        new GameSquare(38, "Luxury Tax", SquareType.Tax, ColorGroup.None, 0, 0, 75),
-        new GameSquare(39, "Board Walk", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 400, 50),
-        new GameSquare(40, "In Jail", SquareType.InJail, ColorGroup.None, 0, 0, 0)
+        new GameSquare( 0, "Go [0]", SquareType.Go, ColorGroup.None, 0, 0, 0),
+        new GameSquare( 1, "Mediterannean Ave [1]", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 2),
+        new GameSquare( 2, "Community Chest [2]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+        new GameSquare( 3, "Baltic Ave [3]", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 4),
+        new GameSquare( 4, "Income Tax [4]", SquareType.Tax, ColorGroup.None, 0, 0, 0),
+        new GameSquare( 5, "Reading Railroad [5]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+        new GameSquare( 6, "Oriental Ave [6]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
+        new GameSquare( 7, "Chance [7]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+        new GameSquare( 8, "Vermont Ave [8]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
+        new GameSquare( 9, "Connecticut Ave [9]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 120, 8),
+        new GameSquare(10, "Just Visiting [10]", SquareType.JustVisiting, ColorGroup.None, 0, 0, 0),
+        new GameSquare(11, "St. Charles Place [11]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
+        new GameSquare(12, "Electric Co. [12]", SquareType.Utility, ColorGroup.White, 2, 150, 0),
+        new GameSquare(13, "States Ave [13]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
+        new GameSquare(14, "Virginia Ave [14]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 160, 12),
+        new GameSquare(15, "Pennsylvania Railroad [15]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+        new GameSquare(16, "St. James Place [16]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
+        new GameSquare(17, "Community Chest [17]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+        new GameSquare(18, "Tennessee Ave [18]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
+        new GameSquare(19, "New York Ave [19]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 200, 16),
+        new GameSquare(20, "Free Parking [20]", SquareType.FreeParking, ColorGroup.None, 0, 0, 0),
+        new GameSquare(21, "Kentucky Ave [21]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
+        new GameSquare(22, "Chance [22]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+        new GameSquare(23, "Indiana Ave [23]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
+        new GameSquare(24, "Illinois Ave [24]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 240, 20),
+        new GameSquare(25, "B & O Railroad [25]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+        new GameSquare(26, "Atlantic Ave [26]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
+        new GameSquare(27, "Ventnor Ave [27]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
+        new GameSquare(28, "Water Works [28]", SquareType.Utility, ColorGroup.White, 2, 150, 0),
+        new GameSquare(29, "Marvin Gardens [29]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 280, 24),
+        new GameSquare(30, "Go to Jail [30]", SquareType.GoToJail, ColorGroup.None, 0, 0, 0),
+        new GameSquare(31, "Pacific Ave [31]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
+        new GameSquare(32, "North Carolina Ave [32]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
+        new GameSquare(33, "Community Chest [33]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+        new GameSquare(34, "Pennsylvania Ave [34]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 320, 28),
+        new GameSquare(35, "Short Line Railroad [35]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+        new GameSquare(36, "Chance [36]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+        new GameSquare(37, "Park Place [37]", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 350, 35),
+        new GameSquare(38, "Luxury Tax [38]", SquareType.Tax, ColorGroup.None, 0, 0, 75),
+        new GameSquare(39, "Board Walk [39]", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 400, 50),
+        new GameSquare(40, "In Jail [40 pseudosquare]", SquareType.InJail, ColorGroup.None, 0, 0, 0)
     };
 
         // Chance and Community Chest cards
@@ -280,13 +280,11 @@ namespace Banking
             {
                 actions.Add(goToJustVisiting);
             }
-
-            if (currentSquare == 30)
+            else if (currentSquare == 30)
             {
                 actions.Add(goToJail);
             }
-
-            if (currentSquare != 30 && currentSquare != 40)
+            else
             {
                 actions.Add(roll2);
                 actions.Add(roll3);
@@ -309,63 +307,27 @@ namespace Banking
         {
             uint currentSquare = findGameSquareFromTitle(startState);
 
-            switch (action)
+            if (action.StartsWith("Move_"))
             {
-                case goToJail:
-                    currentSquare = 40; // In Jail
-                    break;
+                uint moveAmount = uint.Parse(action.Substring(5));
+                currentSquare = (currentSquare + moveAmount) % 40;
+            }
+            else
+            {
+                switch (action)
+                {
+                    case goToJail:
+                        currentSquare = 40; // In Jail
+                        break;
 
-                case goToJustVisiting:
-                    currentSquare = 10; // Just visiting
-                    break;
+                    case goToJustVisiting:
+                        currentSquare = 10; // Just visiting
+                        break;
 
-                case roll2:
-                    currentSquare = (currentSquare + 2) % 40;
-                    break;
-
-                case roll3:
-                    currentSquare = (currentSquare + 3) % 40;
-                    break;
-
-                case roll4:
-                    currentSquare = (currentSquare + 4) % 40;
-                    break;
-
-                case roll5:
-                    currentSquare = (currentSquare + 5) % 40;
-                    break;
-
-                case roll6:
-                    currentSquare = (currentSquare + 6) % 40;
-                    break;
-
-                case roll7:
-                    currentSquare = (currentSquare + 7) % 40;
-                    break;
-
-                case roll8:
-                    currentSquare = (currentSquare + 8) % 40;
-                    break;
-
-                case roll9:
-                    currentSquare = (currentSquare + 9) % 40;
-                    break;
-
-                case roll10:
-                    currentSquare = (currentSquare + 10) % 40;
-                    break;
-
-                case roll11:
-                    currentSquare = (currentSquare + 11) % 40;
-                    break;
-
-                case roll12:
-                    currentSquare = (currentSquare + 12) % 40;
-                    break;
-
-                default:
-                    Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
-                    return startState;
+                    default:
+                        Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
+                        return startState;
+                }
             }
 
             string currentState = gameSquares[currentSquare].title;

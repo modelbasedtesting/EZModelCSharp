@@ -19,7 +19,7 @@ namespace Detention
                 SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll
             };
 
-            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 14, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 14, EzModelGraph.LayoutRankDirection.LeftRight);
 
             if (graph.GenerateGraph())
             {
@@ -93,47 +93,47 @@ namespace Detention
 
         // State Values for the 40 squares on the board + the in Jail pseudo-square
         public GameSquare[] gameSquares = {
-            new GameSquare( 0, "Go", SquareType.Other),
-            new GameSquare( 1, "Mediterannean Ave", SquareType.Other),
-            new GameSquare( 2, "Community Chest 1", SquareType.Other),
-            new GameSquare( 3, "Baltic Ave", SquareType.Other),
-            new GameSquare( 4, "Income Tax", SquareType.Other),
-            new GameSquare( 5, "Reading Railroad", SquareType.Other),
-            new GameSquare( 6, "Oriental Ave", SquareType.Other),
-            new GameSquare( 7, "Chance 1", SquareType.Other),
-            new GameSquare( 8, "Vermont Ave", SquareType.Other),
-            new GameSquare( 9, "Connecticut Ave", SquareType.Other),
-            new GameSquare(10, "Just Visiting", SquareType.JustVisiting),
-            new GameSquare(11, "St. Charles Place", SquareType.Other),
-            new GameSquare(12, "Electric Co.", SquareType.Other),
-            new GameSquare(13, "States Ave", SquareType.Other),
-            new GameSquare(14, "Virginia Ave", SquareType.Other),
-            new GameSquare(15, "Pennsylvania Railroad", SquareType.Other),
-            new GameSquare(16, "St. James Place", SquareType.Other),
-            new GameSquare(17, "Community Chest 2", SquareType.Other),
-            new GameSquare(18, "Tennessee Ave", SquareType.Other),
-            new GameSquare(19, "New York Ave", SquareType.Other),
-            new GameSquare(20, "Free Parking", SquareType.Other),
-            new GameSquare(21, "Kentucky Ave", SquareType.Other),
-            new GameSquare(22, "Chance 2", SquareType.Other),
-            new GameSquare(23, "Indiana Ave", SquareType.Other),
-            new GameSquare(24, "Illinois Ave", SquareType.Other),
-            new GameSquare(25, "B & O Railroad", SquareType.Other),
-            new GameSquare(26, "Atlantic Ave", SquareType.Other),
-            new GameSquare(27, "Ventnor Ave", SquareType.Other),
-            new GameSquare(28, "Water Works", SquareType.Other),
-            new GameSquare(29, "Marvin Gardens", SquareType.Other),
-            new GameSquare(30, "Go to Jail", SquareType.GoToJail),
-            new GameSquare(31, "Pacific Ave", SquareType.Other),
-            new GameSquare(32, "North Carolina Ave", SquareType.Other),
-            new GameSquare(33, "Community Chest 3", SquareType.Other),
-            new GameSquare(34, "Pennsylvania Ave", SquareType.Other),
-            new GameSquare(35, "Short Line Railroad", SquareType.Other),
-            new GameSquare(36, "Chance 3", SquareType.Other),
-            new GameSquare(37, "Park Place", SquareType.Other),
-            new GameSquare(38, "Luxury Tax", SquareType.Other),
-            new GameSquare(39, "Board Walk", SquareType.Other),
-            new GameSquare(40, "In Jail", SquareType.InJail)
+            new GameSquare( 0, "Go [0]", SquareType.Other),
+            new GameSquare( 1, "Mediterannean Ave [1]", SquareType.Other),
+            new GameSquare( 2, "Community Chest [2]", SquareType.Other),
+            new GameSquare( 3, "Baltic Ave [3]", SquareType.Other),
+            new GameSquare( 4, "Income Tax [4]", SquareType.Other),
+            new GameSquare( 5, "Reading Railroad [5]", SquareType.Other),
+            new GameSquare( 6, "Oriental Ave [6]", SquareType.Other),
+            new GameSquare( 7, "Chance [7]", SquareType.Other),
+            new GameSquare( 8, "Vermont Ave [8]", SquareType.Other),
+            new GameSquare( 9, "Connecticut Ave [9]", SquareType.Other),
+            new GameSquare(10, "Just Visiting [10]", SquareType.JustVisiting),
+            new GameSquare(11, "St. Charles Place [11]", SquareType.Other),
+            new GameSquare(12, "Electric Co. [12]", SquareType.Other),
+            new GameSquare(13, "States Ave [13]", SquareType.Other),
+            new GameSquare(14, "Virginia Ave [14]", SquareType.Other),
+            new GameSquare(15, "Pennsylvania Railroad [15]", SquareType.Other),
+            new GameSquare(16, "St. James Place [16]", SquareType.Other),
+            new GameSquare(17, "Community Chest [17]", SquareType.Other),
+            new GameSquare(18, "Tennessee Ave [18]", SquareType.Other),
+            new GameSquare(19, "New York Ave [19]", SquareType.Other),
+            new GameSquare(20, "Free Parking [20]", SquareType.Other),
+            new GameSquare(21, "Kentucky Ave [21]", SquareType.Other),
+            new GameSquare(22, "Chance [22]", SquareType.Other),
+            new GameSquare(23, "Indiana Ave [23]", SquareType.Other),
+            new GameSquare(24, "Illinois Ave [24]", SquareType.Other),
+            new GameSquare(25, "B & O Railroad [25]", SquareType.Other),
+            new GameSquare(26, "Atlantic Ave [26]", SquareType.Other),
+            new GameSquare(27, "Ventnor Ave [27]", SquareType.Other),
+            new GameSquare(28, "Water Works [28]", SquareType.Other),
+            new GameSquare(29, "Marvin Gardens [29]", SquareType.Other),
+            new GameSquare(30, "Go to Jail [30]", SquareType.GoToJail),
+            new GameSquare(31, "Pacific Ave [31]", SquareType.Other),
+            new GameSquare(32, "North Carolina Ave [32]", SquareType.Other),
+            new GameSquare(33, "Community Chest [33]", SquareType.Other),
+            new GameSquare(34, "Pennsylvania Ave [34]", SquareType.Other),
+            new GameSquare(35, "Short Line Railroad [35]", SquareType.Other),
+            new GameSquare(36, "Chance [36]", SquareType.Other),
+            new GameSquare(37, "Park Place [37]", SquareType.Other),
+            new GameSquare(38, "Luxury Tax [38]", SquareType.Other),
+            new GameSquare(39, "Board Walk [39]", SquareType.Other),
+            new GameSquare(40, "In Jail [40 pseudosquare]", SquareType.InJail)
         };
 
         // Actions
@@ -192,13 +192,11 @@ namespace Detention
             {
                 actions.Add(goToJustVisiting);
             }
-
-            if (currentSquare == 30)
+            else if (currentSquare == 30)
             {
                 actions.Add(goToJail);
             }
-
-            if (currentSquare != 30 && currentSquare != 40)
+            else
             {
                 actions.Add(roll2);
                 actions.Add(roll3);
@@ -221,65 +219,28 @@ namespace Detention
         {
             uint currentSquare = findGameSquareFromTitle(startState);
 
-            switch (action)
+            if (action.StartsWith("Move_"))
             {
-                case goToJail:
-                    currentSquare = 40; // In Jail
-                    break;
-
-                case goToJustVisiting:
-                    currentSquare = 10; // Just visiting
-                    break;
-
-                case roll2:
-                    currentSquare = (currentSquare + 2) % 40;
-                    break;
-
-                case roll3:
-                    currentSquare = (currentSquare + 3) % 40;
-                    break;
-
-                case roll4:
-                    currentSquare = (currentSquare + 4) % 40;
-                    break;
-
-                case roll5:
-                    currentSquare = (currentSquare + 5) % 40;
-                    break;
-
-                case roll6:
-                    currentSquare = (currentSquare + 6) % 40;
-                    break;
-
-                case roll7:
-                    currentSquare = (currentSquare + 7) % 40;
-                    break;
-
-                case roll8:
-                    currentSquare = (currentSquare + 8) % 40;
-                    break;
-
-                case roll9:
-                    currentSquare = (currentSquare + 9) % 40;
-                    break;
-
-                case roll10:
-                    currentSquare = (currentSquare + 10) % 40;
-                    break;
-
-                case roll11:
-                    currentSquare = (currentSquare + 11) % 40;
-                    break;
-
-                case roll12:
-                    currentSquare = (currentSquare + 12) % 40;
-                    break;
-
-                default:
-                    Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
-                    return startState;
+                uint moveAmount = uint.Parse(action.Substring(5));
+                currentSquare = (currentSquare + moveAmount) % 40;
             }
+            else
+            {
+                switch (action)
+                {
+                    case goToJail:
+                        currentSquare = 40; // In Jail
+                        break;
 
+                    case goToJustVisiting:
+                        currentSquare = 10; // Just visiting
+                        break;
+
+                    default:
+                        Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
+                        return startState;
+                }
+            }
             string currentState = gameSquares[currentSquare].title;
             return currentState;
         }
