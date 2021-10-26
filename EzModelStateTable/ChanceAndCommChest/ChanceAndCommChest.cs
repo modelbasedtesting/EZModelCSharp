@@ -2,7 +2,7 @@
 // copyright 2021 Serious Quality LLC
 
 // Model the classic board game Monopoly
-// Step 3: model the bank, and introduce adapter to buy properties that are unowned
+// Step 3: model community chest and chance cards
 
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace ChanceAndCommChest
     {
         public static void Main()
         {
-            Monopoly client = new Monopoly(1500)
+            Monopoly client = new Monopoly()
             {
                 SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll
             };
@@ -24,7 +24,7 @@ namespace ChanceAndCommChest
 
             if (graph.GenerateGraph())
             {
-                //   graph.DisplayStateTable(); // Display the Excel-format state table
+                graph.DisplayStateTable(); // Display the Excel-format state table
 
                 // write graph file before traversal
                 graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
@@ -128,7 +128,6 @@ namespace ChanceAndCommChest
             }
         }
 
-
         // State Values for the 40 squares on the board + the in Jail pseudo-square
         public GameSquare[] gameSquares = {
     new GameSquare( 0, "Go [0]", SquareType.Go, ColorGroup.None, 0, 0, 0),
@@ -174,11 +173,6 @@ namespace ChanceAndCommChest
     new GameSquare(40, "In Jail [40 pseudosquare]", SquareType.InJail, ColorGroup.None, 0, 0, 0)
 };
 
-        // Chance and Community Chest cards
-        // State values
-        //        List<string> bottomsOfLadders = new List<string>();
-        //        List<string> topsOfChutes = new List<string>();
-
         // Actions
         // Individual dice actions, for graph-building
         const string roll12 = "Move_12";
@@ -205,53 +199,9 @@ namespace ChanceAndCommChest
 
         // Community Chest card actions
 
-        Player[] players;
-        int modelStep = 0;
-
-        // Buying property
-        // - track who owns a property: 0 == the bank, 1, 2, ... N = a player
-        //   - keep track of which player we are playing? (1, 2, ... N)
-        // - when the owner is 0 for the square you are on, you have the option to buy
-        //   - if you decline to purchase or if you cannot come up with the face value to buy the property, then
-        //     the property goes to auction by the bank
-        //     - starting bid is $1
-        //       - highest bidder receives the property
-
-        public Monopoly(int InitialMoney)
+        public Monopoly()
         {
-            players = new Player[2]; // Player 1 plus the bank.
-
-            for (uint i = 0; i < players.Length; i++)
-            {
-                players[i] = new Player();
-                players[i].GameSetup(i + 1);
-            }
-
             svSquare = 0;
-        }
-
-        public bool CanBuySquare(uint square)
-        {
-            return gameSquares[square].ownerId == 0;
-        }
-
-        public bool ChooseToPurchase()
-        {
-            // TODO: make a choice between true and false by some criteria.
-            return true;
-        }
-
-        public void PlayerBuyOrAuctionSquare(uint playerId, uint square)
-        {
-            if (players[playerId].CanAffordSquare(gameSquares[square].price) && ChooseToPurchase())
-            {
-                // TODO: player can decline to buy, sending the square to auction
-                players[playerId].BuySquare(gameSquares[square].price);
-                gameSquares[square].ownerId = playerId;
-                return;
-            }
-
-            // Players other than playerId get to bid.
         }
 
         /* ****    MODEL CREATION   **** */
@@ -366,20 +316,6 @@ namespace ChanceAndCommChest
             return currentState;
         }
 
-        void ListSquaresOwnedBy(uint playerId)
-        {
-            int quantity = 0;
-            for (uint i = 0; i < 40; i++)
-            {
-                if (gameSquares[i].ownerId == playerId)
-                {
-                    Console.WriteLine("    {0}", gameSquares[i].title);
-                    quantity++;
-                }
-            }
-            Console.WriteLine("{0} squares owned by player {1}.", quantity, playerId);
-        }
-
         /* ****    ADAPTER    **** */
 
         // The rules of the model apply to the adapter
@@ -410,23 +346,6 @@ namespace ChanceAndCommChest
 
         }
 
-        // For game simulation we need a player turn procedure
-        // The side effect of a player taking a turn is to modify the state of the board.
-        //  - a player may indirectly affect the information of other players according to the sell (and buy) and bid rules.
-
-        //************ Player Simulation ****************************
-
-        public bool IsSquareBuyable(uint square)
-        {
-            GameSquare s = gameSquares[square];
-            if (s.squareType == SquareType.ColorGroupMember && s.ownerId == 0)
-            {
-                return true;
-            }
-            return false;
-        }
-
-
         // * *************************************
 
         // Interface method for Adapter
@@ -449,37 +368,4 @@ namespace ChanceAndCommChest
 
         }
     }
-
-    public class Player
-    {
-        uint playerId;
-        public int money; // Player is out of game when this goes negative.
-        uint location = 0; // 40 means you are in jail.
-                            //        bool[] possessions = new bool[41]; // each element is a location value for a property
-
-        public Player()
-        {
-        }
-
-        public void GameSetup(uint playerId, int money = 1500)
-        {
-            this.playerId = playerId;
-            this.money = money;
-        }
-
-        public bool CanAffordSquare(uint price)
-        {
-            if (price <= money)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        public void BuySquare(uint price)
-        {
-            money -= (int)price;
-        }
-    }
-
 }

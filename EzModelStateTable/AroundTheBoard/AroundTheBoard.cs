@@ -80,7 +80,6 @@ namespace AroundTheBoard
             }
         }
 
-
         // State Values for the 40 squares on the board + the in Jail pseudo-square
         public GameSquare[] gameSquares = {
             new GameSquare( 0, "Go [0]"),
@@ -129,6 +128,8 @@ namespace AroundTheBoard
         // Individual dice actions, for graph-building
         const string roll3 = "Move_3";
         const string roll2 = "Move_2";
+        const string roll11 = "Move_11";
+        const string roll12 = "Move_12";
 
         public Monopoly()
         {
@@ -168,6 +169,8 @@ namespace AroundTheBoard
 
             actions.Add(roll2);
             actions.Add(roll3);
+//            actions.Add(roll11);
+//            actions.Add(roll12);
 
             return actions;
         }
@@ -177,19 +180,19 @@ namespace AroundTheBoard
         {
             uint currentSquare = findGameSquareFromTitle(startState);
 
-            switch (action)
+            if (action.StartsWith("Move_"))
             {
-                case roll2:
-                    currentSquare = (currentSquare + 2) % 40;
-                    break;
-
-                case roll3:
-                    currentSquare = (currentSquare + 3) % 40;
-                    break;
-
-                default:
-                    Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
-                    return startState;
+                uint moveAmount = uint.Parse(action.Substring(5));
+                currentSquare = (currentSquare + moveAmount) % 40;
+            }
+            else
+            {
+                switch (action)
+                {
+                    default:
+                        Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
+                        return startState;
+                }
             }
 
             string currentState = gameSquares[currentSquare].title;

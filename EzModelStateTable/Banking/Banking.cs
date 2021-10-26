@@ -2,11 +2,12 @@
 // copyright 2021 Serious Quality LLC
 
 // Model the classic board game Monopoly
-// Step 3: model the bank, and introduce adapter to buy properties that are unowned
+// Step 4: model the bank, and introduce adapter to buy properties that are unowned
 
 using System;
 using System.Collections.Generic;
 using SeriousQualityEzModel;
+using System.Linq;
 
 namespace Banking
 {
@@ -19,7 +20,7 @@ namespace Banking
                 SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll
             };
 
-            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 14, EzModelGraph.LayoutRankDirection.LeftRight);
+            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 20, EzModelGraph.LayoutRankDirection.LeftRight);
 
             if (graph.GenerateGraph())
             {
@@ -120,10 +121,27 @@ namespace Banking
                 this.setSize = sSize;
                 this.price = p;
                 this.baseRent = bR;
-
                 this.isMortgaged = false;
-                this.ownerId = 0;
-                this.numHouses = 0;
+                this.ownerId = 0;    // show in state
+                this.numHouses = 0;  // show in state
+            }
+
+            public uint CurrentRent(bool ArrivedByChanceCard = false)
+            {
+                // TODO: compute current rent, which is a function of
+                //  - $0 for squareTypes Chance, Community Chest, Go to Jail,
+                //    Free Parking, Just Visiting, Go, Tax, In Jail
+                //  - if ownerID == 0 or the current player -> $0
+                //  - isMortgaged -> $0
+                //  - squareType: special formula for RailRoad / Utility, and
+                //    if ArrivedByChanceCard then the calculation is 10x for
+                //    the utility, or double for the railroad
+                //  - if numHouses > 0 then rent is from a table for house rent
+                //  - if owner ID is same for all members of the color group,
+                //    then rent is double baseRent
+                //  - finally, pay baseRent
+
+                return 10 * location;
             }
         }
 
@@ -173,11 +191,6 @@ namespace Banking
         new GameSquare(40, "In Jail [40 pseudosquare]", SquareType.InJail, ColorGroup.None, 0, 0, 0)
     };
 
-        // Chance and Community Chest cards
-        // State values
-        //        List<string> bottomsOfLadders = new List<string>();
-        //        List<string> topsOfChutes = new List<string>();
-
         // Actions
         // Individual dice actions, for graph-building
         const string roll12 = "Move_12";
@@ -195,6 +208,14 @@ namespace Banking
         // Evaluation actions
         const string goToJail = "Go to Jail";
         const string goToJustVisiting = "Go to Just Visiting";
+
+        // Chance / Community chest card actions
+        const string advanceToGo = "Advance to Go";
+
+        // Chance card actions
+        const string goBack3 = "Go back three spaces";
+
+        // Community Chest card actions
 
         Player[] players;
         int modelStep = 0;
@@ -255,18 +276,18 @@ namespace Banking
             return gameSquares[0].title; // Go
         }
 
-        uint findGameSquareFromTitle(string squareTitle)
+        GameSquare findGameSquareFromTitle(string squareTitle)
         {
             for (uint i = 0; i < gameSquares.Length; i++)
             {
                 if (gameSquares[i].title == squareTitle)
                 {
-                    return i;
+                    return gameSquares[i];
                 }
             }
             // Error: squareTitle not matched
             // TODO: throw an exception
-            return 42;
+            return gameSquares[0]; // Go, for now.
         }
 
         // Interface method for model creation
@@ -274,15 +295,23 @@ namespace Banking
         {
             List<string> actions = new List<string>();
 
-            uint currentSquare = findGameSquareFromTitle(startState);
+            GameSquare currentSquare = findGameSquareFromTitle(startState);
 
-            if (currentSquare == 40)
+            if (currentSquare.squareType == SquareType.InJail)
             {
                 actions.Add(goToJustVisiting);
             }
-            else if (currentSquare == 30)
+            else if (currentSquare.squareType == SquareType.GoToJail)
             {
                 actions.Add(goToJail);
+            }
+            else if (currentSquare.squareType == SquareType.CommunityChest)
+            {
+                actions.Add(advanceToGo);
+            }
+            else if (currentSquare.squareType == SquareType.Chance)
+            {
+                actions.Add(goBack3);
             }
             else
             {
@@ -305,23 +334,38 @@ namespace Banking
         // Interface method for model creation
         public string GetEndState(string startState, string action)
         {
-            uint currentSquare = findGameSquareFromTitle(startState);
+            GameSquare currentSquare = findGameSquareFromTitle(startState);
 
             if (action.StartsWith("Move_"))
             {
                 uint moveAmount = uint.Parse(action.Substring(5));
-                currentSquare = (currentSquare + moveAmount) % 40;
+                currentSquare = gameSquares[(currentSquare.location + moveAmount) % 40];
             }
             else
             {
                 switch (action)
                 {
                     case goToJail:
-                        currentSquare = 40; // In Jail
+                        currentSquare = getGameSquare(SquareType.InJail); 
                         break;
 
                     case goToJustVisiting:
-                        currentSquare = 10; // Just visiting
+                        currentSquare = getGameSquare(SquareType.JustVisiting);
+                        break;
+
+                    case advanceToGo:
+                        currentSquare = getGameSquare(SquareType.Go);
+                        break;
+
+                    case goBack3:
+                        if (currentSquare.location < 3)
+                        {
+                            // This won't happen on an off-the-shelf Monopoly board, but just in case:
+                            // There is an extra pseudosquare for InJail, so subtract 2 from the
+                            // gameSquares array length instead of 3.
+                            currentSquare = gameSquares[currentSquare.location + gameSquares.Length - 2];
+                        }
+                        currentSquare = gameSquares[currentSquare.location - 3];
                         break;
 
                     default:
@@ -330,21 +374,34 @@ namespace Banking
                 }
             }
 
-            string currentState = gameSquares[currentSquare].title;
-            return currentState;
+            return currentSquare.title;
+        }
+
+        GameSquare getGameSquare(SquareType sT)
+        {
+            foreach( GameSquare gs in gameSquares)
+            {
+                if (gs.squareType == sT)
+                {
+                    return gs;
+                }
+            }
+
+            // TODO: throw an exception - gamesquare of type sT not in gameSquares.
+            return gameSquares[0];
         }
 
         public List<string> AdapterGetAvailableActions(string startState)
         {
             List<string> actions = new List<string>();
 
-            uint currentSquare = findGameSquareFromTitle(startState);
+            GameSquare currentSquare = findGameSquareFromTitle(startState);
 
-            if (currentSquare == 40)
+            if (currentSquare.location == 40)
             {
                 actions.Add(goToJustVisiting);
             }
-            else if (currentSquare == 30)
+            else if (currentSquare.location == 30)
             {
                 actions.Add(goToJail);
             }
@@ -371,25 +428,48 @@ namespace Banking
         // Interface method for model creation
         public string AdapterGetEndState(string startState, string action)
         {
-            uint startSquare = findGameSquareFromTitle(startState);
-            uint currentSquare = startSquare;
+            GameSquare startSquare = findGameSquareFromTitle(startState);
+            GameSquare currentSquare = startSquare;
             modelStep++;
 
             if (action.StartsWith("Move_"))
             {
                 uint moveAmount = uint.Parse(action.Substring(5));
-                currentSquare = (currentSquare + moveAmount) % 40;
+                if (currentSquare.location + moveAmount >= gameSquares.Length - 1)
+                {
+                    CollectGoMoney(1); // TODO: change literal 1 to playerId when multi-player
+                }
+                currentSquare = gameSquares[(currentSquare.location + moveAmount) % 40];
             }
             else
             {
                 switch (action)
                 {
                     case goToJail:
-                        currentSquare = 40; // In Jail
+                        currentSquare = getGameSquare(SquareType.InJail);
                         break;
 
                     case goToJustVisiting:
-                        currentSquare = 10; // Just visiting
+                        currentSquare = getGameSquare(SquareType.JustVisiting);
+                        break;
+
+                    case advanceToGo:
+                        currentSquare = getGameSquare(SquareType.Go);
+                        CollectGoMoney(1); // TODO: change literal 1 to playerId when multi-player
+                        break;
+
+                    case goBack3:
+                        if (currentSquare.location < 3)
+                        {
+                            // This won't happen on an off-the-shelf Monopoly board, but just in case:
+                            // There is an extra pseudosquare for InJail, so subtract 2 from the
+                            // gameSquares array length instead of 3.
+                            currentSquare = gameSquares[currentSquare.location + gameSquares.Length - 1 - 3];
+                        }
+                        else
+                        {
+                            currentSquare = gameSquares[currentSquare.location - 3];
+                        }
                         break;
 
                     default:
@@ -398,18 +478,17 @@ namespace Banking
                 }
             }
 
-            Console.WriteLine("Step {5}: {0} at square {1} {2}, landed on square {3} {4}", action, startSquare, gameSquares[startSquare].title, currentSquare, gameSquares[currentSquare].title, modelStep);
+            Console.WriteLine("Step {3}: Player {4} {0} at {1}, landed on {2}", action, startSquare.title, currentSquare.title, modelStep, 1); // TODO: replace literal 1 with playerId.
 
-            if (currentSquare < startSquare)
-            {
-                players[1].money += 200;
-                Console.WriteLine("Player collected 200 for landing on or passing Go, now has {0}", players[1].money);
-            }
+            ReapConsequences(currentSquare, 1); // TODO: replace literal 1 with playerId.
 
-            ReapConsequences(currentSquare);
+            return currentSquare.title;
+        }
 
-            string currentState = gameSquares[currentSquare].title;
-            return currentState;
+        void CollectGoMoney(uint playerId)
+        {
+            players[1].money += 200;
+            Console.WriteLine("Player {0} collected 200 for landing on or passing Go, now has {1}", playerId, players[1].money);
         }
 
         void ListSquaresOwnedBy(uint playerId)
@@ -423,52 +502,51 @@ namespace Banking
                     quantity++;
                 }
             }
-            Console.WriteLine("{0} squares owned by player {1}.", quantity, playerId);
+            Console.WriteLine("{0} properties owned by player {1}.", quantity, playerId);
         }
 
-        void ReapConsequences(uint currentSquare)
+        void ReapConsequences(GameSquare currentSquare, uint playerId)
         {
             uint cost = 0;
 
-            if (gameSquares[currentSquare].colorGroup == ColorGroup.None)
+            if (currentSquare.colorGroup == ColorGroup.None)
             {
-                switch (currentSquare)
+                switch (currentSquare.location)
                 {
                     // Income Tax - $200 or 10% of cash
                     case 4:
-                        uint incomeTax = (uint)Math.Round(players[1].money * 0.1);
-                        PayOwner(incomeTax, 1, 0); // Pay the bank
-                        Console.WriteLine("Player pays {0} income tax, now has {1}", incomeTax, players[1].money);
+                        uint incomeTax = (uint)Math.Round(players[playerId].money * 0.1);
+                        PayOwner(incomeTax, playerId, 0); // Pay the bank
+                        Console.WriteLine("Player {0} pays {1} income tax, now has {2}", playerId, incomeTax, players[playerId].money);
                         break;
                     // Luxury Tax - $75
                     case 38:
-                        PayOwner(75, 1, 0); // Pay the bank
-                        Console.WriteLine("Player pays 75 luxury tax, now has {0}", players[1].money);
+                        PayOwner(75, playerId, 0); // Pay the bank
+                        Console.WriteLine("Player {0} pays 75 luxury tax, now has {1}", playerId, players[playerId].money);
                         break;
                 }
             }
             else
             {
-                uint squareOwner = gameSquares[currentSquare].ownerId;
-
-                if (squareOwner == 0)
+                if (currentSquare.ownerId == 0)
                 {
                     // chance to buy
-                    if (players[1].money >= gameSquares[currentSquare].price)
+                    if (players[playerId].money >= currentSquare.price)
                     {
-                        gameSquares[currentSquare].ownerId = 1; // TODO: generalize for multi player
-                        players[1].money -= (int)gameSquares[currentSquare].price;
-                        Console.WriteLine("Player purchased square {0} {1} for {2}, now has {3}", currentSquare, gameSquares[currentSquare].title, gameSquares[currentSquare].price, players[1].money);
-                        ListSquaresOwnedBy(1);
+                        gameSquares[currentSquare.location].ownerId = playerId;
+                        int playerHad = players[playerId].money;
+                        players[playerId].money -= (int)currentSquare.price;
+                        Console.WriteLine("Player {0} had {4}, purchased {1} for {2}, now has {3}", playerId, currentSquare.title, currentSquare.price, players[playerId].money, playerHad);
+                        ListSquaresOwnedBy(playerId);
                     }
                     else
                     {
                         // decline to buy.  TODO: auction
-                        Console.WriteLine("Player declines to purchase square {0} {1}", currentSquare, gameSquares[currentSquare].title);
+                        Console.WriteLine("Player {0} declines to purchase {1}", playerId, currentSquare.title);
                     }
                     return;
                 }
-                else if (squareOwner == 1)
+                else if (currentSquare.ownerId == playerId)
                 {
                     return;
                 }
@@ -477,34 +555,34 @@ namespace Banking
                 // square is owned no houses - pay rent
                 // square is owned and has a multiplier effect (multiple utilities, multiple railroads, full colorgroup) on rent
                 // square is owned and improved (houses / hotel)
-                else if (gameSquares[currentSquare].colorGroup == ColorGroup.White)
+                else if (currentSquare.colorGroup == ColorGroup.White)
                 {
                     // Utilities are the pseudo-color group White
                     // pay 4x dice roll when single ownership
                     // pay 10x dice roll when both utilities are owned by one player
                     // for now, pay 25
                     cost = 25;
-                    PayOwner(cost, 1, gameSquares[currentSquare].ownerId);
+                    PayOwner(cost, playerId, currentSquare.ownerId);
                 }
-                else if (gameSquares[currentSquare].colorGroup == ColorGroup.Black)
+                else if (currentSquare.colorGroup == ColorGroup.Black)
                 {
                     // Railroads are the pseudo-color group Black
                     // pay 25 when single ownership
                     // pay 50, 100, or 200 for double, triple, or quadruple ownership
                     // for now, pay 25:
                     cost = 25;
-                    PayOwner(cost, 1, gameSquares[currentSquare].ownerId);
+                    PayOwner(cost, playerId, currentSquare.ownerId);
                 }
-                else if (gameSquares[currentSquare].colorGroup != ColorGroup.None)
+                else if (currentSquare.colorGroup != ColorGroup.None)
                 {
                     // this is a property that can collect rent
-                    cost = gameSquares[currentSquare].baseRent;
-                    PayOwner(cost, 1, gameSquares[currentSquare].ownerId);
+                    cost = currentSquare.baseRent;
+                    PayOwner(cost, playerId, currentSquare.ownerId);
                 }
 
                 if (cost > 0)
                 {
-                    Console.WriteLine("Player has {0} after {1} rent for square {2} {3}", players[1].money, cost, currentSquare, gameSquares[currentSquare].title);
+                    Console.WriteLine("Player {0} has {1} after {2} rent for {3}", playerId, players[playerId].money, cost, currentSquare.title);
                 }
             }
         }
@@ -512,8 +590,7 @@ namespace Banking
         void PayOwner(uint cost, uint payerId, uint ownerId)
         {
             players[payerId].money -= (int)cost;
-            // TODO: activate next line in real game
-            //            players[ownerId].money += (int)cost;
+            players[ownerId].money += (int)cost;
         }
 
         /* ****    ADAPTER    **** */
@@ -597,7 +674,6 @@ namespace Banking
         uint playerId;
         public int money; // Player is out of game when this goes negative.
         uint location = 0; // 40 means you are in jail.
-                            //        bool[] possessions = new bool[41]; // each element is a location value for a property
 
         public Player()
         {
