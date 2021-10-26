@@ -334,100 +334,6 @@ namespace Banking
         // Interface method for model creation
         public string GetEndState(string startState, string action)
         {
-            GameSquare currentSquare = findGameSquareFromTitle(startState);
-
-            if (action.StartsWith("Move_"))
-            {
-                uint moveAmount = uint.Parse(action.Substring(5));
-                currentSquare = gameSquares[(currentSquare.location + moveAmount) % 40];
-            }
-            else
-            {
-                switch (action)
-                {
-                    case goToJail:
-                        currentSquare = getGameSquare(SquareType.InJail); 
-                        break;
-
-                    case goToJustVisiting:
-                        currentSquare = getGameSquare(SquareType.JustVisiting);
-                        break;
-
-                    case advanceToGo:
-                        currentSquare = getGameSquare(SquareType.Go);
-                        break;
-
-                    case goBack3:
-                        if (currentSquare.location < 3)
-                        {
-                            // This won't happen on an off-the-shelf Monopoly board, but just in case:
-                            // There is an extra pseudosquare for InJail, so subtract 2 from the
-                            // gameSquares array length instead of 3.
-                            currentSquare = gameSquares[currentSquare.location + gameSquares.Length - 2];
-                        }
-                        currentSquare = gameSquares[currentSquare.location - 3];
-                        break;
-
-                    default:
-                        Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
-                        return startState;
-                }
-            }
-
-            return currentSquare.title;
-        }
-
-        GameSquare getGameSquare(SquareType sT)
-        {
-            foreach( GameSquare gs in gameSquares)
-            {
-                if (gs.squareType == sT)
-                {
-                    return gs;
-                }
-            }
-
-            // TODO: throw an exception - gamesquare of type sT not in gameSquares.
-            return gameSquares[0];
-        }
-
-        public List<string> AdapterGetAvailableActions(string startState)
-        {
-            List<string> actions = new List<string>();
-
-            GameSquare currentSquare = findGameSquareFromTitle(startState);
-
-            if (currentSquare.location == 40)
-            {
-                actions.Add(goToJustVisiting);
-            }
-            else if (currentSquare.location == 30)
-            {
-                actions.Add(goToJail);
-            }
-            else
-            {
-
-                actions.Add(roll2);
-                actions.Add(roll3);
-                /*  Control travel around board to 2 or 3 squares at a time
-                        actions.Add(roll4);
-                        actions.Add(roll5);
-                        actions.Add(roll6);
-                        actions.Add(roll7);
-                        actions.Add(roll8);
-                        actions.Add(roll9);
-                        actions.Add(roll10);
-                        actions.Add(roll11);
-                        actions.Add(roll12); */
-            }
-
-            return actions;
-        }
-
-        // Interface method for model creation
-        public string AdapterGetEndState(string startState, string action)
-        {
             GameSquare startSquare = findGameSquareFromTitle(startState);
             GameSquare currentSquare = startSquare;
             modelStep++;
@@ -485,6 +391,20 @@ namespace Banking
             return currentSquare.title;
         }
 
+        GameSquare getGameSquare(SquareType sT)
+        {
+            foreach( GameSquare gs in gameSquares)
+            {
+                if (gs.squareType == sT)
+                {
+                    return gs;
+                }
+            }
+
+            // TODO: throw an exception - gamesquare of type sT not in gameSquares.
+            return gameSquares[0];
+        }
+
         void CollectGoMoney(uint playerId)
         {
             players[1].money += 200;
@@ -508,6 +428,7 @@ namespace Banking
         void ReapConsequences(GameSquare currentSquare, uint playerId)
         {
             uint cost = 0;
+            int playerHad = players[playerId].money;
 
             if (currentSquare.colorGroup == ColorGroup.None)
             {
@@ -534,7 +455,6 @@ namespace Banking
                     if (players[playerId].money >= currentSquare.price)
                     {
                         gameSquares[currentSquare.location].ownerId = playerId;
-                        int playerHad = players[playerId].money;
                         players[playerId].money -= (int)currentSquare.price;
                         Console.WriteLine("Player {0} had {4}, purchased {1} for {2}, now has {3}", playerId, currentSquare.title, currentSquare.price, players[playerId].money, playerHad);
                         ListSquaresOwnedBy(playerId);
@@ -542,7 +462,7 @@ namespace Banking
                     else
                     {
                         // decline to buy.  TODO: auction
-                        Console.WriteLine("Player {0} declines to purchase {1}", playerId, currentSquare.title);
+                        Console.WriteLine("Player {0} has {2}, declines to purchase {1} for {3}", playerId, currentSquare.title, players[playerId].money, currentSquare.price);
                     }
                     return;
                 }
@@ -555,25 +475,27 @@ namespace Banking
                 // square is owned no houses - pay rent
                 // square is owned and has a multiplier effect (multiple utilities, multiple railroads, full colorgroup) on rent
                 // square is owned and improved (houses / hotel)
-                else if (currentSquare.colorGroup == ColorGroup.White)
+                else if (currentSquare.colorGroup == ColorGroup.White && !currentSquare.isMortgaged)
                 {
                     // Utilities are the pseudo-color group White
+                    // TODO:
                     // pay 4x dice roll when single ownership
                     // pay 10x dice roll when both utilities are owned by one player
-                    // for now, pay 25
+                    // (For now, pay 25)
                     cost = 25;
                     PayOwner(cost, playerId, currentSquare.ownerId);
                 }
-                else if (currentSquare.colorGroup == ColorGroup.Black)
+                else if (currentSquare.colorGroup == ColorGroup.Black && !currentSquare.isMortgaged)
                 {
                     // Railroads are the pseudo-color group Black
                     // pay 25 when single ownership
+                    // TODO:
                     // pay 50, 100, or 200 for double, triple, or quadruple ownership
-                    // for now, pay 25:
+                    // (For now, pay 25)
                     cost = 25;
                     PayOwner(cost, playerId, currentSquare.ownerId);
                 }
-                else if (currentSquare.colorGroup != ColorGroup.None)
+                else if (currentSquare.colorGroup != ColorGroup.None && !currentSquare.isMortgaged)
                 {
                     // this is a property that can collect rent
                     cost = currentSquare.baseRent;
@@ -582,7 +504,7 @@ namespace Banking
 
                 if (cost > 0)
                 {
-                    Console.WriteLine("Player {0} has {1} after {2} rent for {3}", playerId, players[playerId].money, cost, currentSquare.title);
+                    Console.WriteLine("Player {0} had {4}, has {1} after {2} rent for {3}", playerId, players[playerId].money, cost, currentSquare.title, playerHad);
                 }
             }
         }
@@ -647,7 +569,7 @@ namespace Banking
         {
             // For Monopoly, this adapter is a simulation of game play with 1 or more players.
 
-            string expected = AdapterGetEndState(startState, action);
+            string expected = GetEndState(startState, action);
 
             // affect the player state
 
