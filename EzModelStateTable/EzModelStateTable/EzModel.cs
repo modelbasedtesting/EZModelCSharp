@@ -582,6 +582,21 @@ namespace SeriousQualityEzModel
             return String.Empty;
         }
 
+        public string NodesToString()
+        {
+            string result = String.Empty;
+
+            for (uint i = 0; i < count; i++)
+            {
+                result += "\"" + nodes[i].state + "\"";
+                if (i < count - 1)
+                {
+                    result += ",";
+                }
+            }
+            return result;
+        }
+
         public void SetParentByIndex(uint index, string parentState)
         {
             if (index < count)
@@ -973,10 +988,6 @@ namespace SeriousQualityEzModel
             pathEndNode.Add(endOfPathNodeIndex);
         }
 
-        // TODO immediately:
-        // Add array of node name strings.
-        // set selectedSvgElementInfo to action name + node name instead of action name + node index.
-        
         void WriteSvgDeltasFile(string fileName)
         {
             // TODO:
@@ -1025,7 +1036,16 @@ TH {
 		</script>
     <table border=""0"" width=""100%"" height=""100%"">
 		<tr>
-			<th colspan=""2"" id=""selectedSvgElementInfo"" style=""height:20px; color:#e00000"">INITIAL STATE</th> 
+        <td colspan=""2"">
+            <table border=""0"" width=""100%"">
+    		<tr>
+			<!-- th id=""selectedSvgElementInfo"" style=""height:20px; color:#e00000"">INITIAL STATE</th -->
+			<th id=""selectedSvgElementStartState"" style=""text-align:right;color:#e00000;width:40%""> </th>
+			<th id=""selectedSvgElementTransition"" style=""text-align:center;color:#e00000;width:20% "">INITIAL STATE</th>
+			<th id=""selectedSvgElementEndState"" style=""text-align:left;color:#e00000;width:40%""> </th>
+            </tr>
+            </table>
+        </td>
 		</tr>
 		<tr>
 			<td width=""50"">
@@ -1167,6 +1187,8 @@ TH {
 var step = -1; // Because step is an index into an array.
 ");
                     w.WriteLine("const actionNames = [{0}];", transitions.ActionsToString());
+                    w.WriteLine(" ");
+                    w.WriteLine("const nodeNames = [{0}];", totalNodes.NodesToString());
                     w.WriteLine(" ");
                     w.WriteLine("const transitionActions = [{0}];", transitions.ActionIndicesToString());
                     w.WriteLine(" ");
@@ -1447,7 +1469,10 @@ function releaseSelection() {
                 text[i].setAttribute(""fill"", ""black"");
             }
         }
-        document.getElementById(""selectedSvgElementInfo"").innerHTML = "" "";
+        document.getElementById(""selectedSvgElementStartState"").innerHTML = "" "";
+        document.getElementById(""selectedSvgElementTransition"").innerHTML = "" "";
+        document.getElementById(""selectedSvgElementEndState"").innerHTML = "" "";
+        
         selectedSvgElement = undefined;
     }
 }
@@ -1468,7 +1493,7 @@ function attr(event) {
             var title = p.getElementsByTagName(""title"");
             if (title && title.length > 0)
             {
-                msg += title[0].innerHTML;
+                msg = title[0].innerHTML;
             }
             var text = p.getElementsByTagName(""text"");
             if (text && text.length > 0)
@@ -1484,7 +1509,7 @@ function attr(event) {
             var text = p.getElementsByTagName(""text"");
             if (text && text.length > 0)
             {
-                msg += text[0].innerHTML;
+                msg = text[0].innerHTML;
                 text[0].setAttribute(""fill"", ""red"");
             }
             break;
@@ -1492,7 +1517,9 @@ function attr(event) {
             break;
     }
 
-    document.getElementById(""selectedSvgElementInfo"").innerHTML = msg;
+    document.getElementById(""selectedSvgElementStartState"").innerHTML = "" "";
+    document.getElementById(""selectedSvgElementTransition"").innerHTML = msg;
+    document.getElementById(""selectedSvgElementEndState"").innerHTML = "" "";
 }
 
 var temp = svgOuter.getElementsByTagName(""g"");
@@ -1791,7 +1818,10 @@ function reset() {
     stopTraversal();
     clearTimeout(t);
 
-    document.getElementById(""selectedSvgElementInfo"").innerHTML = ""INITIAL STATE"";
+    document.getElementById(""selectedSvgElementStartState"").innerHTML = "" "";
+    document.getElementById(""selectedSvgElementEndState"").innerHTML = "" "";
+    document.getElementById(""selectedSvgElementTransition"").innerHTML = ""INITIAL STATE"";
+
     for (var i = 0; i < transitionHitCounts.length; i++)
     {
         transitionHitCounts[i] = 0;
@@ -2082,11 +2112,15 @@ function traversalStepCommon() {
 
     if (step == -1)
     {
-        document.getElementById(""selectedSvgElementInfo"").innerHTML = ""INITIAL STATE"";
+        document.getElementById(""selectedSvgElementTransition"").innerHTML = ""INITIAL STATE"";
+        document.getElementById(""selectedSvgElementStartState"").innerHTML = "" "";
+        document.getElementById(""selectedSvgElementEndState"").innerHTML = "" "";
         return; 
     }
 
-    document.getElementById(""selectedSvgElementInfo"").innerHTML = actionNames[transitionActions[traversedEdge[step]]] + "" to "" + endNode[step].toString();
+    document.getElementById(""selectedSvgElementTransition"").innerHTML = actionNames[transitionActions[traversedEdge[step]]];
+    document.getElementById(""selectedSvgElementStartState"").innerHTML = nodeNames[startNode[step]];
+    document.getElementById(""selectedSvgElementEndState"").innerHTML = nodeNames[endNode[step]];
 
     if (step == traversedEdge.length-1)
     {
