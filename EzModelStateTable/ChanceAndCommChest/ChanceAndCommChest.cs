@@ -7,10 +7,11 @@
 using System;
 using System.Collections.Generic;
 using SeriousQualityEzModel;
+using System.Linq;
 
-namespace Banking
+namespace ChanceAndCommChest
 {
-    class BankingProgram
+    class ChanceAndCommChestProgram
     {
         public static void Main()
         {
@@ -19,7 +20,7 @@ namespace Banking
                 SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll
             };
 
-            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 14, EzModelGraph.LayoutRankDirection.LeftRight);
+            EzModelGraph graph = new EzModelGraph(client, 1100, 110, 20, EzModelGraph.LayoutRankDirection.LeftRight);
 
             if (graph.GenerateGraph())
             {
@@ -130,48 +131,48 @@ namespace Banking
 
         // State Values for the 40 squares on the board + the in Jail pseudo-square
         public GameSquare[] gameSquares = {
-        new GameSquare( 0, "Go [0]", SquareType.Go, ColorGroup.None, 0, 0, 0),
-        new GameSquare( 1, "Mediterannean Ave [1]", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 2),
-        new GameSquare( 2, "Community Chest [2]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-        new GameSquare( 3, "Baltic Ave [3]", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 4),
-        new GameSquare( 4, "Income Tax [4]", SquareType.Tax, ColorGroup.None, 0, 0, 0),
-        new GameSquare( 5, "Reading Railroad [5]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-        new GameSquare( 6, "Oriental Ave [6]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
-        new GameSquare( 7, "Chance [7]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-        new GameSquare( 8, "Vermont Ave [8]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
-        new GameSquare( 9, "Connecticut Ave [9]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 120, 8),
-        new GameSquare(10, "Just Visiting [10]", SquareType.JustVisiting, ColorGroup.None, 0, 0, 0),
-        new GameSquare(11, "St. Charles Place [11]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
-        new GameSquare(12, "Electric Co. [12]", SquareType.Utility, ColorGroup.White, 2, 150, 0),
-        new GameSquare(13, "States Ave [13]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
-        new GameSquare(14, "Virginia Ave [14]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 160, 12),
-        new GameSquare(15, "Pennsylvania Railroad [15]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-        new GameSquare(16, "St. James Place [16]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
-        new GameSquare(17, "Community Chest [17]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-        new GameSquare(18, "Tennessee Ave [18]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
-        new GameSquare(19, "New York Ave [19]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 200, 16),
-        new GameSquare(20, "Free Parking [20]", SquareType.FreeParking, ColorGroup.None, 0, 0, 0),
-        new GameSquare(21, "Kentucky Ave [21]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
-        new GameSquare(22, "Chance [22]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-        new GameSquare(23, "Indiana Ave [23]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
-        new GameSquare(24, "Illinois Ave [24]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 240, 20),
-        new GameSquare(25, "B & O Railroad [25]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-        new GameSquare(26, "Atlantic Ave [26]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
-        new GameSquare(27, "Ventnor Ave [27]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
-        new GameSquare(28, "Water Works [28]", SquareType.Utility, ColorGroup.White, 2, 150, 0),
-        new GameSquare(29, "Marvin Gardens [29]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 280, 24),
-        new GameSquare(30, "Go to Jail [30]", SquareType.GoToJail, ColorGroup.None, 0, 0, 0),
-        new GameSquare(31, "Pacific Ave [31]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
-        new GameSquare(32, "North Carolina Ave [32]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
-        new GameSquare(33, "Community Chest [33]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
-        new GameSquare(34, "Pennsylvania Ave [34]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 320, 28),
-        new GameSquare(35, "Short Line Railroad [35]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
-        new GameSquare(36, "Chance [36]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
-        new GameSquare(37, "Park Place [37]", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 350, 35),
-        new GameSquare(38, "Luxury Tax [38]", SquareType.Tax, ColorGroup.None, 0, 0, 75),
-        new GameSquare(39, "Board Walk [39]", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 400, 50),
-        new GameSquare(40, "In Jail [40 pseudosquare]", SquareType.InJail, ColorGroup.None, 0, 0, 0)
-    };
+    new GameSquare( 0, "Go [0]", SquareType.Go, ColorGroup.None, 0, 0, 0),
+    new GameSquare( 1, "Mediterannean Ave [1]", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 2),
+    new GameSquare( 2, "Community Chest [2]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+    new GameSquare( 3, "Baltic Ave [3]", SquareType.ColorGroupMember, ColorGroup.Purple, 2, 60, 4),
+    new GameSquare( 4, "Income Tax [4]", SquareType.Tax, ColorGroup.None, 0, 0, 0),
+    new GameSquare( 5, "Reading Railroad [5]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+    new GameSquare( 6, "Oriental Ave [6]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
+    new GameSquare( 7, "Chance [7]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+    new GameSquare( 8, "Vermont Ave [8]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 100, 6),
+    new GameSquare( 9, "Connecticut Ave [9]", SquareType.ColorGroupMember, ColorGroup.Sky, 3, 120, 8),
+    new GameSquare(10, "Just Visiting [10]", SquareType.JustVisiting, ColorGroup.None, 0, 0, 0),
+    new GameSquare(11, "St. Charles Place [11]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
+    new GameSquare(12, "Electric Co. [12]", SquareType.Utility, ColorGroup.White, 2, 150, 0),
+    new GameSquare(13, "States Ave [13]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 140, 10),
+    new GameSquare(14, "Virginia Ave [14]", SquareType.ColorGroupMember, ColorGroup.Magenta, 3, 160, 12),
+    new GameSquare(15, "Pennsylvania Railroad [15]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+    new GameSquare(16, "St. James Place [16]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
+    new GameSquare(17, "Community Chest [17]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+    new GameSquare(18, "Tennessee Ave [18]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 180, 14),
+    new GameSquare(19, "New York Ave [19]", SquareType.ColorGroupMember, ColorGroup.Orange, 3, 200, 16),
+    new GameSquare(20, "Free Parking [20]", SquareType.FreeParking, ColorGroup.None, 0, 0, 0),
+    new GameSquare(21, "Kentucky Ave [21]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
+    new GameSquare(22, "Chance [22]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+    new GameSquare(23, "Indiana Ave [23]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 220, 18),
+    new GameSquare(24, "Illinois Ave [24]", SquareType.ColorGroupMember, ColorGroup.Red, 3, 240, 20),
+    new GameSquare(25, "B & O Railroad [25]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+    new GameSquare(26, "Atlantic Ave [26]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
+    new GameSquare(27, "Ventnor Ave [27]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 260, 22),
+    new GameSquare(28, "Water Works [28]", SquareType.Utility, ColorGroup.White, 2, 150, 0),
+    new GameSquare(29, "Marvin Gardens [29]", SquareType.ColorGroupMember, ColorGroup.Yellow, 3, 280, 24),
+    new GameSquare(30, "Go to Jail [30]", SquareType.GoToJail, ColorGroup.None, 0, 0, 0),
+    new GameSquare(31, "Pacific Ave [31]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
+    new GameSquare(32, "North Carolina Ave [32]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 300, 26),
+    new GameSquare(33, "Community Chest [33]", SquareType.CommunityChest, ColorGroup.None, 0, 0, 0),
+    new GameSquare(34, "Pennsylvania Ave [34]", SquareType.ColorGroupMember, ColorGroup.Green, 3, 320, 28),
+    new GameSquare(35, "Short Line Railroad [35]", SquareType.RailRoad, ColorGroup.Black, 4, 200, 0),
+    new GameSquare(36, "Chance [36]", SquareType.Chance, ColorGroup.None, 0, 0, 0),
+    new GameSquare(37, "Park Place [37]", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 350, 35),
+    new GameSquare(38, "Luxury Tax [38]", SquareType.Tax, ColorGroup.None, 0, 0, 75),
+    new GameSquare(39, "Board Walk [39]", SquareType.ColorGroupMember, ColorGroup.NavyBlue, 2, 400, 50),
+    new GameSquare(40, "In Jail [40 pseudosquare]", SquareType.InJail, ColorGroup.None, 0, 0, 0)
+};
 
         // Chance and Community Chest cards
         // State values
@@ -195,6 +196,14 @@ namespace Banking
         // Evaluation actions
         const string goToJail = "Go to Jail";
         const string goToJustVisiting = "Go to Just Visiting";
+
+        // Chance / Community chest card actions
+        const string advanceToGo = "Advance to Go";
+
+        // Chance card actions
+        const string goBack3 = "Go back three spaces";
+
+        // Community Chest card actions
 
         Player[] players;
         int modelStep = 0;
@@ -275,6 +284,8 @@ namespace Banking
             List<string> actions = new List<string>();
 
             uint currentSquare = findGameSquareFromTitle(startState);
+            uint[] communityChest = { 2, 17, 33 };
+            uint[] chance = { 7, 22, 36 };
 
             if (currentSquare == 40)
             {
@@ -283,6 +294,14 @@ namespace Banking
             else if (currentSquare == 30)
             {
                 actions.Add(goToJail);
+            }
+            else if (communityChest.Contains(currentSquare))
+            {
+                actions.Add(advanceToGo);
+            }
+            else if (chance.Contains(currentSquare))
+            {
+                actions.Add(goBack3);
             }
             else
             {
@@ -324,89 +343,24 @@ namespace Banking
                         currentSquare = 10; // Just visiting
                         break;
 
+                    case advanceToGo:
+                        currentSquare = 0;
+                        break;
+
+                    case goBack3:
+                        if (currentSquare < 3)
+                        {
+                            // This won't happen on an off-the-shelf Monopoly board
+                            currentSquare += 40;
+                        }
+                        currentSquare -= 3;
+                        break;
+                       
                     default:
                         Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
                         return startState;
                 }
             }
-
-            string currentState = gameSquares[currentSquare].title;
-            return currentState;
-        }
-
-        public List<string> AdapterGetAvailableActions(string startState)
-        {
-            List<string> actions = new List<string>();
-
-            uint currentSquare = findGameSquareFromTitle(startState);
-
-            if (currentSquare == 40)
-            {
-                actions.Add(goToJustVisiting);
-            }
-            else if (currentSquare == 30)
-            {
-                actions.Add(goToJail);
-            }
-            else
-            {
-
-                actions.Add(roll2);
-                actions.Add(roll3);
-                /*  Control travel around board to 2 or 3 squares at a time
-                        actions.Add(roll4);
-                        actions.Add(roll5);
-                        actions.Add(roll6);
-                        actions.Add(roll7);
-                        actions.Add(roll8);
-                        actions.Add(roll9);
-                        actions.Add(roll10);
-                        actions.Add(roll11);
-                        actions.Add(roll12); */
-            }
-
-            return actions;
-        }
-
-        // Interface method for model creation
-        public string AdapterGetEndState(string startState, string action)
-        {
-            uint startSquare = findGameSquareFromTitle(startState);
-            uint currentSquare = startSquare;
-            modelStep++;
-
-            if (action.StartsWith("Move_"))
-            {
-                uint moveAmount = uint.Parse(action.Substring(5));
-                currentSquare = (currentSquare + moveAmount) % 40;
-            }
-            else
-            {
-                switch (action)
-                {
-                    case goToJail:
-                        currentSquare = 40; // In Jail
-                        break;
-
-                    case goToJustVisiting:
-                        currentSquare = 10; // Just visiting
-                        break;
-
-                    default:
-                        Console.WriteLine("ERROR: unknown action '{0}' in UserRules.GetEndState()", action);
-                        return startState;
-                }
-            }
-
-            Console.WriteLine("Step {5}: {0} at square {1} {2}, landed on square {3} {4}", action, startSquare, gameSquares[startSquare].title, currentSquare, gameSquares[currentSquare].title, modelStep);
-
-            if (currentSquare < startSquare)
-            {
-                players[1].money += 200;
-                Console.WriteLine("Player collected 200 for landing on or passing Go, now has {0}", players[1].money);
-            }
-
-            ReapConsequences(currentSquare);
 
             string currentState = gameSquares[currentSquare].title;
             return currentState;
@@ -424,96 +378,6 @@ namespace Banking
                 }
             }
             Console.WriteLine("{0} squares owned by player {1}.", quantity, playerId);
-        }
-
-        void ReapConsequences(uint currentSquare)
-        {
-            uint cost = 0;
-
-            if (gameSquares[currentSquare].colorGroup == ColorGroup.None)
-            {
-                switch (currentSquare)
-                {
-                    // Income Tax - $200 or 10% of cash
-                    case 4:
-                        uint incomeTax = (uint)Math.Round(players[1].money * 0.1);
-                        PayOwner(incomeTax, 1, 0); // Pay the bank
-                        Console.WriteLine("Player pays {0} income tax, now has {1}", incomeTax, players[1].money);
-                        break;
-                    // Luxury Tax - $75
-                    case 38:
-                        PayOwner(75, 1, 0); // Pay the bank
-                        Console.WriteLine("Player pays 75 luxury tax, now has {0}", players[1].money);
-                        break;
-                }
-            }
-            else
-            {
-                uint squareOwner = gameSquares[currentSquare].ownerId;
-
-                if (squareOwner == 0)
-                {
-                    // chance to buy
-                    if (players[1].money >= gameSquares[currentSquare].price)
-                    {
-                        gameSquares[currentSquare].ownerId = 1; // TODO: generalize for multi player
-                        players[1].money -= (int)gameSquares[currentSquare].price;
-                        Console.WriteLine("Player purchased square {0} {1} for {2}, now has {3}", currentSquare, gameSquares[currentSquare].title, gameSquares[currentSquare].price, players[1].money);
-                        ListSquaresOwnedBy(1);
-                    }
-                    else
-                    {
-                        // decline to buy.  TODO: auction
-                        Console.WriteLine("Player declines to purchase square {0} {1}", currentSquare, gameSquares[currentSquare].title);
-                    }
-                    return;
-                }
-                else if (squareOwner == 1)
-                {
-                    return;
-                }
-                // possibilities:
-                // square is owned but mortgaged - free ride
-                // square is owned no houses - pay rent
-                // square is owned and has a multiplier effect (multiple utilities, multiple railroads, full colorgroup) on rent
-                // square is owned and improved (houses / hotel)
-                else if (gameSquares[currentSquare].colorGroup == ColorGroup.White)
-                {
-                    // Utilities are the pseudo-color group White
-                    // pay 4x dice roll when single ownership
-                    // pay 10x dice roll when both utilities are owned by one player
-                    // for now, pay 25
-                    cost = 25;
-                    PayOwner(cost, 1, gameSquares[currentSquare].ownerId);
-                }
-                else if (gameSquares[currentSquare].colorGroup == ColorGroup.Black)
-                {
-                    // Railroads are the pseudo-color group Black
-                    // pay 25 when single ownership
-                    // pay 50, 100, or 200 for double, triple, or quadruple ownership
-                    // for now, pay 25:
-                    cost = 25;
-                    PayOwner(cost, 1, gameSquares[currentSquare].ownerId);
-                }
-                else if (gameSquares[currentSquare].colorGroup != ColorGroup.None)
-                {
-                    // this is a property that can collect rent
-                    cost = gameSquares[currentSquare].baseRent;
-                    PayOwner(cost, 1, gameSquares[currentSquare].ownerId);
-                }
-
-                if (cost > 0)
-                {
-                    Console.WriteLine("Player has {0} after {1} rent for square {2} {3}", players[1].money, cost, currentSquare, gameSquares[currentSquare].title);
-                }
-            }
-        }
-
-        void PayOwner(uint cost, uint payerId, uint ownerId)
-        {
-            players[payerId].money -= (int)cost;
-            // TODO: activate next line in real game
-            //            players[ownerId].money += (int)cost;
         }
 
         /* ****    ADAPTER    **** */
@@ -568,12 +432,6 @@ namespace Banking
         // Interface method for Adapter
         public string AdapterTransition(string startState, string action)
         {
-            // For Monopoly, this adapter is a simulation of game play with 1 or more players.
-
-            string expected = AdapterGetEndState(startState, action);
-
-            // affect the player state
-
             string observed = "";
             // What does execution mean?
             //
