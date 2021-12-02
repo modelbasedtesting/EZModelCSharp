@@ -53,7 +53,7 @@ namespace OpenCartModel
 
          // If you want to drive the system under test as EzModel generates test steps,
          // set client.NotifyAdapter true.
-         client.NotifyAdapter = false;
+         client.NotifyAdapter = true;
          // If you want EzModel to stop generating test steps when a problem is
          // detected, set client.NotifyAdapter true, set client.StopOnProblem true,
          // and then return false from the client.AreStatesAcceptablySimilar() method.
@@ -237,6 +237,7 @@ namespace OpenCartModel
       public void SetStateOfSystemUnderTest(string state)
       {
          // TODO: Implement this when NotifyAdapter is true.
+         // Go to OpenCart Site via Selenium commands
       }
 
       // IEzModelClient Interface method
@@ -264,6 +265,7 @@ namespace OpenCartModel
       public string AdapterTransition(string startState, string action)
       {
          // TODO: Finish implementation when NotifyAdapter is true
+         // Big switch statement with selenium code.
 
          string expected = GetEndState(startState, action);
          string observed = "";
