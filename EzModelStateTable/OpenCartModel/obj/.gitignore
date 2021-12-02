@@ -1,0 +1,6 @@
+Debug
+Release
+*.json
+*.targets
+*.cache
+*.props

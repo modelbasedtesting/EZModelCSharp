@@ -3,65 +3,67 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesklampAndTrafficlight", "DesklampAndTrafficlight\DesklampAndTrafficlight.csproj", "{CB1CD038-320A-49CC-84F6-49EF8E2AD379}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DesklampAndTrafficlight", "DesklampAndTrafficlight\DesklampAndTrafficlight.csproj", "{CB1CD038-320A-49CC-84F6-49EF8E2AD379}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChutesAndLadders", "ChutesAndLadders\ChutesAndLadders.csproj", "{AAD09EF6-D8BD-4701-B695-A87A671D040B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChutesAndLadders", "ChutesAndLadders\ChutesAndLadders.csproj", "{AAD09EF6-D8BD-4701-B695-A87A671D040B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EzModelStateTable", "EzModelStateTable\EzModelStateTable.csproj", "{02D23C75-DBCD-4694-9E67-00BBC7654E2D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EzModelStateTable", "EzModelStateTable\EzModelStateTable.csproj", "{02D23C75-DBCD-4694-9E67-00BBC7654E2D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatRoom", "ChatRoom\ChatRoom.csproj", "{EED5DA81-04DE-4206-BECC-2B7A09551369}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatRoom", "ChatRoom\ChatRoom.csproj", "{EED5DA81-04DE-4206-BECC-2B7A09551369}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiUserChatRoom", "MultiUserChatRoom\MultiUserChatRoom.csproj", "{26E241B8-28CD-4F98-9271-A0D1D2A1F24B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultiUserChatRoom", "MultiUserChatRoom\MultiUserChatRoom.csproj", "{26E241B8-28CD-4F98-9271-A0D1D2A1F24B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlanRichardsonAPIs", "AlanRichardsonAPIs\AlanRichardsonAPIs.csproj", "{1544B095-BC78-41FC-8FCB-FF1A8B004DFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AlanRichardsonAPIs", "AlanRichardsonAPIs\AlanRichardsonAPIs.csproj", "{1544B095-BC78-41FC-8FCB-FF1A8B004DFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RichardsonAPIsAdapterExecution", "RichardsonAPIsAdapterExecution\RichardsonAPIsAdapterExecution.csproj", "{EFA1AC1E-F3C3-44D8-BBBE-2199EA6D1E74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RichardsonAPIsAdapterExecution", "RichardsonAPIsAdapterExecution\RichardsonAPIsAdapterExecution.csproj", "{EFA1AC1E-F3C3-44D8-BBBE-2199EA6D1E74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynchronousHttpClientExecuter", "SynchronousHttpClientExecuter\SynchronousHttpClientExecuter.csproj", "{43322E20-E3EE-4DB5-8251-0756FEE834A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynchronousHttpClientExecuter", "SynchronousHttpClientExecuter\SynchronousHttpClientExecuter.csproj", "{43322E20-E3EE-4DB5-8251-0756FEE834A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsHairball", "TodoAPIsHairball\TodoAPIsHairball.csproj", "{80AAD770-B509-4C82-9241-FF9D4110B8C9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsHairball", "TodoAPIsHairball\TodoAPIsHairball.csproj", "{80AAD770-B509-4C82-9241-FF9D4110B8C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIs3NodesE", "TodoAPIs3NodesE\TodoAPIs3NodesE.csproj", "{64ED2CF1-B645-4AF8-9320-5C572831E7E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIs3NodesE", "TodoAPIs3NodesE\TodoAPIs3NodesE.csproj", "{64ED2CF1-B645-4AF8-9320-5C572831E7E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIs4NodesE", "TodoAPIs4NodesE\TodoAPIs4NodesE.csproj", "{3BE6929C-4D2E-44DF-A6E9-BEBF2FA78BAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIs4NodesE", "TodoAPIs4NodesE\TodoAPIs4NodesE.csproj", "{3BE6929C-4D2E-44DF-A6E9-BEBF2FA78BAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsActiveResolvedE", "TodoAPIsActiveResolvedE\TodoAPIsActiveResolvedE.csproj", "{72FA110F-1024-484B-B438-006319A1207B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsActiveResolvedE", "TodoAPIsActiveResolvedE\TodoAPIsActiveResolvedE.csproj", "{72FA110F-1024-484B-B438-006319A1207B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsHugeE", "TodoAPIsHugeE\TodoAPIsHugeE.csproj", "{455CB76E-4284-4CB2-912A-87DB6F18D772}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsHugeE", "TodoAPIsHugeE\TodoAPIsHugeE.csproj", "{455CB76E-4284-4CB2-912A-87DB6F18D772}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsEndSessionZeroTodos", "TodoAPIsEndSessionZeroTodos\TodoAPIsEndSessionZeroTodos.csproj", "{A407B279-168A-49CF-84B1-33D3611E51B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsEndSessionZeroTodos", "TodoAPIsEndSessionZeroTodos\TodoAPIsEndSessionZeroTodos.csproj", "{A407B279-168A-49CF-84B1-33D3611E51B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsEndSession", "TodoAPIsEndSession\TodoAPIsEndSession.csproj", "{9F00BBD6-50DE-4B0F-903D-33196AAE69CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsEndSession", "TodoAPIsEndSession\TodoAPIsEndSession.csproj", "{9F00BBD6-50DE-4B0F-903D-33196AAE69CE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsActiveResolvedA", "TodoAPIsActiveResolvedA\TodoAPIsActiveResolvedA.csproj", "{36DB8E0F-6DB0-46F9-8AB0-3CB2EF4AB940}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsActiveResolvedA", "TodoAPIsActiveResolvedA\TodoAPIsActiveResolvedA.csproj", "{36DB8E0F-6DB0-46F9-8AB0-3CB2EF4AB940}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsAuthTokenA", "TodoAPIsAuthTokenA\TodoAPIsAuthTokenA.csproj", "{54936EF9-AAD9-4431-9EED-0EAA29EDBD92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsAuthTokenA", "TodoAPIsAuthTokenA\TodoAPIsAuthTokenA.csproj", "{54936EF9-AAD9-4431-9EED-0EAA29EDBD92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsReleaseTokenA", "TodoAPIsReleaseTokenA\TodoAPIsReleaseTokenA.csproj", "{610DA0C3-6600-4949-9FCD-6359CF339ABA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsReleaseTokenA", "TodoAPIsReleaseTokenA\TodoAPIsReleaseTokenA.csproj", "{610DA0C3-6600-4949-9FCD-6359CF339ABA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsStartEndOnly", "TodoAPIsStartEndOnly\TodoAPIsStartEndOnly.csproj", "{DDE83ADF-6869-4D3D-A7EF-0EE37112D451}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsStartEndOnly", "TodoAPIsStartEndOnly\TodoAPIsStartEndOnly.csproj", "{DDE83ADF-6869-4D3D-A7EF-0EE37112D451}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsAdapterExecution", "TodoAPIsAdapterExecution\TodoAPIsAdapterExecution.csproj", "{DA186D66-3E01-4231-B82A-9FE511B94928}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsAdapterExecution", "TodoAPIsAdapterExecution\TodoAPIsAdapterExecution.csproj", "{DA186D66-3E01-4231-B82A-9FE511B94928}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoAPIsNaiveAdapter", "TodoAPIsNaiveAdapter\TodoAPIsNaiveAdapter.csproj", "{457801DF-C968-4C96-A4B4-E23C3991AD8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAPIsNaiveAdapter", "TodoAPIsNaiveAdapter\TodoAPIsNaiveAdapter.csproj", "{457801DF-C968-4C96-A4B4-E23C3991AD8B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientTemplate", "ClientTemplate\ClientTemplate.csproj", "{78CB5B7D-4957-4DCE-921D-937ED0B59F73}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClientTemplate", "ClientTemplate\ClientTemplate.csproj", "{78CB5B7D-4957-4DCE-921D-937ED0B59F73}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewAbstract", "NewAbstract\NewAbstract.csproj", "{9A019806-DDAD-43CF-88FD-09388978C8CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NewAbstract", "NewAbstract\NewAbstract.csproj", "{9A019806-DDAD-43CF-88FD-09388978C8CE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetClinic", "PetClinic\PetClinic.csproj", "{FBB17101-D701-4741-B78C-B67E234F9B06}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PetClinic", "PetClinic\PetClinic.csproj", "{FBB17101-D701-4741-B78C-B67E234F9B06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monopoly", "Monopoly\Monopoly.csproj", "{FE240BDE-6BEF-4999-8DF2-372762180475}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monopoly", "Monopoly\Monopoly.csproj", "{FE240BDE-6BEF-4999-8DF2-372762180475}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AroundTheBoard", "AroundTheBoard\AroundTheBoard.csproj", "{AB09A67E-DEEF-4900-AE99-53870092C8DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AroundTheBoard", "AroundTheBoard\AroundTheBoard.csproj", "{AB09A67E-DEEF-4900-AE99-53870092C8DA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Detention", "Detention\Detention.csproj", "{99CB587C-B126-4185-BA63-4A52380B02D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Detention", "Detention\Detention.csproj", "{99CB587C-B126-4185-BA63-4A52380B02D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Banking", "Banking\Banking.csproj", "{D7925CD2-18F7-444C-B163-7792E9D920AB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Banking", "Banking\Banking.csproj", "{D7925CD2-18F7-444C-B163-7792E9D920AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChanceAndCommChest", "ChanceAndCommChest\ChanceAndCommChest.csproj", "{43811D19-BBAE-49A8-B984-BF5745F9FF38}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChanceAndCommChest", "ChanceAndCommChest\ChanceAndCommChest.csproj", "{43811D19-BBAE-49A8-B984-BF5745F9FF38}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GetOutOfJail", "GetOutOfJail\GetOutOfJail.csproj", "{348770E1-823A-45C6-A541-81D187D7F22B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetOutOfJail", "GetOutOfJail\GetOutOfJail.csproj", "{348770E1-823A-45C6-A541-81D187D7F22B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCartModel", "OpenCartModel\OpenCartModel.csproj", "{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -189,6 +191,10 @@ Global
 		{348770E1-823A-45C6-A541-81D187D7F22B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{348770E1-823A-45C6-A541-81D187D7F22B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{348770E1-823A-45C6-A541-81D187D7F22B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
