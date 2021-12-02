@@ -17,7 +17,7 @@ namespace OpenCartModel
          client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
          client.IncludeSelfLinkNoise = true;
 
-         EzModelGraph graph = new EzModelGraph(client, 2200, 61, 35);
+         EzModelGraph graph = new EzModelGraph(client, 2200, 260, 35);
 
          if (!graph.GenerateGraph())
          {
