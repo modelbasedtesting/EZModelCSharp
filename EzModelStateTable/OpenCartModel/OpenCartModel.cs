@@ -48,6 +48,7 @@ namespace OpenCartModel
          }
 
          graph.DisplayStateTable(); // Display the Excel-format state table
+         graph.layoutDirection = EzModelGraph.LayoutRankDirection.TopDown;
 
          graph.CreateGraphVizFileAndImage(EzModelGraph.GraphShape.Default);
 
