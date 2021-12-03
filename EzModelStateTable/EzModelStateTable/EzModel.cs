@@ -2546,6 +2546,7 @@ function getHitColor(hitCount) {
                     {
                         client.ReportTraversal(initialState, popcornTrail);
                     }
+                    w.Close();
                 } // using
             } // using
         }
