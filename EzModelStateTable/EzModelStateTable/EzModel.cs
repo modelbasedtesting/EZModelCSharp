@@ -706,10 +706,10 @@ namespace SeriousQualityEzModel
         uint problemCount = 0;
         uint traversalCount = 0;
         double wallStartTime; // Initialize at the top of a traversal.
-        LayoutRankDirection layoutRankDirection = LayoutRankDirection.LeftRight;
 
         IEzModelClient client;
 
+        public LayoutRankDirection layoutDirection = LayoutRankDirection.LeftRight;
         public enum GraphShape
         {
             Circle, Default
@@ -745,7 +745,7 @@ namespace SeriousQualityEzModel
 
             totalNodes = new Nodes(maxNodes);
 
-            this.layoutRankDirection = layoutRankDirection;
+            this.layoutDirection = layoutRankDirection;
         }
 
         public enum LayoutRankDirection
@@ -995,7 +995,7 @@ namespace SeriousQualityEzModel
             // One bar for each transition.  Hitcount on the Y axis
             // 
             string[] ezModelGraph = File.ReadAllLines(EzModelFileName + traversalCount + ".svg");
-            string rankDir = layoutRankDirection == LayoutRankDirection.LeftRight ? "LR" : "TD";
+            string rankDir = layoutDirection == LayoutRankDirection.LeftRight ? "LR" : "TD";
             using (FileStream fs = new FileStream(fileName + rankDir + traversalCount + ".html", FileMode.Create))
             {
                 using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
@@ -2206,7 +2206,7 @@ function getHitColor(hitCount) {
                 w.WriteLine("digraph state_machine {");
                 w.WriteLine("size = \"13,7.5\";");
                 w.WriteLine("node [shape = ellipse];");
-                w.WriteLine("rankdir={0};", layoutRankDirection == LayoutRankDirection.TopDown ? "TD" : "LR");
+                w.WriteLine("rankdir={0};", layoutDirection == LayoutRankDirection.TopDown ? "TD" : "LR");
 
 
                 // add the state nodes to the image
@@ -2355,189 +2355,199 @@ function getHitColor(hitCount) {
             wallStartTime = DateTime.Now.Ticks;
 
         ResetPosition:
-            InitializeSVGDeltas();
-
-            // Each transition will now be a target to be reached
-            //  1. find a transition with a low hit count
-            //  2. move along a path from where you are to the start node of that transition
-            //  3. move along the target transition (so now you shd be in that transition's end node)
-
-            // InitialState is needed in case rules.ReportProblem() is called.
-            string initialState = client.GetInitialState();
-
-            if (client.NotifyAdapter)
+            using (FileStream fs = new FileStream(String.Format("Traversal_RandomDestinationCoverage-{0}.txt", minimumCoverageFloor), FileMode.Create))
             {
-                // TODO: for Abstract model, client must set its own popcorn trail of details
-                // that aligns with the popcorn trail here, which is about the model.
-                client.SetStateOfSystemUnderTest(initialState);
-            }
-
-            // State is the start state of the current transition.
-            string state = initialState;
-
-            // Record the actions taken in case rules.ReportProblem() is called.
-            // This list is built up only when the rules module has NotifyAdapter == true.
-            List<string> popcornTrail = new List<string>();
-
-            int loopctr = 0;
-
-            while (transitions.GetHitcountFloor() < minimumCoverageFloor)
-            {
-            // The unconditional increment of loopctr on the next line is correct
-            // only because there is a transition added to the traversal at the
-            // bottom of this loop.
-                loopctr++;
-
-                path = new Queue<int>();
-
-            InitializeNewPath:
-                // Prefer an outlink transition with a low hit count
-                int targetIndex = transitions.GetLowHitTransitionIndexPreferOutlink(state);
-
-                string targetStartState = transitions.StartStateByTransitionIndex((uint)targetIndex);
-
-                if (state != targetStartState)
+                using (StreamWriter w = new StreamWriter(fs, Encoding.ASCII))
                 {
-                    path = FindShortestPath(state, targetStartState);
+                    InitializeSVGDeltas();
 
-                    // Handle graphs that are not strongly connected.  In such a 
-                    // graph, eventually a path of zero length is returned.  In
-                    // the code above this, we see that it is the target transition
-                    // that there is no path to.  So, we will remove that transition
-                    // from the list of candidates - disable it - and ask for
-                    // an alternative low hitcount transition.  If we get through
-                    // the whole list of transitions and find no candidates, then
-                    // the traversal stops with a note that there are no more
-                    // traversal paths available in the graph, due to lack of strong
-                    // connections.
-                    if (path.Count == 0)
+                    // Each transition will now be a target to be reached
+                    //  1. find a transition with a low hit count
+                    //  2. move along a path from where you are to the start node of that transition
+                    //  3. move along the target transition (so now you shd be in that transition's end node)
+
+                    // InitialState is needed in case rules.ReportProblem() is called.
+                    string initialState = client.GetInitialState();
+                    w.WriteLine(initialState);
+
+                    if (client.NotifyAdapter)
                     {
-                        transitions.DisableTransition((uint)targetIndex);
-                        Console.WriteLine("Disabled transition #{0} because there is no path to it from state {1}", targetIndex + 1, state);
-                        goto InitializeNewPath;
+                        // TODO: for Abstract model, client must set its own popcorn trail of details
+                        // that aligns with the popcorn trail here, which is about the model.
+                        client.SetStateOfSystemUnderTest(initialState);
                     }
 
-                    foreach (int tIndex in path)
+                    // State is the start state of the current transition.
+                    string state = initialState;
+
+                    // Record the actions taken in case rules.ReportProblem() is called.
+                    // This list is built up only when the rules module has NotifyAdapter == true.
+                    List<string> popcornTrail = new List<string>();
+
+                    int loopctr = 0;
+
+                    while (transitions.GetHitcountFloor() < minimumCoverageFloor)
                     {
-                        // mark the transitions covered along the way
-                        transitions.IncrementHitCount((uint)tIndex);
+                        // The unconditional increment of loopctr on the next line is correct
+                        // only because there is a transition added to the traversal at the
+                        // bottom of this loop.
                         loopctr++;
 
+                        path = new Queue<int>();
+
+                    InitializeNewPath:
+                        // Prefer an outlink transition with a low hit count
+                        int targetIndex = transitions.GetLowHitTransitionIndexPreferOutlink(state);
+
+                        string targetStartState = transitions.StartStateByTransitionIndex((uint)targetIndex);
+
+                        if (state != targetStartState)
+                        {
+                            path = FindShortestPath(state, targetStartState);
+
+                            // Handle graphs that are not strongly connected.  In such a 
+                            // graph, eventually a path of zero length is returned.  In
+                            // the code above this, we see that it is the target transition
+                            // that there is no path to.  So, we will remove that transition
+                            // from the list of candidates - disable it - and ask for
+                            // an alternative low hitcount transition.  If we get through
+                            // the whole list of transitions and find no candidates, then
+                            // the traversal stops with a note that there are no more
+                            // traversal paths available in the graph, due to lack of strong
+                            // connections.
+                            if (path.Count == 0)
+                            {
+                                transitions.DisableTransition((uint)targetIndex);
+                                Console.WriteLine("Disabled transition #{0} because there is no path to it from state {1}", targetIndex + 1, state);
+                                goto InitializeNewPath;
+                            }
+
+                            foreach (int tIndex in path)
+                            {
+                                // mark the transitions covered along the way
+                                transitions.IncrementHitCount((uint)tIndex);
+                                loopctr++;
+
+                                if (client.NotifyAdapter)
+                                {
+                                    string action = transitions.ActionByTransitionIndex((uint)tIndex);
+                                    popcornTrail.Add(action);
+                                    // TODO: the following console output relates to the AdapterGetEndState method in the Monopoly client.
+                                    Console.WriteLine(" "); //  ("During path traversal");
+                                    string reportedEndState = client.AdapterTransition(transitions.StartStateByTransitionIndex((uint)tIndex), action);
+                                    string predicted = transitions.EndStateByTransitionIndex((uint)tIndex);
+                                    w.WriteLine("{0} | {1}", action, predicted);
+
+                                    if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
+                                    {
+                                        // Inconsistency detected.
+                                        // Let the adapter report the problem, including the popcorn trail.
+                                        client.ReportProblem(initialState, reportedEndState, predicted, popcornTrail);
+                                        // If the adapter wants to stop on problem, stop.
+                                        if (client.StopOnProblem)
+                                        {
+                                            Console.WriteLine("Stopping due to problem.  Achieved floor coverage of {0} before stop. Completed {1} iterations of traversal.", transitions.GetHitcountFloor(), loopctr);
+                                            WriteSvgDeltasFile(String.Format("{0}StopOnProblem{1}", fname, ++problemCount));
+                                            return;
+                                        }
+
+                                        // TODO:
+                                        // Provide a way for the user to override disabling transitions.
+                                        // Reason is that the problem might not be severe enough that
+                                        // disabling the transition is necessary to continue the traversal.
+
+                                        // On first fault on an action, Disable the transition.
+                                        if (transitions.IncrementActionFailures((uint)tIndex) == 1)
+                                        {
+                                            // NOTE: the cause of the problem detected may be in the route to this transition,
+                                            // rather than in this transition.
+                                            // Building a capability for EzModel to pick an alternate route to this transition
+                                            // is useful, and coincident with the Beeline strategy.
+                                            // Beeline may isolate the problem transition, for instance: if the first problem
+                                            // was detected on transition Z in the route ...,Y,Z, and then Beeline succeeds in
+                                            // route ...,X,Z, we may find that another route of ...,Y,Z also has a problem.  Y
+                                            // is then the suspect transition.
+
+                                            // TODO: add a display value to show the disabled transition
+                                            transitions.DisableTransition((uint)tIndex);
+                                        }
+                                        else
+                                        {
+                                            // TODO: add a display value to show the disabled transition
+
+                                            // On second or later fault on the same action, disable the action everywhere.
+                                            transitions.DisableTransitionsByAction(transitions.ActionByTransitionIndex((uint)tIndex));
+                                            // NOTE: there may be a systemic problem with the action itself.  Two incidents involving the
+                                            // same action is reason enough to avoid the action for the remainder of the run.  Development
+                                            // team can root-cause the issue.
+                                        }
+                                        // Write an HTML file called Problem{problemCount}.html.  The
+                                        // traversal it shows will be all the steps up to the problem,
+                                        // so those are the steps to reproduce.  The dev can read the
+                                        // arrays of edges, etc, at the bottom of the file to work through
+                                        // the steps.  Hubba, hubba.
+                                        WriteSvgDeltasFile(String.Format("{0}Problem{1}", fname, ++problemCount));
+
+                                        // Re-write the graph file because transitions are disabled.
+                                        // *** Only write enabled transitions to the graph file!!
+                                        traversalCount++;
+                                        CreateGraphVizFileAndImage(currentShape);
+
+                                        // Go back to the start of this function, and reset the adapter.
+                                        goto ResetPosition;
+                                    }
+                                }
+                                AppendSvgDelta((uint)tIndex, targetIndex);
+                            }
+                        }
+
+                        // mark that we covered the target Transition as well
+                        transitions.IncrementHitCount((uint)targetIndex);
+
+                        state = transitions.EndStateByTransitionIndex((uint)targetIndex);  // move to the end node of the target transition
                         if (client.NotifyAdapter)
                         {
-                            string action = transitions.ActionByTransitionIndex((uint)tIndex);
+                            string action = transitions.ActionByTransitionIndex((uint)targetIndex);
                             popcornTrail.Add(action);
                             // TODO: the following console output relates to the AdapterGetEndState method in the Monopoly client.
-                            Console.WriteLine(" "); //  ("During path traversal");
-                            string reportedEndState = client.AdapterTransition(transitions.StartStateByTransitionIndex((uint)tIndex), action);
-                            string predicted = transitions.EndStateByTransitionIndex((uint)tIndex);
+                            Console.WriteLine(" "); //  ("After Path traversal");
+                            string reportedEndState = client.AdapterTransition(targetStartState, action);
+                            string predicted = transitions.EndStateByTransitionIndex((uint)targetIndex);
+                            w.WriteLine("{0} | {1}", action, predicted);
+
                             if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
                             {
-                                // Inconsistency detected.
-                                // Let the adapter report the problem, including the popcorn trail.
                                 client.ReportProblem(initialState, reportedEndState, predicted, popcornTrail);
-                                // If the adapter wants to stop on problem, stop.
                                 if (client.StopOnProblem)
                                 {
-                                    Console.WriteLine("Stopping due to problem.  Achieved floor coverage of {0} before stop. Completed {1} iterations of traversal.", transitions.GetHitcountFloor(), loopctr);
-                                    WriteSvgDeltasFile(String.Format("{0}StopOnProblem{1}", fname, ++problemCount));
                                     return;
                                 }
 
-                                // TODO:
-                                // Provide a way for the user to override disabling transitions.
-                                // Reason is that the problem might not be severe enough that
-                                // disabling the transition is necessary to continue the traversal.
-
-                                // On first fault on an action, Disable the transition.
-                                if (transitions.IncrementActionFailures((uint)tIndex) == 1)
+                                if (transitions.IncrementActionFailures((uint)targetIndex) == 1)
                                 {
-                                    // NOTE: the cause of the problem detected may be in the route to this transition,
-                                    // rather than in this transition.
-                                    // Building a capability for EzModel to pick an alternate route to this transition
-                                    // is useful, and coincident with the Beeline strategy.
-                                    // Beeline may isolate the problem transition, for instance: if the first problem
-                                    // was detected on transition Z in the route ...,Y,Z, and then Beeline succeeds in
-                                    // route ...,X,Z, we may find that another route of ...,Y,Z also has a problem.  Y
-                                    // is then the suspect transition.
-
-                                    // TODO: add a display value to show the disabled transition
-                                    transitions.DisableTransition((uint)tIndex);
+                                    transitions.DisableTransition((uint)targetIndex);
                                 }
                                 else
                                 {
-                                    // TODO: add a display value to show the disabled transition
-
-                                    // On second or later fault on the same action, disable the action everywhere.
-                                    transitions.DisableTransitionsByAction(transitions.ActionByTransitionIndex((uint)tIndex));
-            // NOTE: there may be a systemic problem with the action itself.  Two incidents involving the
-            // same action is reason enough to avoid the action for the remainder of the run.  Development
-            // team can root-cause the issue.
+                                    transitions.DisableTransitionsByAction(transitions.ActionByTransitionIndex((uint)targetIndex));
                                 }
-                                // Write an HTML file called Problem{problemCount}.html.  The
-                                // traversal it shows will be all the steps up to the problem,
-                                // so those are the steps to reproduce.  The dev can read the
-                                // arrays of edges, etc, at the bottom of the file to work through
-                                // the steps.  Hubba, hubba.
-                                WriteSvgDeltasFile(String.Format("{0}Problem{1}", fname, ++problemCount));
-
-                                // Re-write the graph file because transitions are disabled.
-                                // *** Only write enabled transitions to the graph file!!
-                                traversalCount++;
-                                CreateGraphVizFileAndImage(currentShape);
-
-                                // Go back to the start of this function, and reset the adapter.
+                                // Inconsistency.  Restart traversal.
                                 goto ResetPosition;
                             }
                         }
-                        AppendSvgDelta((uint)tIndex, targetIndex);
+                        AppendSvgDelta((uint)targetIndex, targetIndex);
                     }
-                }
+                // TODO: Trace floor coverage
+                    Console.WriteLine("Reached coverage floor of {0} in {1} iterations.", minimumCoverageFloor, loopctr);
+                    WriteSvgDeltasFile(String.Format("{0}RandomDestinationCoverage", fname));
+                    traversalCount++;
 
-                // mark that we covered the target Transition as well
-                transitions.IncrementHitCount((uint)targetIndex);
-
-                state = transitions.EndStateByTransitionIndex((uint)targetIndex);  // move to the end node of the target transition
-                if (client.NotifyAdapter)
-                {
-                    string action = transitions.ActionByTransitionIndex((uint)targetIndex);
-                    popcornTrail.Add(action);
-                    // TODO: the following console output relates to the AdapterGetEndState method in the Monopoly client.
-                    Console.WriteLine(" "); //  ("After Path traversal");
-                    string reportedEndState = client.AdapterTransition(targetStartState, action);
-                    string predicted = transitions.EndStateByTransitionIndex((uint)targetIndex);
-                    if (!client.AreStatesAcceptablySimilar(reportedEndState, predicted))
+                    if (client.NotifyAdapter)
                     {
-                        client.ReportProblem(initialState, reportedEndState, predicted, popcornTrail);
-                        if (client.StopOnProblem)
-                        {
-                            return;
-                        }
-
-                        if (transitions.IncrementActionFailures((uint)targetIndex) == 1)
-                        {
-                            transitions.DisableTransition((uint)targetIndex);
-                        }
-                        else
-                        {
-                            transitions.DisableTransitionsByAction(transitions.ActionByTransitionIndex((uint)targetIndex));
-                        }
-                        // Inconsistency.  Restart traversal.
-                        goto ResetPosition;
+                        client.ReportTraversal(initialState, popcornTrail);
                     }
-                }
-
-                AppendSvgDelta((uint)targetIndex, targetIndex);
-            }
-            // TODO: Trace floor coverage
-            Console.WriteLine("Reached coverage floor of {0} in {1} iterations.", minimumCoverageFloor, loopctr);
-            WriteSvgDeltasFile(String.Format("{0}RandomDestinationCoverage", fname));
-            traversalCount++;
-
-            if (client.NotifyAdapter)
-            {
-                client.ReportTraversal(initialState, popcornTrail);
-            }
+                } // using
+            } // using
         }
 
         // A sanity check for the client's model
