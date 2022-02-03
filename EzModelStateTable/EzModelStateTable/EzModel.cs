@@ -1063,7 +1063,7 @@ TH {
                     bool copyToStream = false;
                     double worldWidth = 0.0;
 
-                    for (var i=0; i < ezModelGraph.Length; i++)
+                    for (int i = 0; i < ezModelGraph.Length; i++)
                     {
                         if (copyToStream == true)
                         {

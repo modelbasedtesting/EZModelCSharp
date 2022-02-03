@@ -310,7 +310,7 @@ namespace TodoAPIsAdapterExecution
             TodosList todos = new TodosList();
 
             // issue the GET request
-            if (!executer.GetRequest(acceptHeaders, "todos"))
+            if (!executer.GetRequest(acceptHeaders, "todos", new List<string[]>()))
             {
                 Console.WriteLine("Get Todos List failed");
                 Environment.Exit(-2);
@@ -509,7 +509,7 @@ namespace TodoAPIsAdapterExecution
                         // The app dumps a lot of information to the
                         // standard output on startup: port it is running
                         // on, list of challenges.
-                        bool started = executer.Startup();
+                        bool started = executer.Startup("/Users/dougs/Downloads/", "java", "-jar apichallenges.jar");
                         if (!started)
                         {
                             // We couldn't start the APIs server.  Stop the test run.
@@ -528,7 +528,7 @@ namespace TodoAPIsAdapterExecution
                         // API Challenges.
                         acceptHeaders.Add("application/json");
 
-                        if (!executer.GetRequest(acceptHeaders, "shutdown"))
+                        if (!executer.GetRequest(acceptHeaders, "shutdown", new List<string[]>()))
                         {
                             // There is a bug in shutdown on the API server:
                             // the function does not return a response
@@ -574,7 +574,7 @@ namespace TodoAPIsAdapterExecution
 
                             if (postThisEdit)
                             {
-                                if (!executer.PostRequest(acceptHeaders, String.Format("todos/{0}", t.id), body))
+                                if (!executer.PostRequest(acceptHeaders, String.Format("todos/{0}", t.id), body, new List<string[]>()))
                                 {
                                     Console.WriteLine("Edit Some Todos failed on POST {0}", t.id);
                                     Environment.Exit(-3);
@@ -617,7 +617,7 @@ namespace TodoAPIsAdapterExecution
                             todoNoId.description = "Created by POST method";
                             body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
-                            if (!executer.PostRequest(acceptHeaders, "todos", body))
+                            if (!executer.PostRequest(acceptHeaders, "todos", body, new List<string[]>()))
                             {
                                 Console.WriteLine("Add Some Active Todos failed.");
                                 Environment.Exit(-7);
@@ -653,7 +653,7 @@ namespace TodoAPIsAdapterExecution
                             todoNoId.description = "Created by POST method";
                             body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
-                            if (!executer.PostRequest(acceptHeaders, "todos", body))
+                            if (!executer.PostRequest(acceptHeaders, "todos", body, new List<string[]>()))
                             {
                                 Console.WriteLine("Add Some Resolved Todos failed.");
                                 Environment.Exit(-27);
@@ -674,7 +674,7 @@ namespace TodoAPIsAdapterExecution
                             todoNoId.description = "Created by POST method";
                             body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
-                            if (!executer.PostRequest(acceptHeaders, "todos", body))
+                            if (!executer.PostRequest(acceptHeaders, "todos", body, new List<string[]>()))
                             {
                                 Console.WriteLine("Add All Active Todos failed.");
                                 Environment.Exit(-3);
@@ -695,7 +695,7 @@ namespace TodoAPIsAdapterExecution
                             todoNoId.description = "Created by POST method";
                             body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
-                            if (!executer.PostRequest(acceptHeaders, "todos", body))
+                            if (!executer.PostRequest(acceptHeaders, "todos", body, new List<string[]>()))
                             {
                                 Console.WriteLine("Add All Resolved Todos failed.");
                                 Environment.Exit(-23);
@@ -878,7 +878,7 @@ namespace TodoAPIsAdapterExecution
                             todoNoId.description = "Created by POST method";
                             body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
-                            if (!executer.PostRequest(acceptHeaders, "todos", body))
+                            if (!executer.PostRequest(acceptHeaders, "todos", body, new List<string[]>()))
                             {
                                 Console.WriteLine("Resolve Some Active Todos failed.");
                                 Environment.Exit(-28);
@@ -933,7 +933,7 @@ namespace TodoAPIsAdapterExecution
                             todoNoId.description = "Created by POST method";
                             body = new StringContent(JsonSerializer.Serialize(todoNoId));
 
-                            if (!executer.PostRequest(acceptHeaders, "todos", body))
+                            if (!executer.PostRequest(acceptHeaders, "todos", body, new List<string[]>()))
                             {
                                 Console.WriteLine("Activate Some Resolved Todos failed.");
                                 Environment.Exit(-29);
@@ -1026,7 +1026,7 @@ namespace TodoAPIsAdapterExecution
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "docs"))
+                        if (!executer.GetRequest(acceptHeaders, "docs", new List<string[]>()))
                         {
                             Console.WriteLine("Get Documentation failed.");
                             Environment.Exit(-9);
@@ -1037,7 +1037,7 @@ namespace TodoAPIsAdapterExecution
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "heartbeat"))
+                        if (!executer.GetRequest(acceptHeaders, "heartbeat", new List<string[]>()))
                         {
                             Console.WriteLine("Get Service Heartbeat failed.");
                             Environment.Exit(-14);

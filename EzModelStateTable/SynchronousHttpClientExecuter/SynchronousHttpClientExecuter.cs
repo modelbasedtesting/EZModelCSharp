@@ -386,12 +386,10 @@ namespace SynchronousHttpClientExecuter
             return true;
         }
 
-        public bool Startup()
+        // Call startup when running an Http server locally.
+        // If reaching out to a running web service, do not call this method.
+        public bool Startup(string workingDirectory, string fileName, string arguments)
         {
-            string workingDirectory = "";
-            string fileName = "java";
-            string arguments = "-jar apichallenges.jar";
-
             process = new Process();
             ProcessStartInfo startInfo = new ProcessStartInfo();
 
@@ -405,7 +403,7 @@ namespace SynchronousHttpClientExecuter
             try
             {
                 process.Start();
-                // Give Java time to get the jar running, otherwise
+                // Give the process time to get running, otherwise
                 // we won't get the first response from the service and
                 // we will report a problem - false positive.
                 System.Threading.Thread.Sleep(1500);
@@ -413,7 +411,7 @@ namespace SynchronousHttpClientExecuter
             catch (Exception e)
             {
                 // Tell why we were unable to start the process.
-                Console.WriteLine("ExecuterJavaAPIs.Startup() exception: {0}", e.Message);
+                Console.WriteLine("SynchronousHttpClient.Startup() exception: {1}", e.Message);
                 Console.WriteLine("Trying to start {0}", fileName);
                 Console.WriteLine("with arguments {0}", arguments);
                 Console.WriteLine("at path {0}", workingDirectory);

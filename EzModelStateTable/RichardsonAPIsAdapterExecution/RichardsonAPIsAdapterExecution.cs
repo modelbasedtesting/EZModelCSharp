@@ -380,7 +380,7 @@ namespace RichardsonAPIsAdapterExecution
                         // The app dumps a lot of information to the
                         // standard output on startup: port it is running
                         // on, list of challenges.
-                        bool started = executer.Startup();
+                        bool started = executer.Startup("/Users/dougs/Downloads/", "java", "-jar apichallenges.jar");
                         if (!started)
                         {
                             // We couldn't start the APIs server.  Stop the test run.
@@ -398,7 +398,7 @@ namespace RichardsonAPIsAdapterExecution
                         // API Challenges.
                         acceptHeaders.Add("application/json");
 
-                        if (!executer.GetRequest(acceptHeaders, "shutdown"))
+                        if (!executer.GetRequest(acceptHeaders, "shutdown", new List<string[]>()))
                         {
                             // There is a bug in shutdown on the API server:
                             // the function does not return a response
@@ -414,7 +414,7 @@ namespace RichardsonAPIsAdapterExecution
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "todos"))
+                        if (!executer.GetRequest(acceptHeaders, "todos", new List<string[]>()))
                         {
                             //            Environment.Exit(-2);
                         }
@@ -434,7 +434,7 @@ namespace RichardsonAPIsAdapterExecution
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo)))
+                        if (!executer.GetRequest(acceptHeaders, String.Format("todos/{0}", selectedTodo), new List<string[]>()))
                         {
                             //                        Environment.Exit(-8);
                         }
@@ -454,7 +454,7 @@ namespace RichardsonAPIsAdapterExecution
 
                         body = new StringContent(String.Format("{\"id\": {0}, \"title\": \"POST-amended\", \"doneStatus\": true, \"description\": \"This todo modified by POST request with Id\"}", selectedTodo), Encoding.UTF8, "application/json");
 
-                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        if (!executer.PostRequest(acceptHeaders, "todos", body, new List<string[]>()))
                         {
                             //           Environment.Exit(-3);
                         }
@@ -476,7 +476,7 @@ namespace RichardsonAPIsAdapterExecution
 
                         body = new StringContent("{\"title\": \"POST JSON todo and accept JSON\", \"doneStatus\": false, \"description\": \"input format was JSON, output format should be JSON\"}", Encoding.UTF8, "application/json");
 
-                        if (!executer.PostRequest(acceptHeaders, "todos", body))
+                        if (!executer.PostRequest(acceptHeaders, "todos", body, new List<string[]>()))
                         {
                             //           Environment.Exit(-3);
                         }
@@ -510,7 +510,7 @@ namespace RichardsonAPIsAdapterExecution
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "docs"))
+                        if (!executer.GetRequest(acceptHeaders, "docs", new List<string[]>()))
                         {
                             //                        Environment.Exit(-9);
                         }
@@ -528,7 +528,7 @@ namespace RichardsonAPIsAdapterExecution
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "challenges"))
+                        if (!executer.GetRequest(acceptHeaders, "challenges", new List<string[]>()))
                         {
                             //                        Environment.Exit(-2);
                         }
@@ -558,7 +558,7 @@ namespace RichardsonAPIsAdapterExecution
                         acceptHeaders.Add("application/json");
 
                         // issue the GET request
-                        if (!executer.GetRequest(acceptHeaders, "heartbeat"))
+                        if (!executer.GetRequest(acceptHeaders, "heartbeat", new List<string[]>()))
                         {
                             //           Environment.Exit(-14);
                         }
