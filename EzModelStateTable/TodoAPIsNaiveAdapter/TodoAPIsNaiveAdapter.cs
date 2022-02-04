@@ -572,7 +572,7 @@ namespace TodoAPIsNaiveAdapter
                         // The app dumps a lot of information to the
                         // standard output on startup: port it is running
                         // on, list of challenges.
-                        bool started = executer.Startup();
+                        bool started = executer.Startup("","","");
                         if (!started)
                         {
                             // We couldn't start the APIs server.  Stop the test run.

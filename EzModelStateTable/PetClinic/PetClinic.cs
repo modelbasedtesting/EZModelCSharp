@@ -123,7 +123,7 @@ namespace PetClinic
         // /owners/2/pets/new for Betty Davis.
 
         uint svOwnerCount = 10; // initial number of owners when petclinic starts
-        string[] ownerInfo
+        string[] ownerInfo;
         bool svTrueFalse = true;
         uint svSomeNumber = 4;
 
