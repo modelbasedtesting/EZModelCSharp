@@ -65,6 +65,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetOutOfJail", "GetOutOfJai
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCartModel", "OpenCartModel\OpenCartModel.csproj", "{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IstqbVendingMachine", "IstqbVendingMachine\IstqbVendingMachine.csproj", "{056CD345-400F-462B-81C8-7C482DB769E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -195,6 +197,10 @@ Global
 		{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DEA614DB-CBF2-4112-B3DF-EADEF8AEE28A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{056CD345-400F-462B-81C8-7C482DB769E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{056CD345-400F-462B-81C8-7C482DB769E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{056CD345-400F-462B-81C8-7C482DB769E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{056CD345-400F-462B-81C8-7C482DB769E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
