@@ -7,13 +7,13 @@ using System.Collections.Generic;
 // Check the box for EzModelStateTable.
 using SeriousQualityEzModel;
 
-namespace VendingMachineNamespace
+namespace ClientTemplate
 {
-    class VendingMachineProgram
+    class ClientTemplateProgram
     {
         static int Main()
         {
-            VendingMachine client = new VendingMachine();
+            TemplateClient client = new TemplateClient();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
             client.IncludeSelfLinkNoise = true;
 
@@ -64,7 +64,7 @@ namespace VendingMachineNamespace
         }
     }
 
-    public class VendingMachine : IEzModelClient
+    public class TemplateClient : IEzModelClient
     {
         SelfLinkTreatmentChoice skipSelfLinks;
         bool notifyAdapter;
@@ -98,19 +98,10 @@ namespace VendingMachineNamespace
             set => includeSelfLinkNoise = value;
         }
 
-        List<(string, object)> state = new List<(string, object)>
-        {
-            ("HasCoffeeIngredients", true),
-            ("HasTea", true),
-            ("HasHotWater", true),
-            ("InsufficientChange", false),
-            ("HasZeroMoney", true),
-            ("HasTeaMoney", false),
-            ("HasCoffeeMoney", false),
-            ("CoffeeSelected", false),
-            ("TeaSelected", false),
-            ("HotWaterSelected", false)
-        };
+        // TODO: Declare state variables
+        // Example:
+        bool svTrueFalse = true;
+        uint svSomeNumber = 4;
 
         // TODO: Declare transitions
         // SUGGESTION: Choose "const string" as the transition
@@ -118,36 +109,27 @@ namespace VendingMachineNamespace
         // can be utilized in a switch case, which is useful in
         // GetEndState().
         // Example:
-        const string selectTea = "Select Tea";
-        const string selectCoffee = "Select Coffee";
-        const string selectHotWater = "Select Hot Water";
-        const string cancelSelection = "Cancel Selection";
-        const string refund = "Refund";
-        const string dispense = "Dispense";
+        const string actionA = "Action A";
+        const string actionB = "Action B";
+        const string actionC = "Action C";
 
-        string StringifyStateVector(List<(string, object)> state)
+
+        string StringifyStateVector(bool stateArg1, uint stateArg2)
         {
             // TODO: Join state variable values into an ordered string
 
             // Example:
-
-            string stateString = "";
-            foreach((string s, object o) in state )
-            {
-                stateString += s + "." + o.ToString() + ", ";
-            }
-            if (stateString.Length > 2)
-            {
-                stateString = stateString.Substring(0, stateString.Length - 2);
-            }
-            Console.WriteLine(stateString);
-            return stateString;
+            string s = String.Format("StateArg1.{0}, StateArg2.{1}", stateArg1, stateArg2);
+            return s;
         }
 
         // IEzModelClient Interface method
         public string GetInitialState()
         {
-            return StringifyStateVector( state );
+            // TODO: feed state values
+
+            // Example:
+            return StringifyStateVector( svTrueFalse, svSomeNumber );
         }
 
         // IEzModelClient Interface method
@@ -157,45 +139,22 @@ namespace VendingMachineNamespace
 
             // TODO: Parse the startState.  Example:
             string[] vState = startState.Split(", ");
-
-            bool HasCoffeeIngredients = vState[0].Split(".")[1] == "True" ? true : false;
-            bool HasTea = vState[1].Split(".")[1] == "True" ? true : false;
-            bool HasHotWater = vState[2].Split(".")[1] == "True" ? true : false;
-            bool InsufficientChange = vState[3].Split(".")[1] == "True" ? true : false;
-            bool HasZeroMoney = vState[4].Split(".")[1] == "True" ? true : false;
-            bool HasTeaMoney = vState[5].Split(".")[1] == "True" ? true : false;
-            bool HasCoffeeMoney = vState[6].Split(".")[1] == "True" ? true : false;
-            bool CoffeeSelected = vState[7].Split(".")[1] == "True" ? true : false;
-            bool TeaSelected = vState[8].Split(".")[1] == "True" ? true : false;
-            bool HotWaterSelected = vState[9].Split(".")[1] == "True" ? true : false;
+            bool stateArg1 = vState[0].Contains("True") ? true : false;
+            uint stateArg2 = uint.Parse(vState[1].Split(".")[1]);
 
             // TODO: Accumulate actions available according to the start state.
             // Example:
-            if (HasCoffeeIngredients)
+            if (!stateArg1)
             {
-                actions.Add( selectCoffee );
+                actions.Add(actionA);
+                return actions;
             }
 
-            if (HasTea)
-            {
-                actions.Add( selectTea );
-            }
+            actions.Add(actionB);
 
-            if (HasHotWater)
+            if (includeSelfLinkNoise)
             {
-                actions.Add( selectHotWater );
-            }
-
-            actions.Add( Cancel );
-
-            if (( CoffeeSelected && HasCoffeeMoney) || (TeaSelected && HasTeaMoney) || HotWaterSelected )
-            {
-                actions.Add( Dispense );
-            }
-
-            if (!HasZeroMoney)
-            {
-                actions.Add( Refund );
+                actions.Add(actionC);
             }
 
             return actions;
@@ -208,8 +167,8 @@ namespace VendingMachineNamespace
             // the action.
             // Example:
             string[] vState = startState.Split(", ");
-            bool stateArg1 = v(0].Contains("True") ? true : false;
-            uint stateArg2 = uint.Parse(v(1].Split(".")[1]);
+            bool stateArg1 = vState[0].Contains("True") ? true : false;
+            uint stateArg2 = uint.Parse(vState[1].Split(".")[1]);
 
             switch (action)
             {
