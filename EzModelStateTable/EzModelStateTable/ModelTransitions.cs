@@ -33,7 +33,6 @@ namespace SeriousQualityEzModel
         // the array Length tells the capacity of the array, not the number
         // of populated elements in the array.
         uint transitionCount = 0;
-        readonly uint actionCount = 0;
 
         public readonly string transitionSeparator = " | ";
 
@@ -44,7 +43,6 @@ namespace SeriousQualityEzModel
         {
             transitions = new StateTransition[maximumTransitions];
             transitionActionProblemCount = new int[maximumActions];
-            // actions = new TransitionAction[maximumActions];
             this.randomSeed = randomSeed;
             rnd = new Random(this.randomSeed);
         }
@@ -56,11 +54,6 @@ namespace SeriousQualityEzModel
                 return (int)transitions[(uint)index].actionIndex;
             }
             return -1;
-        }
-
-        public uint ActionsCount()
-        {
-            return actionCount;
         }
 
         public string ActionIndicesToString()

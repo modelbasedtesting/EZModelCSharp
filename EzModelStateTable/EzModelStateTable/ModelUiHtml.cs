@@ -227,7 +227,7 @@ TH {
 @"						</tr>
 						<tr>
 						    <td style=""padding-left: 3px"">");
-                    w.WriteLine("{0} actions</td>", transitions.ActionsCount());
+                    w.WriteLine("{0} actions</td>", actionsList.Length);
                     w.WriteLine(
 @"						</tr>
 					</table>
