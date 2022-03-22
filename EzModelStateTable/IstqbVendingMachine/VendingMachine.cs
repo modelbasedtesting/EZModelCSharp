@@ -1,12 +1,4 @@
-﻿// TODO: To fill in the template, carry out all the instructions in // TODO comments.
-
-using System;
-using System.Linq; // Except() on Dictionary
-using System.Collections.Generic;
-
-// TODO: Right-click on the project Dependencies folder and choose Add Reference...
-// Check the box for EzModelStateTable.
-using SeriousQualityEzModel;
+﻿using SeriousQualityEzModel;
 
 namespace IstqbVendingMachine
 {
@@ -14,11 +6,11 @@ namespace IstqbVendingMachine
     {
         static int Main()
         {
-            VendingMachine client = new VendingMachine();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.SkipAll;
+            VendingMachine client = new ();
+            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
             client.IncludeSelfLinkNoise = true;
 
-            EzModelGraph graph = new EzModelGraph(client, 1000, 300, 20);
+            EzModelGraph graph = new (client, 1000, 300, 20);
 
             if (!graph.GenerateGraph())
             {
@@ -65,43 +57,9 @@ namespace IstqbVendingMachine
         }
     }
 
-    public class VendingMachine : IEzModelClient
+    public partial class VendingMachine : IEzModelClient
     {
-        SelfLinkTreatmentChoice skipSelfLinks;
-        bool notifyAdapter;
-        bool stopOnProblem;
-        bool includeSelfLinkNoise = false;
-
-        // These properties are unimportant until after the model is building.
-        // Get them out of the way, in a place that will be easy to get at later.
-        // Interface Properties
-        public SelfLinkTreatmentChoice SelfLinkTreatment
-        {
-            get => skipSelfLinks;
-            set => skipSelfLinks = value;
-        }
-
-        // IEzModelClient Interface Property
-        public bool NotifyAdapter
-        {
-            get => notifyAdapter;
-            set => notifyAdapter = value;
-        }
-
-        // IEzModelClient Interface Property
-        public bool StopOnProblem
-        {
-            get => stopOnProblem;
-            set => stopOnProblem = value;
-        }
-
-        public bool IncludeSelfLinkNoise
-        {
-            get => includeSelfLinkNoise;
-            set => includeSelfLinkNoise = value;
-        }
-
-        Dictionary<string, string> state;
+        readonly Dictionary<string, string> state;
 
         // State variable names
         const string HAS_COFFEE = "CoffeeAvailable"; // yes when COFFEE_INVENTORY > 0, no when COFFEE_INVENTORY == 0
@@ -141,6 +99,7 @@ namespace IstqbVendingMachine
         const string addQuarter = "Insert quarter";
         const string refund = "Refund";
         const string dispense = "Dispense";
+
         // MORE ACTIONS TO ADD:
         // setCoffeePrice
         // setTeaPrice
@@ -149,8 +108,8 @@ namespace IstqbVendingMachine
         // addTeaIngredients
         // addHotWaterIngredients
 
-        Dictionary<string, int> actions;
-        Dictionary<int, Dictionary<string, string>> statesDict;
+        readonly Dictionary<string, int> actions;
+        readonly Dictionary<int, Dictionary<string, string>> statesDict;
         int statesCounter;
 
         public VendingMachine()
@@ -247,10 +206,10 @@ namespace IstqbVendingMachine
 
             if (statesDict[currentState][DRINK_SELECTION] == "None")
             {
-                //                actionList.Add(actions[selectCoffee]);
-                //                actionList.Add(actions[selectTea]);
+                actionList.Add(actions[selectCoffee]);
+                actionList.Add(actions[selectTea]);
                 actionList.Add(actions[selectHotWater]);
-                //                actionList.Add(actions[selectCocaCola]);
+                actionList.Add(actions[selectCocaCola]);
             }
             else // DRINK_SELECTION is not None
             {
@@ -263,7 +222,7 @@ namespace IstqbVendingMachine
 
             int insertedMoney = ParseMoneyInserted(statesDict[currentState]);
 
-            if (insertedMoney < 15)
+            if (insertedMoney < 105)
             {
                 actionList.Add(actions[addDime]);
                 actionList.Add(actions[addNickel]);
@@ -413,6 +372,43 @@ namespace IstqbVendingMachine
             }
 
             return UpdateStates(endState);
+        }
+    }
+
+    public partial class VendingMachine
+    {
+        SelfLinkTreatmentChoice skipSelfLinks;
+        bool notifyAdapter;
+        bool stopOnProblem;
+        bool includeSelfLinkNoise = false;
+
+        // These properties are unimportant until after the model is building.
+        // Get them out of the way, in a place that will be easy to get at later.
+        // Interface Properties
+        public SelfLinkTreatmentChoice SelfLinkTreatment
+        {
+            get => skipSelfLinks;
+            set => skipSelfLinks = value;
+        }
+
+        // IEzModelClient Interface Property
+        public bool NotifyAdapter
+        {
+            get => notifyAdapter;
+            set => notifyAdapter = value;
+        }
+
+        // IEzModelClient Interface Property
+        public bool StopOnProblem
+        {
+            get => stopOnProblem;
+            set => stopOnProblem = value;
+        }
+
+        public bool IncludeSelfLinkNoise
+        {
+            get => includeSelfLinkNoise;
+            set => includeSelfLinkNoise = value;
         }
 
         // IEzModelClient Interface method

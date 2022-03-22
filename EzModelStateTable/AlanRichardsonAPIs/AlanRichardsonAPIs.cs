@@ -8,7 +8,7 @@ namespace AlanRichardsonAPIs
     {
         static int Main()
         {
-            APIs client = new APIs();
+            APIs client = new ();
             client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
             client.IncludeSelfLinkNoise = false;
 
@@ -18,7 +18,7 @@ namespace AlanRichardsonAPIs
             // created and traversed when exactly enough graph components
             // are allocated.  Try reducing any of the three arguments and
             // observe the consequences.
-            EzModelGraph graph = new EzModelGraph(client, 2000, 32, 40);
+            EzModelGraph graph = new (client, 2000, 32, 40);
 
             if (!graph.GenerateGraph())
             {
@@ -27,7 +27,6 @@ namespace AlanRichardsonAPIs
             }
 
             List<String> report = graph.AnalyzeConnectivity();
-
             if (report.Count > 0)
             {
                 Console.WriteLine("The graph is not strongly connected.");
@@ -40,6 +39,14 @@ namespace AlanRichardsonAPIs
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
+            if (duplicateActions.Count > 0)
+            {
+                Console.WriteLine("There are duplicate outlinks in the graph.");
+                foreach (string S in duplicateActions)
+                {
+                    Console.WriteLine(S);
+                }
+            }
 
             graph.DisplayStateTable(); // Display the Excel-format state table
 
@@ -55,40 +62,8 @@ namespace AlanRichardsonAPIs
         }
     }
 
-    public class APIs : IEzModelClient
+    public partial class APIs : IEzModelClient
     {
-        SelfLinkTreatmentChoice skipSelfLinks;
-        bool notifyAdapter;
-        bool stopOnProblem;
-        bool includeSelfLinkNoise = false;
-
-        // IEzModelClient Interface Property
-        public SelfLinkTreatmentChoice SelfLinkTreatment
-        {
-            get => skipSelfLinks;
-            set => skipSelfLinks = value;
-        }
-
-        // IEzModelClient Interface Property
-        public bool NotifyAdapter
-        {
-            get => notifyAdapter;
-            set => notifyAdapter = value;
-        }
-
-        // IEzModelClient Interface Property
-        public bool StopOnProblem
-        {
-            get => stopOnProblem;
-            set => stopOnProblem = value;
-        }
-
-        public bool IncludeSelfLinkNoise
-        {
-            get => includeSelfLinkNoise;
-            set => includeSelfLinkNoise = value;
-        }
-
         // Initially the system is not running, and this affects a lot of
         // state.
         bool svInSession = false;
@@ -153,64 +128,58 @@ namespace AlanRichardsonAPIs
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
-        string StringifyStateVector(bool inSession, bool hasResolvedTodos, bool hasActiveTodos, bool xAuthTokenExists, bool xChallengerGuidExists)
+        string StringifyState(int state)
         {
-            string s = String.Format("InSession.{0}, HasResolvedTodos.{1}, HasActiveTodos{2}, XAuth.{3}, XChallenger.{4}", inSession, hasResolvedTodos, hasActiveTodos, xAuthTokenExists, xChallengerGuidExists);
-            return s;
+            string stateString = "";
+
+            foreach (string stateVariable in stateVariableList)
+            {
+                stateString += stateVariable + "." + statesDict[state][stateVariable] + "\n";
+            }
+
+            return stateString.Substring(0, stateString.Length - 1);
+        }
+
+        int UpdateStates(Dictionary<string, string> state)
+        {
+            foreach (KeyValuePair<int, Dictionary<string, string>> entry in statesDict)
+            {
+                if (!entry.Value.Except(state).Any())
+                {
+                    return entry.Key;
+                }
+            }
+            statesDict[statesCounter] = new Dictionary<string, string>(state);
+            statesCounter++;
+            return statesCounter - 1;
         }
 
         // Interface method
-        public string GetInitialState()
+        public int GetInitialState()
         {
-            return StringifyStateVector(svInSession, svHasResolvedTodos, svHasActiveTodos, svXAuthTokenExists, svXChallengerGuidExists);
+            return 0;
         }
 
-        // Interface method
-        public void SetStateOfSystemUnderTest(string state)
+        // IEzModelClient Interface method
+        public string[] GetActionsList()
         {
+            return new string[]
+                { selectTea,
+                selectCoffee,
+                selectHotWater,
+                cancelSelection,
+                addNickel,
+                addDime,
+                addQuarter,
+                refund,
+                dispense,
+                selectCocaCola };
         }
 
-        // Interface method
-        public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
+        // IEzModelClient Interface method
+        public List<int> GetAvailableActions(int currentState)
         {
-        }
-
-        // Interface method
-        public bool AreStatesAcceptablySimilar(string observed, string expected)
-        {
-            // Compare reported to expected, if unacceptable return false.
-            return true;
-        }
-
-        // Interface method
-        public void ReportTraversal(string initialState, List<string> popcornTrail)
-        {
-
-        }
-
-        // Interface method
-        public string AdapterTransition(string startState, string action)
-        {
-            string expected = GetEndState(startState, action);
-            string observed = "";
-
-            return observed;
-        }
-
-        // Interface method
-        public List<string> GetAvailableActions(string startState)
-        {
-            List<string> actions = new List<string>();
-
-            // We must parse the startState, because we will be fed
-            // a variety of start states and we keep track of only
-            // one state in this object.
-            string[] vState = startState.Split(", ");
-            bool inSession = vState[0].Contains("True") ? true : false;
-            bool hasResolvedTodos = vState[1].Contains("True") ? true : false;
-            bool hasActiveTodos = vState[2].Contains("True") ? true : false;
-            bool xAuthTokenExists = vState[3].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[4].Contains("True") ? true : false;
+            List<int> actions = new ();
 
             if (!inSession)
             {
@@ -267,15 +236,9 @@ namespace AlanRichardsonAPIs
         }
 
         // Interface method
-        public string GetEndState(string startState, string action)
+        public int GetEndState(int startState, int action)
         {
-            // We must parse the startState, else we will 
-            string[] vState = startState.Split(", ");
-            bool inSession = vState[0].Contains("True") ? true : false;
-            bool hasResolvedTodos = vState[1].Contains("True") ? true : false;
-            bool hasActiveTodos = vState[2].Contains("True") ? true : false;
-            bool xAuthTokenExists = vState[3].Contains("True") ? true : false;
-            bool xChallengerGuidExists = vState[4].Contains("True") ? true : false;
+            Dictionary<string, string> endState = new(statesDict[startState]);
 
             switch (action)
             {
@@ -354,7 +317,74 @@ namespace AlanRichardsonAPIs
                     Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
                     break;
             }
-            return StringifyStateVector(inSession, hasResolvedTodos, hasActiveTodos, xAuthTokenExists, xChallengerGuidExists);
+            return UpdateStates(endState);
+        }
+    }
+
+    public partial class APIs
+    {
+        SelfLinkTreatmentChoice skipSelfLinks;
+        bool notifyAdapter;
+        bool stopOnProblem;
+        bool includeSelfLinkNoise = false;
+
+        // IEzModelClient Interface Property
+        public SelfLinkTreatmentChoice SelfLinkTreatment
+        {
+            get => skipSelfLinks;
+            set => skipSelfLinks = value;
+        }
+
+        // IEzModelClient Interface Property
+        public bool NotifyAdapter
+        {
+            get => notifyAdapter;
+            set => notifyAdapter = value;
+        }
+
+        // IEzModelClient Interface Property
+        public bool StopOnProblem
+        {
+            get => stopOnProblem;
+            set => stopOnProblem = value;
+        }
+
+        public bool IncludeSelfLinkNoise
+        {
+            get => includeSelfLinkNoise;
+            set => includeSelfLinkNoise = value;
+        }
+
+        // Interface method
+        public void SetStateOfSystemUnderTest(string state)
+        {
+        }
+
+        // Interface method
+        public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
+        {
+        }
+
+        // Interface method
+        public bool AreStatesAcceptablySimilar(string observed, string expected)
+        {
+            // Compare reported to expected, if unacceptable return false.
+            return true;
+        }
+
+        // Interface method
+        public void ReportTraversal(string initialState, List<string> popcornTrail)
+        {
+
+        }
+
+        // Interface method
+        public string AdapterTransition(string startState, string action)
+        {
+            string expected = GetEndState(startState, action);
+            string observed = "";
+
+            return observed;
         }
     }
 }
