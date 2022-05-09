@@ -6,9 +6,11 @@ namespace IstqbVendingMachine
     {
         static int Main()
         {
-            VendingMachine client = new ();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
-            client.IncludeSelfLinkNoise = true;
+            VendingMachine client = new()
+            {
+                SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll,
+                IncludeSelfLinkNoise = true
+            };
 
             EzModelGraph graph = new (client, 1000, 300, 20);
 
@@ -108,7 +110,34 @@ namespace IstqbVendingMachine
         // addTeaIngredients
         // addHotWaterIngredients
 
-        readonly Dictionary<string, int> actions;
+        int actionsDict( string name )
+        {
+            // What is the point of this function?
+            // The goal is to make a "const" dictionary, although this is
+            // not quite it.  So there is more to figure out and this is where
+            // we are right now.
+            // Usage: provide constant values mapped to constant strings
+            // The strings (action names) are used throughout this class.
+            // The values (action enumerators) are passed to and from EzModel.
+            // The GetEndState() method could be written with a switch block 
+            // instead of a multiplicity of if blocks when the mapping of
+            // action names to action enumerators is constant.
+            switch (name)
+            {
+                case selectTea: return 0;
+                case selectCoffee: return 1;
+                case selectHotWater: return 2;
+                case cancelSelection: return 3;
+                case addNickel: return 4;
+                case addDime: return 5;
+                case addQuarter: return 6;
+                case refund: return 7;
+                case dispense: return 8;
+                case selectCocaCola: return 9;
+                default: return -1;
+            }
+        }
+
         readonly Dictionary<int, Dictionary<string, string>> statesDict;
         int statesCounter;
 
@@ -125,20 +154,6 @@ namespace IstqbVendingMachine
             };
 
             statesDict = new Dictionary<int, Dictionary<string, string>>();
-
-            actions = new Dictionary<string, int>
-            {
-                [selectTea] = 0,
-                [selectCoffee] = 1,
-                [selectHotWater] = 2,
-                [cancelSelection] = 3,
-                [addNickel] = 4,
-                [addDime] = 5,
-                [addQuarter] = 6,
-                [refund] = 7,
-                [dispense] = 8,
-                [selectCocaCola] = 9
-            };
 
             statesCounter = 0;
             statesDict[statesCounter] = new Dictionary<string, string>(state);
@@ -206,17 +221,17 @@ namespace IstqbVendingMachine
 
             if (statesDict[currentState][DRINK_SELECTION] == "None")
             {
-                actionList.Add(actions[selectCoffee]);
-                actionList.Add(actions[selectTea]);
-                actionList.Add(actions[selectHotWater]);
-                actionList.Add(actions[selectCocaCola]);
+                actionList.Add(actionsDict(selectCoffee));
+                actionList.Add(actionsDict(selectTea));
+                actionList.Add(actionsDict(selectHotWater));
+                actionList.Add(actionsDict(selectCocaCola));
             }
             else // DRINK_SELECTION is not None
             {
-                actionList.Add(actions[cancelSelection]);
+                actionList.Add(actionsDict(cancelSelection));
                 if (statesDict[currentState][DISPENSE_LIGHT] == "on")
                 {
-                    actionList.Add(actions[dispense]);
+                    actionList.Add(actionsDict(dispense));
                 }
             }
 
@@ -224,14 +239,14 @@ namespace IstqbVendingMachine
 
             if (insertedMoney < 105)
             {
-                actionList.Add(actions[addDime]);
-                actionList.Add(actions[addNickel]);
-                actionList.Add(actions[addQuarter]);
+                actionList.Add(actionsDict(addDime));
+                actionList.Add(actionsDict(addNickel));
+                actionList.Add(actionsDict(addQuarter));
             }
 
             if (insertedMoney > 0)
             {
-                actionList.Add(actions[refund]);
+                actionList.Add(actionsDict(refund));
             }
 
             return actionList;
@@ -292,34 +307,39 @@ namespace IstqbVendingMachine
         {
             Dictionary<string, string> endState = new(statesDict[startState]);
 
-            if (action == actions[selectCoffee])
+            // Unable to use a switch (action) block because 
+            // the actionsDict() method doesn't output constants.
+            // TODO: come up with constants that map to the actionsDict
+            // values so that a switch block can be used here instead of
+            // so many if blocks.
+            if (action == actionsDict(selectCoffee))
             {
                 endState[DRINK_SELECTION] = "Coffee";
             }
 
-            if (action == actions[selectTea])
+            if (action == actionsDict(selectTea))
             {
                 endState[DRINK_SELECTION] = "Tea";
             }
 
-            if (action == actions[selectHotWater])
+            if (action == actionsDict(selectHotWater))
             {
                 endState[DRINK_SELECTION] = "Hot water";
             }
 
-            if (action == actions[selectCocaCola])
+            if (action == actionsDict(selectCocaCola))
             {
                 endState[DRINK_SELECTION] = "Coca-Cola";
             }
 
-            if (action == actions[cancelSelection])
+            if (action == actionsDict(cancelSelection))
             {
                 endState[DRINK_SELECTION] = "None";
             }
 
             int moneyInserted = ParseMoneyInserted(endState);
 
-            if (action == actions[dispense])
+            if (action == actionsDict(dispense))
             {
                 if (endState[DRINK_SELECTION] == "Hot water")
                 {
@@ -340,22 +360,22 @@ namespace IstqbVendingMachine
                 endState[DRINK_SELECTION] = "None";
             }
 
-            if (action == actions[addDime])
+            if (action == actionsDict(addDime))
             {
                 moneyInserted += 10;
             }
 
-            if (action == actions[addNickel])
+            if (action == actionsDict(addNickel))
             {
                 moneyInserted += 5;
             }
 
-            if (action == actions[addQuarter])
+            if (action == actionsDict(addQuarter))
             {
                 moneyInserted += 25;
             }
 
-            if (action == actions[refund])
+            if (action == actionsDict(refund))
             {
                 moneyInserted = 0;
             }

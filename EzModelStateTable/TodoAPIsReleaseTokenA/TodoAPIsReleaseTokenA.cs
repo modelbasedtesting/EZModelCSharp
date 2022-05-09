@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using SeriousQualityEzModel;
+﻿using SeriousQualityEzModel;
 
 namespace TodoAPIsReleaseTokenA
 {
@@ -8,17 +6,13 @@ namespace TodoAPIsReleaseTokenA
     {
         static int Main()
         {
-            APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction;
-            client.IncludeSelfLinkNoise = true;
+            APIs client = new()
+            {
+                SelfLinkTreatment = SelfLinkTreatmentChoice.OnePerAction,
+                IncludeSelfLinkNoise = true
+            };
 
-            // We learned after generating the graph that it has 62 edges,
-            // 13 nodes, and uses 25 actions.  Those specific numbers are
-            // fed in to the constructor as a check that the graph can be
-            // created and traversed when exactly enough graph components
-            // are allocated.  Try reducing any of the three arguments and
-            // observe the consequences.
-            EzModelGraph graph = new EzModelGraph(client, 2000, 200, 25, EzModelGraph.LayoutRankDirection.TopDown);
+            EzModelGraph graph = new (client, 2000, 200, 25, EzModelGraph.LayoutRankDirection.TopDown);
 
             if (!graph.GenerateGraph())
             {
@@ -35,7 +29,7 @@ namespace TodoAPIsReleaseTokenA
                 {
                     Console.WriteLine(S);
                 }
-                return -2;
+                // return -2;
             }
 
             List<string> duplicateActions = graph.ReportDuplicateOutlinks();
@@ -61,7 +55,390 @@ namespace TodoAPIsReleaseTokenA
         }
     }
 
-    public class APIs : IEzModelClient
+    public partial class APIs : IEzModelClient
+    {
+        readonly Dictionary<string, string> state;
+
+        const string IN_SESSION = "InSession";
+        const string RESOLVED_TODOS = "ResolvedTodos";
+        const string ACTIVE_TODOS = "ActiveTodos";
+        const string AUTH_TOKEN_EXISTS = "AuthTokenExists";
+        const string SECRET_NOTE_EXISTS = "SecretNoteExists";
+
+        readonly List<string> stateVariableList = new()
+        {
+            IN_SESSION,
+            RESOLVED_TODOS,
+            ACTIVE_TODOS,
+            AUTH_TOKEN_EXISTS,
+            SECRET_NOTE_EXISTS
+        };
+
+        readonly Dictionary<string, int> actions;
+        readonly Dictionary<int, Dictionary<string, string>> statesDict;
+        int statesCounter;
+
+        // Actions handled by APIs
+        const string startSession = "Start Session";
+        const string endSession = "End Session";
+        const string addSomeActiveTodos = "Add some Active Todos";
+        const string addSomeResolvedTodos = "Add some Resolved Todos";
+        const string addAllActiveTodos = "Add all Active Todos";
+        const string addAllResolvedTodos = "Add all Resolved Todos";
+        const string editSomeTodos = "Edit some Todos";
+        const string deleteAllResolvedTodos = "Delete all Resolved Todos";
+        const string deleteAllActiveTodos = "Delete all Active Todos";
+        const string deleteSomeResolvedTodos = "Delete some Resolved Todos";
+        const string deleteSomeActiveTodos = "Delete some Active Todos";
+        const string deleteAllTodos = "Delete All Todos";
+        const string resolveSomeActiveTodos = "Resolve some Active Todos";
+        const string resolveAllActiveTodos = "Resolve all Active Todos";
+        const string activateSomeResolvedTodos = "Activate some Resolved Todos";
+        const string activateAllResolvedTodos = "Activate all Resolved Todos";
+
+        const string getAuthToken = "Get Auth Token";
+        const string getSecretNote = "Get Secret Note By Token";
+        const string setSecretNote = "Set Secret Note By Token";
+
+        const string releaseAuthToken = "Release Auth Token";
+        const string clearSecretNote = "Clear Secret Note";
+
+        public APIs()
+        {
+            state = new Dictionary<string, string>
+            {
+                [IN_SESSION] = "No",
+                [RESOLVED_TODOS] = "0",
+                [ACTIVE_TODOS] = "0",
+                [AUTH_TOKEN_EXISTS] = "No",
+                [SECRET_NOTE_EXISTS] = "No"
+            };
+
+            statesDict = new Dictionary<int, Dictionary<string, string>>();
+
+            actions = new Dictionary<string, int>
+            {
+                [startSession] = 0,
+                [endSession] = 1,
+                [addSomeActiveTodos] = 2,
+                [addSomeResolvedTodos] = 3,
+                [addAllActiveTodos] = 4,
+                [addAllResolvedTodos] = 5,
+                [editSomeTodos] = 6,
+                [deleteAllResolvedTodos] = 7,
+                [deleteAllActiveTodos] = 8,
+                [deleteSomeResolvedTodos] = 9,
+                [deleteSomeActiveTodos] = 10,
+                [deleteAllTodos] = 11,
+                [resolveSomeActiveTodos] = 12,
+                [resolveAllActiveTodos] = 13,
+                [activateSomeResolvedTodos] = 14,
+                [activateAllResolvedTodos] = 15,
+                [getAuthToken] = 16,
+                [getSecretNote] = 17,
+                [setSecretNote] = 18,
+                [releaseAuthToken] = 19,
+                [clearSecretNote] = 20
+            };
+
+            statesCounter = 0;
+            statesDict[statesCounter] = new Dictionary<string, string>(state);
+            statesCounter++;
+        }
+
+        public string StringifyState(int state)
+        {
+            string stateString = "";
+
+            foreach (string stateVariable in stateVariableList)
+            {
+                stateString += stateVariable + "." + statesDict[state][stateVariable] + "\n";
+            }
+
+            return stateString.Substring(0, stateString.Length - 1);
+        }
+
+        int UpdateStates(Dictionary<string, string> state)
+        {
+            foreach (KeyValuePair<int, Dictionary<string, string>> entry in statesDict)
+            {
+                if (!entry.Value.Except(state).Any())
+                {
+                    return entry.Key;
+                }
+            }
+            statesDict[statesCounter] = new Dictionary<string, string>(state);
+            statesCounter++;
+            return statesCounter - 1;
+        }
+
+        // IEzModelClient Interface method
+        public int GetInitialState()
+        {
+            return 0;
+        }
+
+        // IEzModelClient Interface method
+        public string[] GetActionsList()
+        {
+            return new string[]
+                { startSession,
+                endSession,
+                addSomeActiveTodos,
+                addSomeResolvedTodos,
+                addAllActiveTodos,
+                addAllResolvedTodos,
+                editSomeTodos,
+                deleteAllResolvedTodos,
+                deleteAllActiveTodos,
+                deleteSomeResolvedTodos,
+                deleteSomeActiveTodos,
+                deleteAllTodos,
+                resolveSomeActiveTodos,
+                resolveAllActiveTodos,
+                activateSomeResolvedTodos,
+                activateAllResolvedTodos,
+                getAuthToken,
+                getSecretNote,
+                setSecretNote,
+                releaseAuthToken,
+                clearSecretNote};
+        }
+
+        // Interface method
+        public List<int> GetAvailableActions(int currentState)
+        {
+            List<int> actionList = new();
+            Dictionary<string, string> current = statesDict[currentState];
+
+            if (current[IN_SESSION] == "No")
+            {
+                actionList.Add(actions[startSession]);
+                return actionList;
+            }
+
+            actionList.Add(actions[endSession]);
+
+
+            if (includeSelfLinkNoise)
+            {
+                if (current[ACTIVE_TODOS] != "Zero" || current[RESOLVED_TODOS] != "Zero")
+                {
+                    actionList.Add(actions[editSomeTodos]);
+                }
+            }
+
+            if (current[AUTH_TOKEN_EXISTS] == "No")
+            {
+                actionList.Add(actions[getAuthToken]);
+            }
+            else
+            {
+                actionList.Add(actions[releaseAuthToken]);
+                actionList.Add(actions[getSecretNote]);
+                actionList.Add(actions[setSecretNote]);
+                if (current[SECRET_NOTE_EXISTS] == "Yes")
+                {
+                    actionList.Add(actions[clearSecretNote]);
+                }
+            }
+
+            if (current[ACTIVE_TODOS] == "Zero")
+            {
+                actionList.Add(actions[addSomeActiveTodos]);
+                actionList.Add(actions[addAllActiveTodos]);
+            }
+            else if (current[ACTIVE_TODOS] == "Some")
+            {
+                actionList.Add(actions[deleteAllTodos]);
+                actionList.Add(actions[addSomeActiveTodos]);
+                actionList.Add(actions[addAllActiveTodos]);
+                actionList.Add(actions[deleteAllActiveTodos]);
+                actionList.Add(actions[deleteSomeActiveTodos]);
+                actionList.Add(actions[resolveSomeActiveTodos]);
+                actionList.Add(actions[resolveAllActiveTodos]);
+            }
+            else if (current[ACTIVE_TODOS] == "Max")
+            {
+                actionList.Add(actions[deleteAllActiveTodos]);
+                actionList.Add(actions[deleteSomeActiveTodos]);
+                actionList.Add(actions[deleteAllTodos]);
+                actionList.Add(actions[resolveSomeActiveTodos]);
+                actionList.Add(actions[resolveAllActiveTodos]);
+            }
+
+            if (current[RESOLVED_TODOS] == "Zero")
+            {
+                actionList.Add(actions[addSomeResolvedTodos]);
+                actionList.Add(actions[addAllResolvedTodos]);
+            }
+            else if (current[RESOLVED_TODOS] == "Some")
+            {
+                if (!actionList.Contains(actions[deleteAllTodos]))
+                {
+                    actionList.Add(actions[deleteAllTodos]);
+                }
+                actionList.Add(actions[addSomeResolvedTodos]);
+                actionList.Add(actions[addAllResolvedTodos]);
+                actionList.Add(actions[activateSomeResolvedTodos]);
+                actionList.Add(actions[activateAllResolvedTodos]);
+                actionList.Add(actions[deleteSomeResolvedTodos]);
+                actionList.Add(actions[deleteAllResolvedTodos]);
+            }
+            else if (current[RESOLVED_TODOS] == "Max")
+            {
+                if (!actionList.Contains(actions[deleteAllTodos]))
+                {
+                    actionList.Add(actions[deleteAllTodos]);
+                }
+                actionList.Add(actions[activateSomeResolvedTodos]);
+                actionList.Add(actions[activateAllResolvedTodos]);
+                actionList.Add(actions[deleteSomeResolvedTodos]);
+                actionList.Add(actions[deleteAllResolvedTodos]);
+            }
+
+            return actionList;
+        }
+
+        // Interface method
+        // IEzModelClient Interface method
+        public int GetEndState(int startState, int action)
+        {
+            Dictionary<string, string> endState = new(statesDict[startState]);
+
+            if (action == actions[startSession])
+            {
+                endState[IN_SESSION] = "Yes";
+            }
+
+            if (action == actions[endSession])
+            {
+                endState[IN_SESSION] = "No";
+            }
+
+            // editSomeTodos, deleteSomeTodos are no-ops
+
+            if (action == actions[addSomeActiveTodos])
+            {
+                if (endState[ACTIVE_TODOS] == "Zero")
+                {
+                    endState[ACTIVE_TODOS] = "Some";
+                }
+            }
+
+            if (action == actions[addSomeResolvedTodos])
+            {
+                if (endState[RESOLVED_TODOS] == "Zero")
+                {
+                    endState[RESOLVED_TODOS] = "Some";
+                }
+            }
+
+            if (action == actions[activateSomeResolvedTodos])
+            {
+                if (endState[ACTIVE_TODOS] == "Zero")
+                {
+                    endState[ACTIVE_TODOS] = "Some";
+                }
+                if (endState[RESOLVED_TODOS] == "Max")
+                {
+                    endState[RESOLVED_TODOS] = "Some";
+                }
+            }
+
+            if (action == actions[deleteAllActiveTodos])
+            {
+                endState[ACTIVE_TODOS] = "Zero";
+            }
+
+            if (action == actions[deleteSomeActiveTodos])
+            {
+                if (endState[ACTIVE_TODOS] == "Max")
+                {
+                    endState[ACTIVE_TODOS] = "Some";
+                }
+            }
+
+            if (action == actions[deleteAllTodos])
+            {
+                endState[RESOLVED_TODOS] = "Zero";
+                endState[ACTIVE_TODOS] = "Zero";
+            }    
+
+            if (action == actions[resolveSomeActiveTodos])
+            {
+                if (endState[ACTIVE_TODOS] == "Max")
+                {
+                    endState[ACTIVE_TODOS] = "Some";
+                }
+                if (endState[RESOLVED_TODOS] == "Zero")
+                {
+                    endState[RESOLVED_TODOS] = "Some";
+                }
+            }
+
+            if (action == actions[resolveAllActiveTodos])
+            {
+                endState[ACTIVE_TODOS] = "Zero";
+                endState[RESOLVED_TODOS] = "Max";
+            }
+
+            if (action == actions[addAllActiveTodos])
+            {
+                endState[ACTIVE_TODOS] = "Max";
+            }
+ 
+            if (action == actions[addAllResolvedTodos])
+            {
+                endState[RESOLVED_TODOS] = "Max";
+            }
+
+            if (action == actions[deleteAllResolvedTodos])
+            {
+                endState[RESOLVED_TODOS] = "Zero";
+            }
+
+            if (action == actions[deleteSomeResolvedTodos])
+            { 
+                if (endState[RESOLVED_TODOS] == "Max")
+                {
+                    endState[RESOLVED_TODOS] = "Some";
+                }
+            }
+
+            if (action == actions[activateAllResolvedTodos])
+            {
+                endState[RESOLVED_TODOS] = "Zero";
+                endState[ACTIVE_TODOS] = "Max";
+            }
+
+            if (action == actions[getAuthToken])
+            {
+                endState[AUTH_TOKEN_EXISTS] = "Yes";
+            }
+
+            if (action == actions[releaseAuthToken])
+            {
+                endState[AUTH_TOKEN_EXISTS] = "No";
+            }
+
+            // getSecretNote is a no-op
+
+            if (action == actions[setSecretNote])
+            {
+                endState[SECRET_NOTE_EXISTS] = "Yes";
+            }
+
+            if (action == actions[clearSecretNote])
+            {
+                endState[SECRET_NOTE_EXISTS] = "No";
+            }
+
+            return UpdateStates(endState);
+        }
+    }
+
+    public partial class APIs
     {
         Random rnd = new Random(DateTime.Now.Millisecond);
         SelfLinkTreatmentChoice selfLinkTreatment;
@@ -96,310 +473,54 @@ namespace TodoAPIsReleaseTokenA
             set => includeSelfLinkNoise = value;
         }
 
-        // Initially the system is not running, and this affects a lot of
-        // state.
-        bool svInSession = false;
-
-        // Reduce state explosion on todos by classifing the quantity of todos
-        // into either zero or more than zero.
-        enum ResolvedTodos { Zero, Some, Max };
-        enum ActiveTodos { Zero, Some, Max };
-
-        ResolvedTodos svResolvedTodos = ResolvedTodos.Zero;
-        ActiveTodos svActiveTodos = ActiveTodos.Some;
-        // Once the X-AUTH-TOKEN exists, there isn't a way to get rid of it
-        // except for stopping the system under test.
-        bool svAuthTokenExists = false;
-        bool svSecretNoteExists = false;
-
-        // Actions handled by APIs
-        const string startSession = "Start Session";
-        const string endSession = "End Session";
-        const string addSomeActiveTodos = "Add some Active Todos";
-        const string addSomeResolvedTodos = "Add some Resolved Todos";
-        const string addAllActiveTodos = "Add all Active Todos";
-        const string addAllResolvedTodos = "Add all Resolved Todos";
-        const string editSomeTodos = "Edit some Todos";
-        const string deleteAllResolvedTodos = "Delete all Resolved Todos";
-        const string deleteAllActiveTodos = "Delete all Active Todos";
-        const string deleteSomeResolvedTodos = "Delete some Resolved Todos";
-        const string deleteSomeActiveTodos = "Delete some Active Todos";
-        const string deleteAllTodos = "Delete All Todos";
-        const string resolveSomeActiveTodos = "Resolve some Active Todos";
-        const string resolveAllActiveTodos = "Resolve all Active Todos";
-        const string activateSomeResolvedTodos = "Activate some Resolved Todos";
-        const string activateAllResolvedTodos = "Activate all Resolved Todos";
-
-        const string getAuthToken = "Get Auth Token";
-        const string getSecretNote = "Get Secret Note By Token";
-        const string setSecretNote = "Set Secret Note By Token";
-
-        const string releaseAuthToken = "Release Auth Token";
-        const string clearSecretNote = "Clear Secret Note";
-
-        string StringifyStateVector(bool inSession, ResolvedTodos resolvedTodos, ActiveTodos activeTodos, bool authTokenExists, bool secretNoteExists)
+        // IEzModelClient Interface method
+        public void SetStateOfSystemUnderTest(int state)
         {
-            string s = String.Format("InSession.{0}, ResolvedTodos.{1}, ActiveTodos.{2}, AuthToken.{3}, SecretNote.{4}", inSession, resolvedTodos.ToString(), activeTodos.ToString(), authTokenExists.ToString(), secretNoteExists.ToString());
-            return s;
+            // TODO: Implement this when NotifyAdapter is true.
         }
 
-        // Interface method
-        public string GetInitialState()
+        // IEzModelClient Interface method
+        public void ReportProblem(int initialState, int observed, int predicted, List<int> popcornTrail)
         {
-            return StringifyStateVector(svInSession, svResolvedTodos, svActiveTodos, svAuthTokenExists, svSecretNoteExists);
+            // TODO: Implement this when NotifyAdapter is true
         }
 
-        // Interface method
-        public void SetStateOfSystemUnderTest(string state)
+        // IEzModelClient Interface method
+        public bool AreStatesAcceptablySimilar(int observed, int expected)
         {
-        }
+            // TODO: Implement this when NotifyAdapter is true
 
-        // Interface method
-        public void ReportProblem(string initialState, string observed, string predicted, List<string> popcornTrail)
-        {
-        }
-
-        // Interface method
-        public bool AreStatesAcceptablySimilar(string observed, string expected)
-        {
             // Compare reported to expected, if unacceptable return false.
             return true;
         }
 
-        // Interface method
-        public void ReportTraversal(string initialState, List<string> popcornTrail)
+        // IEzModelClient Interface method
+        public void ReportTraversal(int initialState, List<int> popcornTrail)
         {
-
+            // TODO: Implement this when NotifyAdapter is true
         }
 
-        // Interface method
-        public string AdapterTransition(string startState, string action)
+        // IEzModelClient Interface method
+        public int AdapterTransition(int startState, int action)
         {
-            string expected = GetEndState(startState, action);
-            string observed = "";
+            // TODO: Finish implementation when NotifyAdapter is true
+
+            int expected = GetEndState(startState, action);
+            int observed = -1;
+
+            // Responsibilities:
+            // Optionally, validate that the state of the system under test
+            // is acceptably similar to the startState argument. 
+            // Required: drive the system under test according to the action
+            // argument.
+            // If executing the action is problematic, output a problem
+            // notice in some way, and return an empty string to the caller
+            // to indicate the start state was not reached.
+            // If the action executes without problem, then measure the state
+            // of the system under test and return the stringified SUT
+            // state vector to the caller.
 
             return observed;
-        }
-
-        // Interface method
-        public List<string> GetAvailableActions(string startState)
-        {
-            List<string> actions = new List<string>();
-
-            // We must parse the startState, because we will be fed
-            // a variety of start states and we keep track of only
-            // one state in this object.
-            string[] vState = startState.Split(", ");
-            bool inSession = vState[0].Contains("True") ? true : false;
-            string arg = vState[1].Split(".")[1];
-            ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
-            arg = vState[2].Split(".")[1];
-            ActiveTodos activeTodos = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
-            bool authTokenExists = vState[3].Contains("True") ? true : false;
-            bool secretNoteExists = vState[4].Contains("True") ? true : false;
-
-            if (!inSession)
-            {
-                actions.Add(startSession);
-                return actions;
-            }
-
-            actions.Add(endSession);
-
-            if (includeSelfLinkNoise)
-            {
-                if (activeTodos != ActiveTodos.Zero || resolvedTodos != ResolvedTodos.Zero)
-                {
-                    actions.Add(editSomeTodos);
-                }
-            }
-
-            if (!authTokenExists)
-            {
-                actions.Add(getAuthToken);
-            }
-            else
-            {
-                actions.Add(releaseAuthToken);
-                actions.Add(getSecretNote);
-                actions.Add(setSecretNote);
-                if (secretNoteExists)
-                {
-                    actions.Add(clearSecretNote);
-                }
-            }
-
-            switch (activeTodos)
-            {
-                case ActiveTodos.Zero:
-                    actions.Add(addSomeActiveTodos);
-                    actions.Add(addAllActiveTodos);
-                    break;
-                case ActiveTodos.Some:
-                    actions.Add(deleteAllTodos);
-                    actions.Add(addSomeActiveTodos);
-                    actions.Add(addAllActiveTodos);
-                    actions.Add(deleteAllActiveTodos);
-                    actions.Add(deleteSomeActiveTodos);
-                    actions.Add(resolveSomeActiveTodos);
-                    actions.Add(resolveAllActiveTodos);
-                    break;
-                case ActiveTodos.Max:
-                    actions.Add(deleteAllActiveTodos);
-                    actions.Add(deleteSomeActiveTodos);
-                    actions.Add(deleteAllTodos);
-                    actions.Add(resolveSomeActiveTodos);
-                    actions.Add(resolveAllActiveTodos);
-                    break;
-                default:
-                    break;
-            }
-
-            switch (resolvedTodos)
-            {
-                case ResolvedTodos.Zero:
-                    actions.Add(addSomeResolvedTodos);
-                    actions.Add(addAllResolvedTodos);
-                    break;
-                case ResolvedTodos.Some:
-                    if (!actions.Contains(deleteAllTodos))
-                    {
-                        actions.Add(deleteAllTodos);
-                    }
-                    actions.Add(addSomeResolvedTodos);
-                    actions.Add(addAllResolvedTodos);
-                    actions.Add(activateSomeResolvedTodos);
-                    actions.Add(activateAllResolvedTodos);
-                    actions.Add(deleteSomeResolvedTodos);
-                    actions.Add(deleteAllResolvedTodos);
-                    break;
-                case ResolvedTodos.Max:
-                    if (!actions.Contains(deleteAllTodos))
-                    {
-                        actions.Add(deleteAllTodos);
-                    }
-                    actions.Add(activateSomeResolvedTodos);
-                    actions.Add(activateAllResolvedTodos);
-                    actions.Add(deleteSomeResolvedTodos);
-                    actions.Add(deleteAllResolvedTodos);
-                    break;
-                default:
-                    break;
-            }
-
-            return actions;
-        }
-
-        // Interface method
-        public string GetEndState(string startState, string action)
-        {
-            // We must parse the startState, else we will 
-            string[] vState = startState.Split(", ");
-            bool inSession = vState[0].Contains("True") ? true : false;
-            string arg = vState[1].Split(".")[1];
-            ResolvedTodos resolvedTodos = (ResolvedTodos)Enum.Parse(typeof(ResolvedTodos), arg);
-            arg = vState[2].Split(".")[1];
-            ActiveTodos activeTodos = (ActiveTodos)Enum.Parse(typeof(ActiveTodos), arg);
-            bool authTokenExists = vState[3].Contains("True") ? true : false;
-            bool secretNoteExists = vState[4].Contains("True") ? true : false;
-
-            switch (action)
-            {
-                case startSession:
-                    inSession = true;
-                    break;
-                case endSession:
-                    inSession = false;
-                    break;
-                case editSomeTodos:
-                    break;
-                case addSomeActiveTodos:
-                    if (activeTodos == ActiveTodos.Zero)
-                    {
-                        activeTodos = ActiveTodos.Some;
-                    }
-                    break;
-                case addSomeResolvedTodos:
-                    if (resolvedTodos == ResolvedTodos.Zero)
-                    {
-                        resolvedTodos = ResolvedTodos.Some;
-                    }
-                    break;
-                case activateSomeResolvedTodos:
-                    if (activeTodos == ActiveTodos.Zero)
-                    {
-                        activeTodos = ActiveTodos.Some;
-                    }
-                    if (resolvedTodos == ResolvedTodos.Max)
-                    {
-                        resolvedTodos = ResolvedTodos.Some;
-                    }
-                    break;
-                case deleteAllActiveTodos:
-                    activeTodos = ActiveTodos.Zero;
-                    break;
-                case deleteSomeActiveTodos:
-                    if (activeTodos == ActiveTodos.Max)
-                    {
-                        activeTodos = ActiveTodos.Some;
-                    }
-                    break;
-                case deleteAllTodos:
-                    resolvedTodos = ResolvedTodos.Zero;
-                    activeTodos = ActiveTodos.Zero;
-                    break;
-                case resolveSomeActiveTodos:
-                    if (activeTodos == ActiveTodos.Max)
-                    {
-                        activeTodos = ActiveTodos.Some;
-                    }
-                    if (resolvedTodos == ResolvedTodos.Zero)
-                    {
-                        resolvedTodos = ResolvedTodos.Some;
-                    }
-                    break;
-                case resolveAllActiveTodos:
-                    activeTodos = ActiveTodos.Zero;
-                    resolvedTodos = ResolvedTodos.Max;
-                    break;
-                case addAllActiveTodos:
-                    activeTodos = ActiveTodos.Max;
-                    break;
-                case addAllResolvedTodos:
-                    resolvedTodos = ResolvedTodos.Max;
-                    break;
-                case deleteAllResolvedTodos:
-                    resolvedTodos = ResolvedTodos.Zero;
-                    break;
-                case deleteSomeResolvedTodos:
-                    if (resolvedTodos == ResolvedTodos.Max)
-                    {
-                        resolvedTodos = ResolvedTodos.Some;
-                    }
-                    break;
-                case activateAllResolvedTodos:
-                    resolvedTodos = ResolvedTodos.Zero;
-                    activeTodos = ActiveTodos.Max;
-                    break;
-                case getAuthToken:
-                    authTokenExists = true;
-                    break;
-                case releaseAuthToken:
-                    authTokenExists = false;
-                    break;
-                case getSecretNote:
-                    break;
-                case setSecretNote:
-                    secretNoteExists = true;
-                    break;
-                case clearSecretNote:
-                    secretNoteExists = false;
-                    break;
-                default:
-                    Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
-                    break;
-            }
-            return StringifyStateVector(inSession, resolvedTodos, activeTodos, authTokenExists, secretNoteExists);
         }
     }
 }

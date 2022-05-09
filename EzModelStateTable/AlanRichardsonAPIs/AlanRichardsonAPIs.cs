@@ -1,23 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// EZmodel State Graph Generation
+// copyright 2022 Serious Quality LLC
+
 using SeriousQualityEzModel;
 
 namespace AlanRichardsonAPIs
 {
-    class AlanRichardsonAPIsProgram
+    public class AlanRichardsonAPIsProgram
     {
-        static int Main()
+        public static int Main()
         {
-            APIs client = new ();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
-            client.IncludeSelfLinkNoise = false;
+            APIs client = new()
+            {
+                SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll,
+                IncludeSelfLinkNoise = false
+            };
 
-            // We learned after generating the graph that it has 62 edges,
-            // 13 nodes, and uses 25 actions.  Those specific numbers are
-            // fed in to the constructor as a check that the graph can be
-            // created and traversed when exactly enough graph components
-            // are allocated.  Try reducing any of the three arguments and
-            // observe the consequences.
             EzModelGraph graph = new (client, 2000, 32, 40);
 
             if (!graph.GenerateGraph())
@@ -181,9 +178,11 @@ namespace AlanRichardsonAPIs
         {
             List<int> actions = new ();
 
-            if (!inSession)
+            Dictionary<string, string> current = statesDict[currentState];
+
+            if (current[IN_SESSION] == "No")
             {
-                actions.Add(startSession);
+                actions.Add(actions[startSession]);
                 return actions;
             }
 
