@@ -1,13 +1,8 @@
-﻿using System;
-using System.Linq; // Enumerable
-using System.Text; // StringContent Encoding
-using System.Net.Http;
-using System.Collections.Generic;
+﻿using System.Text; // StringContent Encoding
 using SeriousQualityEzModel;
 using SynchronousHttpClientExecuter;
 using System.Text.Json;
 using System.Xml.Serialization;
-using System.IO;
 using System.Xml;
 
 namespace TodoAPIsNaiveAdapter
@@ -16,13 +11,15 @@ namespace TodoAPIsNaiveAdapter
     {
         static int Main(string[] args)
         {
-            APIs client = new APIs();
-            client.SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll;
-            client.IncludeSelfLinkNoise = true;
-            client.IncludeSecretToken = true;  // Set false to trim the size of the model by excluding actions about the secret token.
-            client.AcceptJsonBeforeXml = true;  // Only accept JSON in the response until all challenges have been covered at least once.
+            APIs client = new()
+            {
+                SelfLinkTreatment = SelfLinkTreatmentChoice.AllowAll,
+                IncludeSelfLinkNoise = true,
+                IncludeSecretToken = true,  // Set false to trim the size of the model by excluding actions about the secret token.
+                AcceptJsonBeforeXml = true  // Only accept JSON in the response until all challenges have been covered at least once.
+            };
 
-            EzModelGraph graph = new EzModelGraph(client, 7000, 500, 60, EzModelGraph.LayoutRankDirection.TopDown, DateTime.Now.Millisecond);
+            EzModelGraph graph = new (client, 7000, 500, 60, EzModelGraph.LayoutRankDirection.TopDown, DateTime.Now.Millisecond);
 
             if (!graph.GenerateGraph())
             {
@@ -67,49 +64,8 @@ namespace TodoAPIsNaiveAdapter
         }
     }
 
-    public class APIs : IEzModelClient
+    public partial class APIs : IEzModelClient
     {
-        SynchronousHttpClient executer = new SynchronousHttpClient();
-        bool waitForObserverKeystroke;
-
-        SelfLinkTreatmentChoice skipSelfLinks;
-        bool notifyAdapter;
-        bool stopOnProblem;
-        bool includeSelfLinkNoise = false;
-
-        // IEzModelClient Interface Property
-        public SelfLinkTreatmentChoice SelfLinkTreatment
-        {
-            get => skipSelfLinks;
-            set => skipSelfLinks = value;
-        }
-
-        // IEzModelClient Interface Property
-        public bool NotifyAdapter
-        {
-            get => notifyAdapter;
-            set => notifyAdapter = value;
-        }
-
-        // IEzModelClient Interface Property
-        public bool StopOnProblem
-        {
-            get => stopOnProblem;
-            set => stopOnProblem = value;
-        }
-
-        public bool IncludeSelfLinkNoise
-        {
-            get => includeSelfLinkNoise;
-            set => includeSelfLinkNoise = value;
-        }
-
-        public bool WaitForObserverKeystroke
-        {
-            get => waitForObserverKeystroke;
-            set => waitForObserverKeystroke = value;
-        }
-
         public APIs()
         {
             executer.server = "http://localhost:4567/";
@@ -160,20 +116,20 @@ namespace TodoAPIsNaiveAdapter
         const string deleteActiveTodo = "Delete an Active Todo";
         const string deleteFinalActiveTodo = "Delete Final Active Todo";
         const string resolveActiveTodo = "Resolve an Active Todo";
-//        const string resolveFinalActiveTodo = "Resolve Final Active Todo";
+        //        const string resolveFinalActiveTodo = "Resolve Final Active Todo";
         const string activateResolvedTodo = "Activate a Resolved Todo";
-//        const string activateFinalResolvedTodo = "Activate Final Resolved Todo";
+        //        const string activateFinalResolvedTodo = "Activate Final Resolved Todo";
 
         // Read-only actions
         const string getTodosList = "Get Todos List";
         const string getDocs = "Get Documentation";
         const string getHeartbeat = "Get Service Heartbeat";
         const string getChallenges = "Get Challenges List";
-        const string getTodoById = "Get Specific Todo"; 
-        const string getResolvedTodos = "Get Resolved Todos List"; 
-        const string getTodosHead = "Get Todos HEAD"; 
-        const string getTodosOPTIONS = "Get Todos OPTIONS"; 
-        const string getXMLTodosList = "Get XML Todos List"; 
+        const string getTodoById = "Get Specific Todo";
+        const string getResolvedTodos = "Get Resolved Todos List";
+        const string getTodosHead = "Get Todos HEAD";
+        const string getTodosOPTIONS = "Get Todos OPTIONS";
+        const string getXMLTodosList = "Get XML Todos List";
         const string getAnyTodosList = "Get Any Todos List"; // Accept */*
         const string getXMLJSONTodosList = "Prefer XML Todos List"; // Accept XML, Accept JSON
         const string getNoAcceptTodosList = "Get No Accept Header Todos List";
@@ -202,7 +158,7 @@ namespace TodoAPIsNaiveAdapter
         // Actions outside of the APIs that cover legitimate REST methods
         const string invalidRequest = "invalidRequest";
 
-        string StringifyStateVector(bool inSession, uint activeCount, uint resolvedCount, bool secretTok )
+        string StringifyStateVector(bool inSession, uint activeCount, uint resolvedCount, bool secretTok)
         {
             string s = String.Format("InSession.{0}, Resolved.{1}, Active.{2}, SecretToken.{3}", inSession, resolvedCount, activeCount, secretTok);
             return s;
@@ -219,6 +175,291 @@ namespace TodoAPIsNaiveAdapter
             executed = Enumerable.Repeat(!AcceptJsonBeforeXml, 33).ToArray();
 
             return StringifyStateVector(svInSession, activeTodosCount, resolvedTodosCount, secretToken);
+        }
+
+        // Interface method
+        public List<string> GetAvailableActions(string startState)
+        {
+            List<string> actions = new List<string>();
+
+            // We must parse the startState, because we will be fed
+            // a variety of start states and we keep track of only
+            // one state in this object.
+            string[] vState = startState.Split(", ");
+            bool inSession = vState[0].Contains("True") ? true : false;
+            if (!inSession)
+            {
+                actions.Add(startSession);
+                return actions;
+            }
+
+            secretToken = vState[3].Contains("True") ? true : false;
+
+            actions.Add(getTodosList);
+            actions.Add(getDocs);
+            actions.Add(getHeartbeat);
+
+            if (IncludeSecretToken)
+            {
+                if (secretToken == false)
+                {
+                    actions.Add(getSecretTokenAuthPass); // challenge
+                }
+                else
+                {
+                    actions.Add(getSecretNote); // challenge
+                    actions.Add(setSecretNote); // challenge
+                    actions.Add(getSecretNoteWrongAuthToken); // challenge
+                    actions.Add(getSecretNoteNoAuthToken); // challenge
+                    actions.Add(setSecretNoteWrongAuthToken); // challenge
+                    actions.Add(setSecretNoteNoAuthToken); // challenge
+                }
+            }
+
+            if (includeSelfLinkNoise)
+            {
+                actions.Add(getTodosList);
+                actions.Add(getDocs);
+                actions.Add(getHeartbeat);
+                if (activeTodosCount + resolvedTodosCount > 0)
+                {
+                    actions.Add(editTodo);
+                    actions.Add(getChallenges); // challenge
+                    actions.Add(getTodoById); // challenge
+                    actions.Add(getTodosHead); // challenge
+                    actions.Add(getTodosOPTIONS); // challenge
+                    actions.Add(getXMLTodosList); // challenge
+                    actions.Add(getAnyTodosList); // challenge
+                    actions.Add(getXMLJSONTodosList); // challenge
+                    actions.Add(getNoAcceptTodosList); // challenge
+                    if (resolvedTodosCount > 0)
+                    {
+                        actions.Add(getResolvedTodos); // challenge
+                    }
+                }
+                actions.Add(createNewChallengerSession); // challenge
+                actions.Add(getTodoFail); // challenge
+                actions.Add(getNonexistentTodo); // challenge
+                actions.Add(addTodoInvalidDoneStatus); // challenge
+                actions.Add(getTodoGzip); // challenge
+                actions.Add(addTodoUnsupportedContentType); // challenge
+                actions.Add(deleteHeartbeat); // challenge
+                actions.Add(patchHeartbeat); // challenge
+                actions.Add(traceHeartbeat); // challenge
+                if (IncludeSecretToken)
+                {
+                    actions.Add(getSecretTokenFailedAuth); // challenge
+                }
+            }
+
+            //            actions.Add(endSession);
+
+            // Add an action for a class of invalid actions that extend beyond
+            // specific invalid actions cited in the API Challenges list.
+            //            actions.Add(invalidRequest);
+
+            resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
+            activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
+
+            switch (activeTodosCount + resolvedTodosCount)
+            {
+                case 0:
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    break;
+
+                case 1:
+                    // activeTodos == 1 and resolvedTodos == 0
+                    // activeTodos == 0 and resolvedTodos == 1
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    if (activeTodosCount == 1)
+                    {
+                        actions.Add(deleteFinalActiveTodo);
+                        actions.Add(resolveActiveTodo);
+                    }
+                    else
+                    {
+                        actions.Add(deleteFinalResolvedTodo);
+                        actions.Add(activateResolvedTodo);
+                    }
+                    break;
+
+                case maximumTodosCount:
+                    // activeTodos > 0 and resolvedTodos > 0
+                    // activeTodos == 0 and resolvedTodos == max
+                    // activeTodos == max and resolvedTodos == 0
+                    if (activeTodosCount > 0)
+                    {
+                        actions.Add(deleteActiveTodo);
+                        actions.Add(resolveActiveTodo);
+                    }
+                    if (resolvedTodosCount > 0)
+                    {
+                        actions.Add(deleteResolvedTodo);
+                        actions.Add(activateResolvedTodo);
+                    }
+                    break;
+
+                case maximumTodosCount - 1:
+                    // activeTodos > 0 and resolvedTodos > 0
+                    // activeTodos == 0 and resolvedTodos == max-1
+                    // activeTodos == max-1 and resolvedTodos == 0
+                    actions.Add(addMaximumActiveTodo);
+                    actions.Add(addMaximumResolvedTodo);
+                    if (activeTodosCount > 0)
+                    {
+                        actions.Add(deleteActiveTodo);
+                        actions.Add(resolveActiveTodo);
+                    }
+                    if (resolvedTodosCount > 0)
+                    {
+                        actions.Add(deleteResolvedTodo);
+                        actions.Add(activateResolvedTodo);
+                    }
+                    break;
+
+                default:
+                    // 1 < activeCount + resolvedCount < maximumTodosCount - 1
+                    // activeTodos > 0 and resolvedTodos > 0
+                    // activeTodos == 0 and resolvedTodos < max-1
+                    // activeTodos < max-1 and resolvedTodos == 0
+                    if (activeTodosCount + resolvedTodosCount > maximumTodosCount)
+                    {
+                        Console.WriteLine("active, resolved = {0}, {1}", activeTodosCount, resolvedTodosCount);
+                    }
+                    actions.Add(addActiveTodo);
+                    actions.Add(addResolvedTodo);
+                    if (activeTodosCount > 0)
+                    {
+                        actions.Add(deleteActiveTodo);
+                        actions.Add(resolveActiveTodo);
+                    }
+                    if (resolvedTodosCount > 0)
+                    {
+                        actions.Add(deleteResolvedTodo);
+                        actions.Add(activateResolvedTodo);
+                    }
+                    break;
+            }
+
+            return actions;
+        }
+
+        // Interface method
+        public string GetEndState(string startState, string action)
+        {
+            string[] vState = startState.Split(", ");
+            bool inSession = vState[0].Contains("True") ? true : false;
+            string endState = String.Empty;
+
+            resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
+            activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
+            secretToken = vState[3].Contains("True") ? true : false;
+
+            switch (action)
+            {
+                case getChallenges:
+                case getTodoById:
+                case getResolvedTodos:
+                case getTodosHead:
+                case getTodosOPTIONS:
+                case getXMLTodosList:
+                case getAnyTodosList:
+                case getXMLJSONTodosList:
+                case getNoAcceptTodosList:
+                case createNewChallengerSession:
+                case getTodoFail:
+                case getNonexistentTodo:
+                case addTodoInvalidDoneStatus:
+                case getTodoGzip:
+                case addTodoUnsupportedContentType:
+                case deleteHeartbeat:
+                case patchHeartbeat:
+                case traceHeartbeat:
+                case getSecretTokenFailedAuth:
+                case getSecretNoteWrongAuthToken:
+                case getSecretNoteNoAuthToken:
+                case setSecretNoteWrongAuthToken:
+                case setSecretNoteNoAuthToken:
+                case getSecretNote:
+                case setSecretNote:
+                    break;
+
+                case getSecretTokenAuthPass:
+                    secretToken = true;
+                    break;
+
+                case startSession:
+                    inSession = true;
+                    break;
+
+                case endSession:
+                    inSession = false;
+                    break;
+
+                case addResolvedTodo:
+                case addMaximumResolvedTodo:
+                    resolvedTodosCount++;
+                    break;
+
+                case addActiveTodo:
+                case addMaximumActiveTodo:
+                    activeTodosCount++;
+                    break;
+
+                case editTodo:
+                    break;
+
+                case activateResolvedTodo:
+                    resolvedTodosCount--;
+                    activeTodosCount++;
+                    break;
+
+                case resolveActiveTodo:
+                    activeTodosCount--;
+                    resolvedTodosCount++;
+                    break;
+
+                case deleteResolvedTodo:
+                case deleteFinalResolvedTodo:
+                    resolvedTodosCount--;
+                    break;
+
+                case deleteActiveTodo:
+                case deleteFinalActiveTodo:
+                    activeTodosCount--;
+                    break;
+
+                case invalidRequest:
+                    break;
+
+                case getTodosList:
+                    break;
+
+                case getDocs:
+                    break;
+
+                case getHeartbeat:
+                    break;
+
+                default:
+                    Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
+                    break;
+            }
+            endState = StringifyStateVector(inSession, activeTodosCount, resolvedTodosCount, secretToken);
+            return endState;
+        }
+    }
+
+    public partial class APIs:
+    {
+        SynchronousHttpClient executer = new SynchronousHttpClient();
+        bool waitForObserverKeystroke;
+        public bool WaitForObserverKeystroke
+        {
+            get => waitForObserverKeystroke;
+            set => waitForObserverKeystroke = value;
         }
 
         // Interface method
@@ -1749,280 +1990,6 @@ namespace TodoAPIsNaiveAdapter
             // Build observed state string
 
             return observed;
-        }
-
-        // Interface method
-        public List<string> GetAvailableActions(string startState)
-        {
-            List<string> actions = new List<string>();
-
-            // We must parse the startState, because we will be fed
-            // a variety of start states and we keep track of only
-            // one state in this object.
-            string[] vState = startState.Split(", ");
-            bool inSession = vState[0].Contains("True") ? true : false;
-            if (!inSession)
-            {
-                actions.Add(startSession);
-                return actions;
-            }
-
-            secretToken = vState[3].Contains("True") ? true : false;
-
-            actions.Add(getTodosList);
-            actions.Add(getDocs);
-            actions.Add(getHeartbeat);
-
-            if (IncludeSecretToken)
-            {
-                if (secretToken == false)
-                {
-                    actions.Add(getSecretTokenAuthPass); // challenge
-                }
-                else
-                {
-                    actions.Add(getSecretNote); // challenge
-                    actions.Add(setSecretNote); // challenge
-                    actions.Add(getSecretNoteWrongAuthToken); // challenge
-                    actions.Add(getSecretNoteNoAuthToken); // challenge
-                    actions.Add(setSecretNoteWrongAuthToken); // challenge
-                    actions.Add(setSecretNoteNoAuthToken); // challenge
-                }
-            }
-
-            if (includeSelfLinkNoise)
-            {
-                actions.Add(getTodosList);
-                actions.Add(getDocs);
-                actions.Add(getHeartbeat);
-                if (activeTodosCount + resolvedTodosCount > 0)
-                {
-                    actions.Add(editTodo);
-                    actions.Add(getChallenges); // challenge
-                    actions.Add(getTodoById); // challenge
-                    actions.Add(getTodosHead); // challenge
-                    actions.Add(getTodosOPTIONS); // challenge
-                    actions.Add(getXMLTodosList); // challenge
-                    actions.Add(getAnyTodosList); // challenge
-                    actions.Add(getXMLJSONTodosList); // challenge
-                    actions.Add(getNoAcceptTodosList); // challenge
-                    if (resolvedTodosCount > 0)
-                    {
-                        actions.Add(getResolvedTodos); // challenge
-                    }
-                }
-                actions.Add(createNewChallengerSession); // challenge
-                actions.Add(getTodoFail); // challenge
-                actions.Add(getNonexistentTodo); // challenge
-                actions.Add(addTodoInvalidDoneStatus); // challenge
-                actions.Add(getTodoGzip); // challenge
-                actions.Add(addTodoUnsupportedContentType); // challenge
-                actions.Add(deleteHeartbeat); // challenge
-                actions.Add(patchHeartbeat); // challenge
-                actions.Add(traceHeartbeat); // challenge
-                if (IncludeSecretToken)
-                {
-                    actions.Add(getSecretTokenFailedAuth); // challenge
-                }
-            }
-
-            //            actions.Add(endSession);
-
-            // Add an action for a class of invalid actions that extend beyond
-            // specific invalid actions cited in the API Challenges list.
-            //            actions.Add(invalidRequest);
-
-            resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
-            activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
-
-            switch (activeTodosCount + resolvedTodosCount)
-            {
-                case 0:
-                    actions.Add(addActiveTodo);
-                    actions.Add(addResolvedTodo);
-                    break;
-
-                case 1:
-                    // activeTodos == 1 and resolvedTodos == 0
-                    // activeTodos == 0 and resolvedTodos == 1
-                    actions.Add(addActiveTodo);
-                    actions.Add(addResolvedTodo);
-                    if (activeTodosCount == 1)
-                    {
-                        actions.Add(deleteFinalActiveTodo);
-                        actions.Add(resolveActiveTodo);
-                    }
-                    else
-                    {
-                        actions.Add(deleteFinalResolvedTodo);
-                        actions.Add(activateResolvedTodo);
-                    }
-                    break;
-
-                case maximumTodosCount:
-                    // activeTodos > 0 and resolvedTodos > 0
-                    // activeTodos == 0 and resolvedTodos == max
-                    // activeTodos == max and resolvedTodos == 0
-                    if (activeTodosCount > 0)
-                    {
-                        actions.Add(deleteActiveTodo);
-                        actions.Add(resolveActiveTodo);
-                    }
-                    if (resolvedTodosCount > 0)
-                    {
-                        actions.Add(deleteResolvedTodo);
-                        actions.Add(activateResolvedTodo);
-                    }
-                    break;
-
-                case maximumTodosCount - 1:
-                    // activeTodos > 0 and resolvedTodos > 0
-                    // activeTodos == 0 and resolvedTodos == max-1
-                    // activeTodos == max-1 and resolvedTodos == 0
-                    actions.Add(addMaximumActiveTodo);
-                    actions.Add(addMaximumResolvedTodo);
-                    if (activeTodosCount > 0)
-                    {
-                        actions.Add(deleteActiveTodo);
-                        actions.Add(resolveActiveTodo);
-                    }
-                    if (resolvedTodosCount > 0)
-                    {
-                        actions.Add(deleteResolvedTodo);
-                        actions.Add(activateResolvedTodo);
-                    }
-                    break;
-
-                default:
-                    // 1 < activeCount + resolvedCount < maximumTodosCount - 1
-                    // activeTodos > 0 and resolvedTodos > 0
-                    // activeTodos == 0 and resolvedTodos < max-1
-                    // activeTodos < max-1 and resolvedTodos == 0
-                    if (activeTodosCount + resolvedTodosCount > maximumTodosCount)
-                    {
-                        Console.WriteLine("active, resolved = {0}, {1}", activeTodosCount, resolvedTodosCount);
-                    }
-                    actions.Add(addActiveTodo);
-                    actions.Add(addResolvedTodo);
-                    if (activeTodosCount > 0)
-                    {
-                        actions.Add(deleteActiveTodo);
-                        actions.Add(resolveActiveTodo);
-                    }
-                    if (resolvedTodosCount > 0)
-                    {
-                        actions.Add(deleteResolvedTodo);
-                        actions.Add(activateResolvedTodo);
-                    }
-                    break;
-            }
-
-            return actions;
-        }
-
-        // Interface method
-        public string GetEndState(string startState, string action)
-        {
-            string[] vState = startState.Split(", ");
-            bool inSession = vState[0].Contains("True") ? true : false;
-            string endState = String.Empty;
-
-            resolvedTodosCount = uint.Parse(vState[1].Split(".")[1]);
-            activeTodosCount = uint.Parse(vState[2].Split(".")[1]);
-            secretToken = vState[3].Contains("True") ? true : false;
-
-            switch (action)
-            {
-                case getChallenges:
-                case getTodoById:
-                case getResolvedTodos:
-                case getTodosHead:
-                case getTodosOPTIONS:
-                case getXMLTodosList:
-                case getAnyTodosList:
-                case getXMLJSONTodosList:
-                case getNoAcceptTodosList:
-                case createNewChallengerSession:
-                case getTodoFail:
-                case getNonexistentTodo:
-                case addTodoInvalidDoneStatus:
-                case getTodoGzip:
-                case addTodoUnsupportedContentType:
-                case deleteHeartbeat:
-                case patchHeartbeat:
-                case traceHeartbeat:
-                case getSecretTokenFailedAuth:
-                case getSecretNoteWrongAuthToken:
-                case getSecretNoteNoAuthToken:
-                case setSecretNoteWrongAuthToken:
-                case setSecretNoteNoAuthToken:
-                case getSecretNote:
-                case setSecretNote:
-                    break;
-
-                case getSecretTokenAuthPass:
-                    secretToken = true;
-                    break;
-
-                case startSession:
-                    inSession = true;
-                    break;
-
-                case endSession:
-                    inSession = false;
-                    break;
-
-                case addResolvedTodo:
-                case addMaximumResolvedTodo:
-                    resolvedTodosCount++;
-                    break;
-
-                case addActiveTodo:
-                case addMaximumActiveTodo:
-                    activeTodosCount++;
-                    break;
-
-                case editTodo:
-                    break;
-
-                case activateResolvedTodo:
-                    resolvedTodosCount--;
-                    activeTodosCount++;
-                    break;
-
-                case resolveActiveTodo:
-                    activeTodosCount--;
-                    resolvedTodosCount++;
-                    break;
-
-                case deleteResolvedTodo:
-                case deleteFinalResolvedTodo:
-                    resolvedTodosCount--;
-                    break;
-
-                case deleteActiveTodo:
-                case deleteFinalActiveTodo:
-                    activeTodosCount--;
-                    break;
-
-                case invalidRequest:
-                    break;
-
-                case getTodosList:
-                    break;
-
-                case getDocs:
-                    break;
-
-                case getHeartbeat:
-                    break;
-
-                default:
-                    Console.WriteLine("ERROR: Unknown action '{0}' in GetEndState()", action);
-                    break;
-            }
-            endState = StringifyStateVector(inSession, activeTodosCount, resolvedTodosCount, secretToken);
-            return endState;
         }
     }
 }
