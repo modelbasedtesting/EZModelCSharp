@@ -1,7 +1,6 @@
 ﻿// EZmodel Sample State Generation
 // copyright 2019 Serious Quality LLC
 
-#define BOOLEAN
 #define BOOLEAN 
 
 using System;
